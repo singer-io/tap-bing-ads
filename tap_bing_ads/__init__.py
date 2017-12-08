@@ -31,7 +31,7 @@ def create_sdk_client(service, customer_id, account_id):
     authentication = OAuthWebAuthCodeGrant(
         CONFIG['oauth_client_id'],
         CONFIG['oauth_client_secret'],
-        '') ## TODO: callback ? - Seems to work
+        '') ## redirect URL not needed for refresh token
 
     authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
 
@@ -44,6 +44,9 @@ def create_sdk_client(service, customer_id, account_id):
     return ServiceClient(service, authorization_data)
 
 def sobject_to_dict(d):
+    if not hasattr(d, '__keylist__'):
+        return d
+
     out = {}
     for k, v in asdict(d).items():
         if hasattr(v, '__keylist__'):
@@ -205,22 +208,83 @@ def do_discover():
     discover_core_objects()
     discover_reports()
 
-def sync_core_objects(customer_id, account_id, properties):
+## TODO: remove fields not selected?
+
+def sync_account_stream(customer_id, account_id):
     client = create_sdk_client('CustomerManagementService', customer_id, account_id)
     response = client.GetAccount(AccountId=account_id)
-    print(json.dumps(sobject_to_dict(response)))
+    ## TODO: filter accounts based in LastModifiedTime
+    singer.write_record('accounts', sobject_to_dict(response))
+
+def sync_campaigns(client, account_id, selected_streams):
+    response = client.GetCampaignsByAccountId(AccountId=account_id)
+    response_dict = sobject_to_dict(response)
+    if 'Campaign' in response_dict:
+        campaigns = response_dict['Campaign']
+
+        if 'campaigns' in selected_streams:
+            for campaign in campaigns:
+                singer.write_record('campaigns', campaign)
+
+        return map(lambda x: x['Id'], campaigns)
+
+def sync_ad_groups(client, campaign_ids, selected_streams):
+    ad_group_ids = []
+    for campaign_id in campaign_ids:
+        response = client.GetAdGroupsByCampaignId(CampaignId=campaign_id)
+        response_dict = sobject_to_dict(response)
+
+        if 'AdGroup' in response_dict:
+            ad_groups = sobject_to_dict(response)['AdGroup']
+
+            if 'ad_groups' in selected_streams:
+                for ad_group in ad_groups:
+                    singer.write_record('ad_groups', ad_group)
+
+            ad_group_ids.append(list(map(lambda x: x['Id'], ad_groups)))
+    return ad_group_ids
+
+def sync_ads(client, ad_group_ids):
+    for ad_group_id in ad_group_ids:
+        response = client.GetAdsByAdGroupId(
+            AdGroupId=ad_group_id,
+            AdTypes={
+                'AdType': [
+                    'AppInstall',
+                    'DynamicSearch',
+                    'ExpandedText',
+                    'Product',
+                    'Text',
+                    'Image'
+                ]
+            })
+        response_dict = sobject_to_dict(response)
+
+        if 'Ad' in response_dict:
+            for ad in response_dict['Ad']:
+                singer.write_record('ads', ad)
+
+def sync_core_objects(customer_id, account_id, selected_streams):
+    if 'accounts' in selected_streams:
+        sync_account_stream(customer_id, account_id)
 
     client = create_sdk_client('CampaignManagementService', customer_id, account_id)
 
-    response = client.GetCampaignsByAccountId(AccountId=account_id)
-    print(json.dumps(sobject_to_dict(response)))
+    campaign_ids = sync_campaigns(client, account_id, selected_streams)
 
-def sync_account(customer_id, account_id, properties):
-    sync_core_objects(customer_id, account_id, properties)
+    if campaign_ids and ('ad_groups' in selected_streams or 'ads' in selected_streams):
+        ad_group_ids = sync_ad_groups(client, campaign_ids, selected_streams)
+        if 'ads' in selected_streams:
+            sync_ads(client, ad_group_ids)
 
-def do_sync_all_accounts(customer_id, account_ids, properties):
+def sync_account(customer_id, account_id, selected_streams):
+    sync_core_objects(customer_id, account_id, selected_streams)
+
+def do_sync_all_accounts(customer_id, account_ids, catalog):
+    selected_streams = list(map(lambda x: x.stream, catalog.streams))
+
     for account_id in account_ids:
-        sync_account(customer_id, account_id, properties)
+        sync_account(customer_id, account_id, selected_streams)
 
 def main_impl():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
@@ -232,11 +296,11 @@ def main_impl():
     if args.discover:
         do_discover()
         LOGGER.info("Discovery complete")
-    elif args.properties:
-        do_sync_all_accounts(CONFIG['customer_id'], account_ids, args.properties)
+    elif args.catalog:
+        do_sync_all_accounts(CONFIG['customer_id'], account_ids, args.catalog)
         LOGGER.info("Sync Completed")
     else:
-        LOGGER.info("No properties were selected")
+        LOGGER.info("No catalog was provided")
 
 ## TODO:
 ## - Account TimeZone?
