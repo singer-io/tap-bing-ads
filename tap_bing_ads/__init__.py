@@ -12,6 +12,8 @@ from singer import utils
 from bingads import AuthorizationData, OAuthWebAuthCodeGrant, ServiceClient
 from suds.sudsobject import asdict
 
+from tap_bing_ads import reports
+
 LOGGER = singer.get_logger()
 
 REQUIRED_CONFIG_KEYS = [
@@ -167,8 +169,7 @@ def get_stream_def(stream_name, pks, schema, replication_key=None):
         'tap_stream_id': stream_name,
         'stream': stream_name,
         'key_properties': pks,
-        'schema': schema,
-        'replication_method': 'FULL_TABLE'
+        'schema': schema
     }
 
     if replication_key:
@@ -178,35 +179,84 @@ def get_stream_def(stream_name, pks, schema, replication_key=None):
     return stream_def
 
 def discover_core_objects():
-    streams = []
+    core_object_streams = []
 
     client = ServiceClient('CustomerManagementService')
     type_map = get_type_map(client)
 
     account_schema = type_map['Account']
      ## TODO: replication_key=LastModifiedTime
-    streams.append(get_stream_def('accounts', ['Id'], account_schema))
+    core_object_streams.append(get_stream_def('accounts', ['Id'], account_schema))
 
     client = ServiceClient('CampaignManagementService')
     type_map = get_type_map(client)
 
     campaign_schema = type_map['Campaign']
-    streams.append(get_stream_def('campaigns', ['Id'], campaign_schema))
+    core_object_streams.append(get_stream_def('campaigns', ['Id'], campaign_schema))
 
     ad_group_schema = type_map['AdGroup']
-    streams.append(get_stream_def('ad_groups', ['Id'], ad_group_schema))
+    core_object_streams.append(get_stream_def('ad_groups', ['Id'], ad_group_schema))
 
     ad_schema = type_map['Ad']
-    streams.append(get_stream_def('ads', ['Id'], ad_schema))
+    core_object_streams.append(get_stream_def('ads', ['Id'], ad_schema))
 
-    json.dump({'streams': streams}, sys.stdout, indent=2)
+    return core_object_streams
+
+def get_report_schema(report_colums):
+    properties = {}
+    for column in report_colums:
+        if column in reports.REPORTING_FIELD_TYPES:
+            _type = reports.REPORTING_FIELD_TYPES[column]
+        else:
+            _type = 'string'
+
+        # TimePeriod's column name changes depending on aggregation level
+        # This tap always uses daily aggregation
+        if column == 'TimePeriod':
+            column = 'GregorianDate'
+            _type = 'datetime'
+
+        if _type == 'datetime':
+            col_schema = {'type': 'string', 'format': 'date-time'}
+        else:
+            col_schema = {'type': _type}
+
+        properties[column] = col_schema
+
+    ## TODO: add _sdc_report_datetime
+    ## TODO: add _sdc_account_id
+    ## TODO: day field? Can it just use GregorianDate?
+
+    return {
+        'properties': properties,
+        'additionalProperties': False
+    }
+
+def camel_to_snake_case(input_str):
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', input_str)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 def discover_reports():
-    pass
+    report_streams = []
+    client = ServiceClient('ReportingService')
+    type_map = get_type_map(client)
+    report_column_regex = r'^(?!ArrayOf)(.+Report)Column$'
+
+    for type_name, type_schema in type_map.items():
+        match = re.match(report_column_regex, type_name)
+        if match and match.groups()[0] in reports.REPORT_WHITELIST:
+            stream_name = camel_to_snake_case(match.groups()[0])
+            report_schema = get_report_schema(type_schema['enum'])
+            ## TODO: determine PK
+            report_stream_def = get_stream_def(stream_name, ['AccountId', 'GregorianDate'], report_schema)
+            report_streams.append(report_stream_def)
+
+    return report_streams
 
 def do_discover():
-    discover_core_objects()
-    discover_reports()
+    core_object_streams = discover_core_objects()
+    report_streams = discover_reports()
+    json.dump({'streams': core_object_streams + report_streams}, sys.stdout, indent=2)
 
 ## TODO: remove fields not selected?
 
@@ -303,8 +353,8 @@ def main_impl():
         LOGGER.info("No catalog was provided")
 
 ## TODO:
-## - Account TimeZone?
-## - Use Campaign.TimeZone for reporting timezone?
+## - Account TimeZone? - Convert core objects timezone based on this?
+## - Use Campaign.TimeZone for reporting timezone? Convert report timezones based on this?
 
 def main():
     try:
