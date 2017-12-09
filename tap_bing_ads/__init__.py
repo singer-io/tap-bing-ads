@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 
-import inspect
+import time
 import json
+import csv
 import sys
 import re
-from datetime import datetime
+import io
+from datetime import datetime, timedelta
+from zipfile import ZipFile
 
 import singer
 import pytz
 from singer import utils
 from bingads import AuthorizationData, OAuthWebAuthCodeGrant, ServiceClient
 from suds.sudsobject import asdict
+import stringcase
+import requests
 
 from tap_bing_ads import reports
 
@@ -28,6 +33,11 @@ REQUIRED_CONFIG_KEYS = [
 
 CONFIG = {}
 STATE = {}
+
+MAX_NUM_REPORT_POLLS = 10
+REPORT_POLL_SLEEP = 5
+
+session = requests.Session()
 
 def create_sdk_client(service, customer_id, account_id):
     authentication = OAuthWebAuthCodeGrant(
@@ -224,17 +234,13 @@ def get_report_schema(report_colums):
         properties[column] = col_schema
 
     ## TODO: add _sdc_report_datetime
-    ## TODO: add _sdc_account_id
+    ## TODO: add _sdc_account_id ?
     ## TODO: day field? Can it just use GregorianDate?
 
     return {
         'properties': properties,
         'additionalProperties': False
     }
-
-def camel_to_snake_case(input_str):
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', input_str)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 def discover_reports():
     report_streams = []
@@ -245,7 +251,7 @@ def discover_reports():
     for type_name, type_schema in type_map.items():
         match = re.match(report_column_regex, type_name)
         if match and match.groups()[0] in reports.REPORT_WHITELIST:
-            stream_name = camel_to_snake_case(match.groups()[0])
+            stream_name = stringcase.snakecase(match.groups()[0])
             report_schema = get_report_schema(type_schema['enum'])
             ## TODO: determine PK
             report_stream_def = get_stream_def(stream_name, ['AccountId', 'GregorianDate'], report_schema)
@@ -327,14 +333,110 @@ def sync_core_objects(customer_id, account_id, selected_streams):
         if 'ads' in selected_streams:
             sync_ads(client, ad_group_ids)
 
-def sync_account(customer_id, account_id, selected_streams):
-    sync_core_objects(customer_id, account_id, selected_streams)
+def stream_report(stream_name, report_name, url):
+    response = session.get(url)
 
-def do_sync_all_accounts(customer_id, account_ids, catalog):
+    if response.status_code != 200:
+        raise Exception('Non-200 ({}) response downloading report'.format(response.status_code))
+
+    with ZipFile(io.BytesIO(response.content)) as zip_file:
+        with zip_file.open(zip_file.namelist()[0]) as binary_file:
+            with io.TextIOWrapper(binary_file) as csv_file:
+                # handle control character at the start of the file
+                header_line = next(csv_file)[1:]
+                headers = header_line.replace('"', '').split(',')
+
+                reader = csv.DictReader(csv_file, fieldnames=headers)
+
+                for row in reader:
+                    ## TODO: add _sdc_report_datetime
+                    ## TODO: add _sdc_account_id ?
+                    ## TODO: day field? Can it just use GregorianDate?
+                    ## TODO: data type row
+                    singer.write_record(stream_name, row)
+
+def sync_report(client, account_id, report_stream):
+    report_name = stringcase.pascalcase(report_stream.stream)
+
+    report_request = client.factory.create('{}Request'.format(report_name))
+    report_request.Format = 'Csv'
+    report_request.Aggregation = 'Daily'
+    report_request.Language = 'English'
+    report_request.ExcludeReportHeader = True
+    report_request.ExcludeReportFooter = True
+
+    ## TODO: Columns - only user selected columns
+    report_columns = client.factory.create('ArrayOf{}Column'.format(report_name))
+    report_columns.KeywordPerformanceReportColumn.append([
+        'TimePeriod',
+        'AccountId',
+        'CampaignId',
+        'Keyword',
+        'KeywordId',
+        'DeviceType',
+        'BidMatchType',
+        'Clicks',
+        'Impressions',
+        'Ctr',
+        'AverageCpc',
+        'Spend',
+        'QualityScore',
+    ])
+    report_request.Columns = report_columns
+
+    ## TODO: use config start_date ?
+    ## TODO: use config conversion_window
+
+    #now = datetime.utcnow()
+    ## TODO: remove
+    ## !!!!!!!! hard coded for development
+    end_datetime = datetime(2016, 7, 15)
+    start_datetime = end_datetime - timedelta(days=30)
+
+    start_date = client.factory.create('Date')
+    start_date.Day = start_datetime.day
+    start_date.Month = start_datetime.month
+    start_date.Year = start_datetime.year
+
+    end_date = client.factory.create('Date')
+    end_date.Day = end_datetime.day
+    end_date.Month = end_datetime.month
+    end_date.Year = end_datetime.year
+    
+    report_time = client.factory.create('ReportTime')
+    report_time.CustomDateRangeStart = start_date
+    report_time.CustomDateRangeEnd = end_date
+    report_time.PredefinedTime = None
+    report_request.Time = report_time
+
+    request_id = client.SubmitGenerateReport(report_request)
+
+    for i in range(0, MAX_NUM_REPORT_POLLS):
+        response = client.PollGenerateReport(request_id)
+        if response.Status == 'Error':
+            raise Exception('Error running {} report'.format(report_name))
+        if response.Status == 'Success':
+            ## TODO: log None url, means no results
+            if response.ReportDownloadUrl:
+                stream_report(report_stream.stream, report_name, response.ReportDownloadUrl)
+            break
+        time.sleep(REPORT_POLL_SLEEP)
+
+def sync_reports(customer_id, account_id, catalog):
+    client = create_sdk_client('ReportingService', customer_id, account_id)
+
+    for report_stream in filter(lambda x: x.stream[-6:] == 'report', catalog.streams):
+        sync_report(client, account_id, report_stream)
+
+def sync_account(customer_id, account_id, catalog):
     selected_streams = list(map(lambda x: x.stream, catalog.streams))
 
+    sync_core_objects(customer_id, account_id, selected_streams)
+    sync_reports(customer_id, account_id, catalog)
+
+def do_sync_all_accounts(customer_id, account_ids, catalog):
     for account_id in account_ids:
-        sync_account(customer_id, account_id, selected_streams)
+        sync_account(customer_id, account_id, catalog)
 
 def main_impl():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)

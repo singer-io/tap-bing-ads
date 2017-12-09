@@ -12,7 +12,9 @@ setup(
     py_modules=['tap_bingads'],
     install_requires=[
       'singer-python==5.0.2',
-      'bingads==11.5.6'
+      'bingads==11.5.6',
+      'requests==2.18.4',
+      'stringcase==1.2.0'
     ],
     entry_points='''
       [console_scripts]
