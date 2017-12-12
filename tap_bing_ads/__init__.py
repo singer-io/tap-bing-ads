@@ -40,6 +40,8 @@ REPORT_POLL_SLEEP = 5
 session = requests.Session()
 
 def create_sdk_client(service, customer_id, account_id):
+    LOGGER.info('Creating SOAP client with OAuth refresh credentials')
+
     authentication = OAuthWebAuthCodeGrant(
         CONFIG['oauth_client_id'],
         CONFIG['oauth_client_secret'],
@@ -191,6 +193,7 @@ def get_stream_def(stream_name, pks, schema, replication_key=None):
 def discover_core_objects():
     core_object_streams = []
 
+    LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
     client = ServiceClient('CustomerManagementService')
     type_map = get_type_map(client)
 
@@ -198,6 +201,7 @@ def discover_core_objects():
      ## TODO: replication_key=LastModifiedTime
     core_object_streams.append(get_stream_def('accounts', ['Id'], account_schema))
 
+    LOGGER.info('Initializing CampaignManagementService client - Loading WSDL')
     client = ServiceClient('CampaignManagementService')
     type_map = get_type_map(client)
 
@@ -244,6 +248,7 @@ def get_report_schema(report_colums):
 
 def discover_reports():
     report_streams = []
+    LOGGER.info('Initializing ReportingService client - Loading WSDL')
     client = ServiceClient('ReportingService')
     type_map = get_type_map(client)
     report_column_regex = r'^(?!ArrayOf)(.+Report)Column$'
@@ -260,7 +265,9 @@ def discover_reports():
     return report_streams
 
 def do_discover():
+    LOGGER.info('Discovering core objects')
     core_object_streams = discover_core_objects()
+    LOGGER.info('Discovering reports')
     report_streams = discover_reports()
     json.dump({'streams': core_object_streams + report_streams}, sys.stdout, indent=2)
 
@@ -284,7 +291,7 @@ def sync_campaigns(client, account_id, selected_streams):
 
         return map(lambda x: x['Id'], campaigns)
 
-def sync_ad_groups(client, campaign_ids, selected_streams):
+def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
     ad_group_ids = []
     for campaign_id in campaign_ids:
         response = client.GetAdGroupsByCampaignId(CampaignId=campaign_id)
@@ -294,6 +301,7 @@ def sync_ad_groups(client, campaign_ids, selected_streams):
             ad_groups = sobject_to_dict(response)['AdGroup']
 
             if 'ad_groups' in selected_streams:
+                LOGGER.info('Syncing AdGroups for Account: , Campaign: '.format(account_id, campaign_id))
                 for ad_group in ad_groups:
                     singer.write_record('ad_groups', ad_group)
 
@@ -322,15 +330,18 @@ def sync_ads(client, ad_group_ids):
 
 def sync_core_objects(customer_id, account_id, selected_streams):
     if 'accounts' in selected_streams:
+        LOGGER.info('Syncing Account: {}'.format(account_id))
         sync_account_stream(customer_id, account_id)
 
     client = create_sdk_client('CampaignManagementService', customer_id, account_id)
 
+    LOGGER.info('Syncing Campaigns for Account: {}'.format(account_id))
     campaign_ids = sync_campaigns(client, account_id, selected_streams)
 
     if campaign_ids and ('ad_groups' in selected_streams or 'ads' in selected_streams):
-        ad_group_ids = sync_ad_groups(client, campaign_ids, selected_streams)
+        ad_group_ids = sync_ad_groups(client, account_id, campaign_ids, selected_streams)
         if 'ads' in selected_streams:
+            LOGGER.info('Syncing Ads for Account: {}'.format(account_id))
             sync_ads(client, ad_group_ids)
 
 def stream_report(stream_name, report_name, url):
@@ -357,6 +368,8 @@ def stream_report(stream_name, report_name, url):
 
 def sync_report(client, account_id, report_stream):
     report_name = stringcase.pascalcase(report_stream.stream)
+
+    LOGGER.info('Syncing report: {}'.format(report_name))
 
     report_request = client.factory.create('{}Request'.format(report_name))
     report_request.Format = 'Csv'
@@ -431,7 +444,10 @@ def sync_reports(customer_id, account_id, catalog):
 def sync_account(customer_id, account_id, catalog):
     selected_streams = list(map(lambda x: x.stream, catalog.streams))
 
+    LOGGER.info('Syncing core objects')
     sync_core_objects(customer_id, account_id, selected_streams)
+
+    LOGGER.info('Syncing reports')
     sync_reports(customer_id, account_id, catalog)
 
 def do_sync_all_accounts(customer_id, account_ids, catalog):
