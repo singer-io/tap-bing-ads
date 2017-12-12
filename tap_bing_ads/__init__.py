@@ -9,8 +9,8 @@ import io
 from datetime import datetime, timedelta
 from zipfile import ZipFile
 
-import singer
 import pytz
+import singer
 from singer import utils
 from bingads import AuthorizationData, OAuthWebAuthCodeGrant, ServiceClient
 from suds.sudsobject import asdict
@@ -37,9 +37,11 @@ STATE = {}
 MAX_NUM_REPORT_POLLS = 10
 REPORT_POLL_SLEEP = 5
 
-session = requests.Session()
+SESSION = requests.Session()
 
-def create_sdk_client(service, customer_id, account_id):
+ARRAY_TYPE_REGEX = r'ArrayOf([a-z]+)'
+
+def create_sdk_client(service, account_id):
     LOGGER.info('Creating SOAP client with OAuth refresh credentials')
 
     authentication = OAuthWebAuthCodeGrant(
@@ -57,39 +59,37 @@ def create_sdk_client(service, customer_id, account_id):
 
     return ServiceClient(service, authorization_data)
 
-def sobject_to_dict(d):
-    if not hasattr(d, '__keylist__'):
-        return d
+def sobject_to_dict(obj):
+    if not hasattr(obj, '__keylist__'):
+        return obj
 
     out = {}
-    for k, v in asdict(d).items():
-        if hasattr(v, '__keylist__'):
-            out[k] = sobject_to_dict(v)
-        elif isinstance(v, list):
-            out[k] = []
-            for item in v:
-                out[k].append(sobject_to_dict(item))
-        elif isinstance(v, datetime):
-            out[k] = utils.strftime(pytz.utc.localize(v))
+    for key, value in asdict(obj).items():
+        if hasattr(value, '__keylist__'):
+            out[key] = sobject_to_dict(value)
+        elif isinstance(value, list):
+            out[key] = []
+            for item in value:
+                out[key].append(sobject_to_dict(item))
+        elif isinstance(value, datetime):
+            out[key] = utils.strftime(pytz.utc.localize(value))
         else:
-            out[k] = v
+            out[key] = value
     return out
 
 def xml_to_json_type(xml_type):
     if xml_type == 'boolean':
         return 'boolean'
-    elif xml_type in ['decimal', 'float', 'double']:
+    if xml_type in ['decimal', 'float', 'double']:
         return 'number'
-    elif xml_type == 'long':
+    if xml_type == 'long':
         return 'integer'
-    elif xml_type in ['dateTime', 'date']:
-        return 'string'
-    else:
-        return 'string'
+
+    return 'string'
 
 def get_json_schema(element):
     types = []
-    format = None
+    _format = None
     enum = None
 
     if element.nillable:
@@ -105,22 +105,20 @@ def get_json_schema(element):
         types.append(_type)
 
         if xml_type in ['dateTime', 'date']:
-            format = 'date-time'
+            _format = 'date-time'
 
-    schema = { 'type': types }
-    
-    if format:
-        schema['format'] = format
+    schema = {'type': types}
+
+    if _format:
+        schema['format'] = _format
 
     if enum:
         schema['enum'] = enum
 
     return schema
 
-array_type_regex = r'ArrayOf([a-z]+)'
-
 def get_array_type(array_type):
-    xml_type = re.match(array_type_regex, array_type).groups()[0]
+    xml_type = re.match(ARRAY_TYPE_REGEX, array_type).groups()[0]
     json_type = xml_to_json_type(xml_type)
 
     return {
@@ -148,7 +146,7 @@ def wsdl_type_to_schema(wsdl_type):
                 properties[element.name] = _type ## set to service type name for now
         else:
             properties[element.name] = get_json_schema(element)
-    
+
     return {
         'type': ['object'],
         'additionalProperties': False,
@@ -170,10 +168,10 @@ def get_type_map(client):
             continue
         type_map[_type.name] = wsdl_type_to_schema(_type)
 
-    for type_name, schema in type_map.items():
+    for schema in type_map.values():
         if 'properties' in schema:
             fill_in_nested_types(type_map, schema)
-    
+
     return type_map
 
 def get_stream_def(stream_name, pks, schema, replication_key=None):
@@ -259,7 +257,13 @@ def discover_reports():
             stream_name = stringcase.snakecase(match.groups()[0])
             report_schema = get_report_schema(type_schema['enum'])
             ## TODO: determine PK
-            report_stream_def = get_stream_def(stream_name, ['AccountId', 'GregorianDate'], report_schema)
+            report_stream_def = get_stream_def(
+                stream_name,
+                [
+                    'AccountId',
+                    'GregorianDate'
+                ],
+                report_schema)
             report_streams.append(report_stream_def)
 
     return report_streams
@@ -273,8 +277,8 @@ def do_discover():
 
 ## TODO: remove fields not selected?
 
-def sync_account_stream(customer_id, account_id):
-    client = create_sdk_client('CustomerManagementService', customer_id, account_id)
+def sync_account_stream(account_id):
+    client = create_sdk_client('CustomerManagementService', account_id)
     response = client.GetAccount(AccountId=account_id)
     ## TODO: filter accounts based in LastModifiedTime
     singer.write_record('accounts', sobject_to_dict(response))
@@ -301,7 +305,8 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
             ad_groups = sobject_to_dict(response)['AdGroup']
 
             if 'ad_groups' in selected_streams:
-                LOGGER.info('Syncing AdGroups for Account: , Campaign: '.format(account_id, campaign_id))
+                LOGGER.info('Syncing AdGroups for Account: {}, Campaign: {}'.format(
+                    account_id, campaign_id))
                 for ad_group in ad_groups:
                     singer.write_record('ad_groups', ad_group)
 
@@ -325,17 +330,20 @@ def sync_ads(client, ad_group_ids):
         response_dict = sobject_to_dict(response)
 
         if 'Ad' in response_dict:
-            for ad in response_dict['Ad']:
+            for ad in response_dict['Ad']: # pylint: disable=invalid-name
                 singer.write_record('ads', ad)
 
-def sync_core_objects(customer_id, account_id, catalog):
-    selected_streams = list(map(lambda x: x.stream, filter(lambda x: x.is_selected == True, catalog.streams)))
+def sync_core_objects(account_id, catalog):
+    selected_streams = list(
+        map(lambda x: x.stream,
+            filter(lambda x: x.is_selected is True,
+                   catalog.streams)))
 
     if 'accounts' in selected_streams:
         LOGGER.info('Syncing Account: {}'.format(account_id))
-        sync_account_stream(customer_id, account_id)
+        sync_account_stream(account_id)
 
-    client = create_sdk_client('CampaignManagementService', customer_id, account_id)
+    client = create_sdk_client('CampaignManagementService', account_id)
 
     LOGGER.info('Syncing Campaigns for Account: {}'.format(account_id))
     campaign_ids = sync_campaigns(client, account_id, selected_streams)
@@ -347,10 +355,11 @@ def sync_core_objects(customer_id, account_id, catalog):
             sync_ads(client, ad_group_ids)
 
 def stream_report(stream_name, report_name, url):
-    response = session.get(url)
+    response = SESSION.get(url)
 
     if response.status_code != 200:
-        raise Exception('Non-200 ({}) response downloading report'.format(response.status_code))
+        raise Exception('Non-200 ({}) response downloading report: {}'.format(
+            response.status_code, report_name))
 
     with ZipFile(io.BytesIO(response.content)) as zip_file:
         with zip_file.open(zip_file.namelist()[0]) as binary_file:
@@ -368,9 +377,10 @@ def stream_report(stream_name, report_name, url):
                     ## TODO: data type row
                     singer.write_record(stream_name, row)
 
-def sync_report(client, account_id, report_stream):
+def sync_report(client, account_id, report_stream): # account_id will be used pylint: disable=unused-argument
     report_name = stringcase.pascalcase(report_stream.stream)
 
+    ## TODO: add date range to log
     LOGGER.info('Syncing report: {}'.format(report_name))
 
     report_request = client.factory.create('{}Request'.format(report_name))
@@ -417,7 +427,7 @@ def sync_report(client, account_id, report_stream):
     end_date.Day = end_datetime.day
     end_date.Month = end_datetime.month
     end_date.Year = end_datetime.year
-    
+
     report_time = client.factory.create('ReportTime')
     report_time.CustomDateRangeStart = start_date
     report_time.CustomDateRangeEnd = end_date
@@ -426,33 +436,37 @@ def sync_report(client, account_id, report_stream):
 
     request_id = client.SubmitGenerateReport(report_request)
 
-    for i in range(0, MAX_NUM_REPORT_POLLS):
+    for _ in range(0, MAX_NUM_REPORT_POLLS):
         response = client.PollGenerateReport(request_id)
         if response.Status == 'Error':
             raise Exception('Error running {} report'.format(report_name))
         if response.Status == 'Success':
-            ## TODO: log None url, means no results
+            ## TODO: add date range to log
+            LOGGER.info('No results for report: {}'.format(report_name))
             if response.ReportDownloadUrl:
                 stream_report(report_stream.stream, report_name, response.ReportDownloadUrl)
             break
         time.sleep(REPORT_POLL_SLEEP)
 
-def sync_reports(customer_id, account_id, catalog):
-    client = create_sdk_client('ReportingService', customer_id, account_id)
+def sync_reports(account_id, catalog):
+    client = create_sdk_client('ReportingService', account_id)
 
-    for report_stream in filter(lambda x: x.is_selected == True and x.stream[-6:] == 'report', catalog.streams):
+    reports_to_sync = filter(lambda x: x.is_selected is True and x.stream[-6:] == 'report',
+                             catalog.streams)
+
+    for report_stream in reports_to_sync:
         sync_report(client, account_id, report_stream)
 
-def sync_account(customer_id, account_id, catalog):
+def sync_account(account_id, catalog):
     LOGGER.info('Syncing core objects')
-    sync_core_objects(customer_id, account_id, catalog)
+    sync_core_objects(account_id, catalog)
 
     LOGGER.info('Syncing reports')
-    sync_reports(customer_id, account_id, catalog)
+    sync_reports(account_id, catalog)
 
-def do_sync_all_accounts(customer_id, account_ids, catalog):
+def do_sync_all_accounts(account_ids, catalog):
     for account_id in account_ids:
-        sync_account(customer_id, account_id, catalog)
+        sync_account(account_id, catalog)
 
 def main_impl():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
@@ -465,7 +479,7 @@ def main_impl():
         do_discover()
         LOGGER.info("Discovery complete")
     elif args.catalog:
-        do_sync_all_accounts(CONFIG['customer_id'], account_ids, args.catalog)
+        do_sync_all_accounts(account_ids, args.catalog)
         LOGGER.info("Sync Completed")
     else:
         LOGGER.info("No catalog was provided")
@@ -473,6 +487,10 @@ def main_impl():
 ## TODO:
 ## - Account TimeZone? - Convert core objects timezone based on this?
 ## - Use Campaign.TimeZone for reporting timezone? Convert report timezones based on this?
+## - record_counter metric each time rows are streamed
+## - http_request_timer or generic Timer for each SDK call and
+##      initalize a client (since it loads the remote WSDL)
+## - job_timer while waiting on report jobs
 
 def main():
     try:
