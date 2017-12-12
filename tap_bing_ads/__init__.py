@@ -328,7 +328,9 @@ def sync_ads(client, ad_group_ids):
             for ad in response_dict['Ad']:
                 singer.write_record('ads', ad)
 
-def sync_core_objects(customer_id, account_id, selected_streams):
+def sync_core_objects(customer_id, account_id, catalog):
+    selected_streams = list(map(lambda x: x.stream, filter(lambda x: x.is_selected == True, catalog.streams)))
+
     if 'accounts' in selected_streams:
         LOGGER.info('Syncing Account: {}'.format(account_id))
         sync_account_stream(customer_id, account_id)
@@ -438,14 +440,12 @@ def sync_report(client, account_id, report_stream):
 def sync_reports(customer_id, account_id, catalog):
     client = create_sdk_client('ReportingService', customer_id, account_id)
 
-    for report_stream in filter(lambda x: x.stream[-6:] == 'report', catalog.streams):
+    for report_stream in filter(lambda x: x.is_selected == True and x.stream[-6:] == 'report', catalog.streams):
         sync_report(client, account_id, report_stream)
 
 def sync_account(customer_id, account_id, catalog):
-    selected_streams = list(map(lambda x: x.stream, catalog.streams))
-
     LOGGER.info('Syncing core objects')
-    sync_core_objects(customer_id, account_id, selected_streams)
+    sync_core_objects(customer_id, account_id, catalog)
 
     LOGGER.info('Syncing reports')
     sync_reports(customer_id, account_id, catalog)
