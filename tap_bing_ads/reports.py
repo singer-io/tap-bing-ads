@@ -2,6 +2,11 @@ REPORT_WHITELIST = [
     'KeywordPerformanceReport'
 ]
 
+REPORT_REQUIRED_FIELDS = ['AccountId', 'GregorianDate']
+
+REPORT_SPECIFIC_REQUIRED_FIELDS = {
+}
+
 ## Any not listed here are strings
 REPORTING_FIELD_TYPES = {
     'AccountNumber': 'integer',

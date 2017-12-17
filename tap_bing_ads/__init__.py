@@ -175,7 +175,7 @@ def get_type_map(client):
 
     return type_map
 
-def get_stream_def(stream_name, schema, pks=None, replication_key=None):
+def get_stream_def(stream_name, schema, metadata=None, pks=None, replication_key=None):
     stream_def = {
         'tap_stream_id': stream_name,
         'stream': stream_name,
@@ -190,6 +190,9 @@ def get_stream_def(stream_name, schema, pks=None, replication_key=None):
         stream_def['replication_method'] = 'INCREMENTAL'
     else:
         stream_def['replication_method'] = 'FULL_TABLE'
+
+    if metadata:
+        stream_def['metadata'] = metadata
 
     return stream_def
 
@@ -250,6 +253,16 @@ def get_report_schema(report_colums):
         'additionalProperties': False
     }
 
+def get_report_metadata(report_name):
+    if report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
+        required_fields = reports.REPORT_REQUIRED_FIELDS + reports.REPORT_REQUIRED_FIELDS[report_name]
+    else:
+        required_fields = reports.REPORT_REQUIRED_FIELDS
+
+    return list(map(
+        lambda field: {"metadata": {"inclusion": "automatic"}, "breadcrumb": ["properties", field]},
+        required_fields))
+
 def discover_reports():
     report_streams = []
     LOGGER.info('Initializing ReportingService client - Loading WSDL')
@@ -257,14 +270,17 @@ def discover_reports():
     type_map = get_type_map(client)
     report_column_regex = r'^(?!ArrayOf)(.+Report)Column$'
 
-    ## TODO: metadata
-
     for type_name, type_schema in type_map.items():
         match = re.match(report_column_regex, type_name)
         if match and match.groups()[0] in reports.REPORT_WHITELIST:
-            stream_name = stringcase.snakecase(match.groups()[0])
+            report_name = match.groups()[0]
+            stream_name = stringcase.snakecase(report_name)
             report_schema = get_report_schema(type_schema['enum'])
-            report_stream_def = get_stream_def(stream_name, report_schema)
+            report_metadata = get_report_metadata(report_name)
+            report_stream_def = get_stream_def(
+                stream_name,
+                report_schema,
+                metadata=report_metadata)
             report_streams.append(report_stream_def)
 
     return report_streams
