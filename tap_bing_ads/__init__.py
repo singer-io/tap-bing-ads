@@ -11,11 +11,12 @@ from zipfile import ZipFile
 
 import pytz
 import singer
-from singer import utils
+from singer import utils, bookmarks
 from bingads import AuthorizationData, OAuthWebAuthCodeGrant, ServiceClient
 from suds.sudsobject import asdict
 import stringcase
 import requests
+import arrow
 
 from tap_bing_ads import reports
 
@@ -72,7 +73,7 @@ def sobject_to_dict(obj):
             for item in value:
                 out[key].append(sobject_to_dict(item))
         elif isinstance(value, datetime):
-            out[key] = utils.strftime(pytz.utc.localize(value))
+            out[key] = arrow.get(value).isoformat()
         else:
             out[key] = value
     return out
@@ -174,17 +175,21 @@ def get_type_map(client):
 
     return type_map
 
-def get_stream_def(stream_name, pks, schema, replication_key=None):
+def get_stream_def(stream_name, schema, pks=None, replication_key=None):
     stream_def = {
         'tap_stream_id': stream_name,
         'stream': stream_name,
-        'key_properties': pks,
         'schema': schema
     }
+
+    if pks:
+        stream_def['key_properties'] = pks
 
     if replication_key:
         stream_def['replication_key'] = replication_key
         stream_def['replication_method'] = 'INCREMENTAL'
+    else:
+        stream_def['replication_method'] = 'FULL_TABLE'
 
     return stream_def
 
@@ -196,21 +201,21 @@ def discover_core_objects():
     type_map = get_type_map(client)
 
     account_schema = type_map['Account']
-     ## TODO: replication_key=LastModifiedTime
-    core_object_streams.append(get_stream_def('accounts', ['Id'], account_schema))
+    core_object_streams.append(
+        get_stream_def('accounts', account_schema, pks=['Id'], replication_key='LastModifiedTime'))
 
     LOGGER.info('Initializing CampaignManagementService client - Loading WSDL')
     client = ServiceClient('CampaignManagementService')
     type_map = get_type_map(client)
 
     campaign_schema = type_map['Campaign']
-    core_object_streams.append(get_stream_def('campaigns', ['Id'], campaign_schema))
+    core_object_streams.append(get_stream_def('campaigns', campaign_schema, pks=['Id']))
 
     ad_group_schema = type_map['AdGroup']
-    core_object_streams.append(get_stream_def('ad_groups', ['Id'], ad_group_schema))
+    core_object_streams.append(get_stream_def('ad_groups', ad_group_schema, pks=['Id']))
 
     ad_schema = type_map['Ad']
-    core_object_streams.append(get_stream_def('ads', ['Id'], ad_schema))
+    core_object_streams.append(get_stream_def('ads', ad_schema, pks=['Id']))
 
     return core_object_streams
 
@@ -235,9 +240,10 @@ def get_report_schema(report_colums):
 
         properties[column] = col_schema
 
-    ## TODO: add _sdc_report_datetime
-    ## TODO: add _sdc_account_id ?
-    ## TODO: day field? Can it just use GregorianDate?
+    properties['_sdc_report_datetime'] = {
+        'type': 'string',
+        'format': 'date-time'
+    }
 
     return {
         'properties': properties,
@@ -256,32 +262,50 @@ def discover_reports():
         if match and match.groups()[0] in reports.REPORT_WHITELIST:
             stream_name = stringcase.snakecase(match.groups()[0])
             report_schema = get_report_schema(type_schema['enum'])
-            ## TODO: determine PK
-            report_stream_def = get_stream_def(
-                stream_name,
-                [
-                    'AccountId',
-                    'GregorianDate'
-                ],
-                report_schema)
+            report_stream_def = get_stream_def(stream_name, report_schema)
             report_streams.append(report_stream_def)
 
     return report_streams
 
-def do_discover():
+def test_credentials(account_ids):
+    if len(account_ids) == 0:
+        raise Exception('At least one id in account_ids is required to test authentication')
+
+    create_sdk_client('CustomerManagementService', account_ids[0])
+
+def do_discover(account_ids):
+    LOGGER.info('Testing authentication')
+    test_credentials(account_ids)
+
     LOGGER.info('Discovering core objects')
     core_object_streams = discover_core_objects()
+
     LOGGER.info('Discovering reports')
     report_streams = discover_reports()
+
     json.dump({'streams': core_object_streams + report_streams}, sys.stdout, indent=2)
 
 ## TODO: remove fields not selected?
 
-def sync_account_stream(account_id):
+def sync_accounts_stream(account_ids):
     client = create_sdk_client('CustomerManagementService', account_id)
-    response = client.GetAccount(AccountId=account_id)
-    ## TODO: filter accounts based in LastModifiedTime
-    singer.write_record('accounts', sobject_to_dict(response))
+    accounts = []
+    
+    for account_id in account_ids:
+        response = client.GetAccount(AccountId=account_id)
+        accounts.append(sobject_to_dict(response))
+
+    accounts_bookmark = bookmarks.get_bookmark(STATE, 'accounts', 'last_record')
+    if accounts_bookmark:
+        accounts = list(
+            filter(lambda x: x['LastModifiedTime'] >= accounts_bookmark,
+                   accounts))
+
+    max_accounts_last_modified = max([x['LastModifiedTime'] for x in accounts])
+
+    singer.write_record('accounts', accounts)
+
+    bookmarks.write_bookmark(STATE, 'accounts', 'last_record', max_accounts_last_modified)
 
 def sync_campaigns(client, account_id, selected_streams):
     response = client.GetCampaignsByAccountId(AccountId=account_id)
@@ -333,16 +357,7 @@ def sync_ads(client, ad_group_ids):
             for ad in response_dict['Ad']: # pylint: disable=invalid-name
                 singer.write_record('ads', ad)
 
-def sync_core_objects(account_id, catalog):
-    selected_streams = list(
-        map(lambda x: x.stream,
-            filter(lambda x: x.is_selected is True,
-                   catalog.streams)))
-
-    if 'accounts' in selected_streams:
-        LOGGER.info('Syncing Account: {}'.format(account_id))
-        sync_account_stream(account_id)
-
+def sync_core_objects(account_id, catalog, selected_streams):
     client = create_sdk_client('CampaignManagementService', account_id)
 
     LOGGER.info('Syncing Campaigns for Account: {}'.format(account_id))
@@ -372,8 +387,6 @@ def stream_report(stream_name, report_name, url):
 
                 for row in reader:
                     ## TODO: add _sdc_report_datetime
-                    ## TODO: add _sdc_account_id ?
-                    ## TODO: day field? Can it just use GregorianDate?
                     ## TODO: data type row
                     singer.write_record(stream_name, row)
 
@@ -457,16 +470,25 @@ def sync_reports(account_id, catalog):
     for report_stream in reports_to_sync:
         sync_report(client, account_id, report_stream)
 
-def sync_account(account_id, catalog):
+def sync_account_data(account_id, catalog, selected_streams):
     LOGGER.info('Syncing core objects')
-    sync_core_objects(account_id, catalog)
+    sync_core_objects(account_id, catalog, selected_streams)
 
     LOGGER.info('Syncing reports')
     sync_reports(account_id, catalog)
 
 def do_sync_all_accounts(account_ids, catalog):
+    selected_streams = list(
+        map(lambda x: x.stream,
+            filter(lambda x: x.is_selected is True,
+                   catalog.streams)))
+
+    if 'accounts' in selected_streams:
+        LOGGER.info('Syncing Accounts')
+        sync_accounts_stream(account_ids)
+
     for account_id in account_ids:
-        sync_account(account_id, catalog)
+        sync_account_data(account_id, catalog, selected_streams)
 
 def main_impl():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
@@ -476,7 +498,7 @@ def main_impl():
     account_ids = CONFIG['account_ids'].split(",")
 
     if args.discover:
-        do_discover()
+        do_discover(account_ids)
         LOGGER.info("Discovery complete")
     elif args.catalog:
         do_sync_all_accounts(account_ids, args.catalog)

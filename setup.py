@@ -11,10 +11,11 @@ setup(
     classifiers=['Programming Language :: Python :: 3 :: Only'],
     py_modules=['tap_bingads'],
     install_requires=[
-      'singer-python==5.0.2',
-      'bingads==11.5.6',
-      'requests==2.18.4',
-      'stringcase==1.2.0'
+        'arrow==0.12.0',
+        'bingads==11.5.6',
+        'requests==2.18.4',
+        'singer-python==5.0.2',
+        'stringcase==1.2.0'
     ],
     entry_points='''
       [console_scripts]
