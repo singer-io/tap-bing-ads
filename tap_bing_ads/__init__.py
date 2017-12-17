@@ -257,6 +257,8 @@ def discover_reports():
     type_map = get_type_map(client)
     report_column_regex = r'^(?!ArrayOf)(.+Report)Column$'
 
+    ## TODO: metadata
+
     for type_name, type_schema in type_map.items():
         match = re.match(report_column_regex, type_name)
         if match and match.groups()[0] in reports.REPORT_WHITELIST:
@@ -464,7 +466,7 @@ def sync_report(client, account_id, report_stream): # account_id will be used py
 def sync_reports(account_id, catalog):
     client = create_sdk_client('ReportingService', account_id)
 
-    reports_to_sync = filter(lambda x: x.is_selected is True and x.stream[-6:] == 'report',
+    reports_to_sync = filter(lambda x: x.is_selected() and x.stream[-6:] == 'report',
                              catalog.streams)
 
     for report_stream in reports_to_sync:
@@ -480,8 +482,10 @@ def sync_account_data(account_id, catalog, selected_streams):
 def do_sync_all_accounts(account_ids, catalog):
     selected_streams = list(
         map(lambda x: x.stream,
-            filter(lambda x: x.is_selected is True,
+            filter(lambda x: x.is_selected(),
                    catalog.streams)))
+
+    ## TODO: write schemas - catalog is just for selection
 
     if 'accounts' in selected_streams:
         LOGGER.info('Syncing Accounts')
