@@ -2,7 +2,7 @@ REPORT_WHITELIST = [
     'KeywordPerformanceReport'
 ]
 
-REPORT_REQUIRED_FIELDS = ['AccountId', 'GregorianDate']
+REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'GregorianDate']
 
 REPORT_SPECIFIC_REQUIRED_FIELDS = {
 }
