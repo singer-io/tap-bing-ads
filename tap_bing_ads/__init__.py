@@ -306,10 +306,10 @@ def do_discover(account_ids):
 ## TODO: remove fields not selected?
 
 def sync_accounts_stream(account_ids):
-    client = create_sdk_client('CustomerManagementService', account_id)
     accounts = []
     
     for account_id in account_ids:
+        client = create_sdk_client('CustomerManagementService', account_id)
         response = client.GetAccount(AccountId=account_id)
         accounts.append(sobject_to_dict(response))
 
