@@ -363,15 +363,17 @@ def do_discover(account_ids):
 
     json.dump({'streams': core_object_streams + report_streams}, sys.stdout, indent=2)
 
-def get_selected_fields(catalog_item):
+def get_selected_fields(catalog_item, exclude=[]):
     if not catalog_item.metadata:
         return None
 
     mdata = metadata.to_map(catalog_item.metadata)
     selected_fields = []
     for prop, prop_schema in catalog_item.schema.properties.items():
-        if prop in catalog_item.key_properties or \
-           metadata.get(mdata, ('properties', prop), 'selected') == True:
+        if prop not in exclude and \
+           ((catalog_item.key_properties and prop in catalog_item.key_properties) or \
+            metadata.get(mdata, ('properties', prop), 'inclusion') == 'automatic' or \
+            metadata.get(mdata, ('properties', prop), 'selected') == True):
             selected_fields.append(prop)
     return selected_fields
 
@@ -500,7 +502,7 @@ def stream_report(stream_name, report_name, url):
                     ## TODO: data type row
                     singer.write_record(stream_name, row)
 
-def sync_report(client, account_id, report_stream): # account_id will be used pylint: disable=unused-argument
+def sync_report(client, account_id, report_stream):
     report_name = stringcase.pascalcase(report_stream.stream)
 
     config_start_date = CONFIG.get('start_date')
@@ -520,23 +522,11 @@ def sync_report(client, account_id, report_stream): # account_id will be used py
     report_request.ExcludeReportHeader = True
     report_request.ExcludeReportFooter = True
 
-    ## TODO: Columns - only user selected columns
+    selected_fields = get_selected_fields(report_stream, exclude=['GregorianDate', '_sdc_report_datetime'])
+    selected_fields.append('TimePeriod')
+
     report_columns = client.factory.create('ArrayOf{}Column'.format(report_name))
-    report_columns.KeywordPerformanceReportColumn.append([
-        'TimePeriod',
-        'AccountId',
-        'CampaignId',
-        'Keyword',
-        'KeywordId',
-        'DeviceType',
-        'BidMatchType',
-        'Clicks',
-        'Impressions',
-        'Ctr',
-        'AverageCpc',
-        'Spend',
-        'QualityScore',
-    ])
+    report_columns.KeywordPerformanceReportColumn.append(selected_fields)
     report_request.Columns = report_columns
 
     request_start_date = client.factory.create('Date')
