@@ -489,8 +489,8 @@ def stream_report(stream_name, report_name, url):
     with ZipFile(io.BytesIO(response.content)) as zip_file:
         with zip_file.open(zip_file.namelist()[0]) as binary_file:
             with io.TextIOWrapper(binary_file) as csv_file:
-                # handle control character at the start of the file
-                header_line = next(csv_file)[1:]
+                # handle control character at the start of the file and extra next line
+                header_line = next(csv_file)[1:-1]
                 headers = header_line.replace('"', '').split(',')
 
                 reader = csv.DictReader(csv_file, fieldnames=headers)
@@ -503,8 +503,15 @@ def stream_report(stream_name, report_name, url):
 def sync_report(client, account_id, report_stream): # account_id will be used pylint: disable=unused-argument
     report_name = stringcase.pascalcase(report_stream.stream)
 
-    ## TODO: add date range to log
-    LOGGER.info('Syncing report: {}'.format(report_name))
+    config_start_date = CONFIG.get('start_date')
+    bookmark = singer.get_bookmark(STATE,
+                                   '{}_{}'.format(account_id, report_stream.stream),
+                                   'date')
+    conversion_window = int(CONFIG.get('conversion_window', '-30'))
+    start_date = arrow.get(bookmark or config_start_date).shift(days=conversion_window)
+    end_date = arrow.get(CONFIG.get('end_date'))
+
+    LOGGER.info('Syncing report: {} - from {} to {}'.format(report_name, start_date, end_date))
 
     report_request = client.factory.create('{}Request'.format(report_name))
     report_request.Format = 'Csv'
@@ -532,28 +539,19 @@ def sync_report(client, account_id, report_stream): # account_id will be used py
     ])
     report_request.Columns = report_columns
 
-    ## TODO: use config start_date ?
-    ## TODO: use config conversion_window
+    request_start_date = client.factory.create('Date')
+    request_start_date.Day = start_date.day
+    request_start_date.Month = start_date.month
+    request_start_date.Year = start_date.year
 
-    #now = datetime.utcnow()
-    ## TODO: remove
-    ## !!!!!!!! hard coded for development
-    end_datetime = datetime(2016, 7, 15)
-    start_datetime = end_datetime - timedelta(days=30)
-
-    start_date = client.factory.create('Date')
-    start_date.Day = start_datetime.day
-    start_date.Month = start_datetime.month
-    start_date.Year = start_datetime.year
-
-    end_date = client.factory.create('Date')
-    end_date.Day = end_datetime.day
-    end_date.Month = end_datetime.month
-    end_date.Year = end_datetime.year
+    request_end_date = client.factory.create('Date')
+    request_end_date.Day = end_date.day
+    request_end_date.Month = end_date.month
+    request_end_date.Year = end_date.year
 
     report_time = client.factory.create('ReportTime')
-    report_time.CustomDateRangeStart = start_date
-    report_time.CustomDateRangeEnd = end_date
+    report_time.CustomDateRangeStart = request_start_date
+    report_time.CustomDateRangeEnd = request_end_date
     report_time.PredefinedTime = None
     report_request.Time = report_time
 
@@ -564,10 +562,13 @@ def sync_report(client, account_id, report_stream): # account_id will be used py
         if response.Status == 'Error':
             raise Exception('Error running {} report'.format(report_name))
         if response.Status == 'Success':
-            ## TODO: add date range to log
-            LOGGER.info('No results for report: {}'.format(report_name))
             if response.ReportDownloadUrl:
                 stream_report(report_stream.stream, report_name, response.ReportDownloadUrl)
+            else:
+                LOGGER.info('No results for report: {} - from {} to {}'.format(
+                    report_name,
+                    start_date,
+                    end_date))
             break
         time.sleep(REPORT_POLL_SLEEP)
 
