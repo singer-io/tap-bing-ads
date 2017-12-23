@@ -14,7 +14,7 @@ setup(
         'arrow==0.12.0',
         'bingads==11.5.6',
         'requests==2.18.4',
-        'singer-python==5.0.2',
+        'singer-python==5.0.4',
         'stringcase==1.2.0'
     ],
     entry_points='''

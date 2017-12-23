@@ -11,7 +11,7 @@ from zipfile import ZipFile
 
 import pytz
 import singer
-from singer import utils
+from singer import utils, metadata
 from bingads import AuthorizationData, OAuthWebAuthCodeGrant, ServiceClient
 import suds
 from suds.sudsobject import asdict
@@ -363,9 +363,30 @@ def do_discover(account_ids):
 
     json.dump({'streams': core_object_streams + report_streams}, sys.stdout, indent=2)
 
-## TODO: remove fields not selected?
+def get_selected_fields(catalog_item):
+    if not catalog_item.metadata:
+        return None
 
-def sync_accounts_stream(account_ids):
+    mdata = metadata.to_map(catalog_item.metadata)
+    selected_fields = []
+    for prop, prop_schema in catalog_item.schema.properties.items():
+        if prop in catalog_item.key_properties or \
+           metadata.get(mdata, ('properties', prop), 'selected') == True:
+            selected_fields.append(prop)
+    return selected_fields
+
+def filter_selected_fields(selected_fields, obj):
+    if selected_fields:
+        return {key:value for key,value in obj.items() if key in selected_fields}
+    return obj
+
+def filter_selected_fields_many(selected_fields, objs):
+    if selected_fields:
+        return [filter_selected_fields(selected_fields, obj) for obj in objs]
+    return objs
+
+def sync_accounts_stream(account_ids, catalog_item):
+    selected_fields = get_selected_fields(catalog_item)
     accounts = []
 
     LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
@@ -386,7 +407,7 @@ def sync_accounts_stream(account_ids):
 
     max_accounts_last_modified = max([x['LastModifiedTime'] for x in accounts])
 
-    singer.write_records('accounts', accounts)
+    singer.write_records('accounts', filter_selected_fields_many(selected_fields, accounts))
 
     singer.write_bookmark(STATE, 'accounts', 'last_record', max_accounts_last_modified)
     singer.write_state(STATE)
@@ -398,8 +419,9 @@ def sync_campaigns(client, account_id, selected_streams):
         campaigns = response_dict['Campaign']
 
         if 'campaigns' in selected_streams:
+            selected_fields = get_selected_fields(selected_streams['campaigns'])
             singer.write_schema('campaigns', get_core_schema(client, 'Campaign'), ['Id'])
-            singer.write_records('campaigns', campaigns)
+            singer.write_records('campaigns', filter_selected_fields_many(selected_fields, campaigns))
 
         return map(lambda x: x['Id'], campaigns)
 
@@ -415,13 +437,15 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
             if 'ad_groups' in selected_streams:
                 LOGGER.info('Syncing AdGroups for Account: {}, Campaign: {}'.format(
                     account_id, campaign_id))
+                selected_fields = get_selected_fields(selected_streams['ad_groups'])
                 singer.write_schema('ad_groups', get_core_schema(client, 'AdGroup'), ['Id'])
-                singer.write_records('ad_groups', ad_groups)
+                singer.write_records('ad_groups',
+                                     filter_selected_fields_many(selected_fields, ad_groups))
 
             ad_group_ids.append(list(map(lambda x: x['Id'], ad_groups)))
     return ad_group_ids
 
-def sync_ads(client, ad_group_ids):
+def sync_ads(client, selected_streams, ad_group_ids):
     for ad_group_id in ad_group_ids:
         response = client.GetAdsByAdGroupId(
             AdGroupId=ad_group_id,
@@ -438,8 +462,10 @@ def sync_ads(client, ad_group_ids):
         response_dict = sobject_to_dict(response)
 
         if 'Ad' in response_dict:
+            selected_fields = get_selected_fields(selected_streams['ads'])
             singer.write_schema('ads', get_core_schema(client, 'Ad'), ['Id'])
-            singer.write_records('ads', response_dict['Ad'])
+            singer.write_records('ads', filter_selected_fields_many(selected_fields,
+                                                                    response_dict['Ad']))
 
 def sync_core_objects(account_id, selected_streams):
     client = create_sdk_client('CampaignManagementService', account_id)
@@ -451,7 +477,7 @@ def sync_core_objects(account_id, selected_streams):
         ad_group_ids = sync_ad_groups(client, account_id, campaign_ids, selected_streams)
         if 'ads' in selected_streams:
             LOGGER.info('Syncing Ads for Account: {}'.format(account_id))
-            sync_ads(client, ad_group_ids)
+            sync_ads(client, selected_streams, ad_group_ids)
 
 def stream_report(stream_name, report_name, url):
     response = SESSION.get(url)
@@ -562,16 +588,13 @@ def sync_account_data(account_id, catalog, selected_streams):
     sync_reports(account_id, catalog)
 
 def do_sync_all_accounts(account_ids, catalog):
-    selected_streams = list(
-        map(lambda x: x.stream,
-            filter(lambda x: x.is_selected(),
-                   catalog.streams)))
-
-    ## TODO: write schemas - catalog is just for selection
+    selected_streams = {}
+    for stream in filter(lambda x: x.is_selected(), catalog.streams):
+        selected_streams[stream.tap_stream_id] = stream
 
     if 'accounts' in selected_streams:
         LOGGER.info('Syncing Accounts')
-        sync_accounts_stream(account_ids)
+        sync_accounts_stream(account_ids, selected_streams['accounts'])
 
     for account_id in account_ids:
         sync_account_data(account_id, catalog, selected_streams)
