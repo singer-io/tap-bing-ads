@@ -33,6 +33,14 @@ REQUIRED_CONFIG_KEYS = [
     "developer_token",
 ]
 
+# objects that are at the root level, with selectable fields in the Stitch UI
+TOP_LEVEL_CORE_OBJECTS = [
+    'AdvertiserAccount',
+    'Campaign',
+    'AdGroup',
+    'Ad'
+]
+
 CONFIG = {}
 STATE = {}
 
@@ -173,6 +181,16 @@ def wsdl_type_to_schema(inherited_types, wsdl_type):
         'properties': properties
     }
 
+def combine_object_schemas(schemas):
+    properties = {}
+    for schema in schemas:
+        for prop, prop_schema in schema['properties'].items():
+            properties[prop] = prop_schema
+    return {
+        'type': ['object'],
+        'properties': properties
+    }
+
 def normalize_abstract_types(inherited_types, type_map):
     for base_type, types in inherited_types.items():
         if base_type in type_map:
@@ -181,7 +199,11 @@ def normalize_abstract_types(inherited_types, type_map):
                 if inherited_type in type_map:
                     schemas.append(type_map[inherited_type])
             schemas.append(type_map[base_type])
-            type_map[base_type] = {'oneOf': schemas}
+
+            if base_type in TOP_LEVEL_CORE_OBJECTS:
+                type_map[base_type] = combine_object_schemas(schemas)
+            else:
+                type_map[base_type] = {'oneOf': schemas}
 
 def fill_in_nested_types(type_map, schema):
     for prop, descriptor in schema['properties'].items():
