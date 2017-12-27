@@ -9,6 +9,7 @@ REPORT_SPECIFIC_REQUIRED_FIELDS = {
 
 ## Any not listed here are strings
 REPORTING_FIELD_TYPES = {
+    'GregorianDate': 'date',
     'AccountNumber': 'integer',
     'AccountId': 'integer',
     'CampaignId': 'integer',

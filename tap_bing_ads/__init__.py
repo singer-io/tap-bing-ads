@@ -507,6 +507,8 @@ def type_report_row(row):
                 value = int(value)
             elif _type == 'number':
                 value = float(value.replace('%', ''))
+            elif _type in ['date', 'datetime']:
+                value = arrow.get(value).isoformat()
 
         row[field_name] = value
 
@@ -577,7 +579,7 @@ def sync_report(client, account_id, report_stream):
     report_time.PredefinedTime = None
     report_request.Time = report_time
 
-    report_time = datetime.utcnow().isoformat()
+    report_time = arrow.get().isoformat()
 
     request_id = client.SubmitGenerateReport(report_request)
 
@@ -641,8 +643,6 @@ def main_impl():
         LOGGER.info("No catalog was provided")
 
 ## TODO:
-## - Account TimeZone? - Convert core objects timezone based on this?
-## - Use Campaign.TimeZone for reporting timezone? Convert report timezones based on this?
 ## - record_counter metric each time rows are streamed
 ## - http_request_timer or generic Timer for each SDK call and
 ##      initalize a client (since it loads the remote WSDL)
