@@ -92,7 +92,7 @@ def xml_to_json_type(xml_type):
         return 'boolean'
     if xml_type in ['decimal', 'float', 'double']:
         return 'number'
-    if xml_type == 'long':
+    if xml_type in ['long', 'int']:
         return 'integer'
 
     return 'string'
@@ -630,6 +630,7 @@ def main_impl():
 ## - http_request_timer or generic Timer for each SDK call and
 ##      initalize a client (since it loads the remote WSDL)
 ## - job_timer while waiting on report jobs
+## - user_agent ?
 
 def main():
     try:
