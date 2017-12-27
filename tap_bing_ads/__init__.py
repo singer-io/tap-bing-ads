@@ -130,13 +130,19 @@ def get_json_schema(element):
 def get_array_type(array_type):
     xml_type = re.match(ARRAY_TYPE_REGEX, array_type).groups()[0]
     json_type = xml_to_json_type(xml_type)
+    array_obj = {
+        'type': ['null', 'object'],
+        'properties': {}
+    }
 
-    return {
+    array_obj['properties'][xml_type] = {
         'type': ['null', 'array'],
         'items': {
             'type': json_type
         }
     }
+
+    return array_obj
 
 def get_complex_type_elements(inherited_types, wsdl_type):
     ## inherited type
