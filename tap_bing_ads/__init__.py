@@ -48,8 +48,28 @@ MAX_NUM_REPORT_POLLS = 10
 REPORT_POLL_SLEEP = 5
 
 SESSION = requests.Session()
+USER_AGENT = 'Singer.io Bing Ads Tap'
 
 ARRAY_TYPE_REGEX = r'ArrayOf([a-z]+)'
+
+def log_service_call(service_method):
+    def wrapper(*args, **kwargs):
+        log_args = list(map(lambda arg: str(arg), args)) + \
+                   list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
+        LOGGER.info('Calling: {}({})'.format(service_method._name, ','.join(log_args)))
+        return service_method(*args, **kwargs)
+    return wrapper
+
+class CustomServiceClient(ServiceClient):
+    def __getattr__(self, name):
+        service_method = super(CustomServiceClient, self).__getattr__(name)
+        return log_service_call(service_method)
+
+    def set_options(self, **kwargs):
+        self._options = kwargs
+        kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
+        kwargs['headers']['User-Agent'] = USER_AGENT
+        self._soap_client.set_options(**kwargs)
 
 def create_sdk_client(service, account_id):
     LOGGER.info('Creating SOAP client with OAuth refresh credentials')
@@ -67,7 +87,7 @@ def create_sdk_client(service, account_id):
         developer_token=CONFIG['developer_token'],
         authentication=authentication)
 
-    return ServiceClient(service, authorization_data)
+    return CustomServiceClient(service, authorization_data)
 
 def sobject_to_dict(obj):
     if not hasattr(obj, '__keylist__'):
@@ -266,14 +286,14 @@ def discover_core_objects():
     core_object_streams = []
 
     LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
-    client = ServiceClient('CustomerManagementService')
+    client = CustomServiceClient('CustomerManagementService')
 
     account_schema = get_core_schema(client, 'AdvertiserAccount')
     core_object_streams.append(
         get_stream_def('accounts', account_schema, pks=['Id'], replication_key='LastModifiedTime'))
 
     LOGGER.info('Initializing CampaignManagementService client - Loading WSDL')
-    client = ServiceClient('CampaignManagementService')
+    client = CustomServiceClient('CampaignManagementService')
 
     campaign_schema = get_core_schema(client, 'Campaign')
     core_object_streams.append(get_stream_def('campaigns', campaign_schema, pks=['Id']))
@@ -340,7 +360,7 @@ def get_report_schema_from_client(client, report_name):
 def discover_reports():
     report_streams = []
     LOGGER.info('Initializing ReportingService client - Loading WSDL')
-    client = ServiceClient('ReportingService')
+    client = CustomServiceClient('ReportingService')
     type_map = get_type_map(client)
     report_column_regex = r'^(?!ArrayOf)(.+Report)Column$'
 
@@ -406,7 +426,7 @@ def sync_accounts_stream(account_ids, catalog_item):
     accounts = []
 
     LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
-    client = ServiceClient('CustomerManagementService')
+    client = CustomServiceClient('CustomerManagementService')
     account_schema = get_core_schema(client, 'AdvertiserAccount')
     singer.write_schema('accounts', account_schema, ['Id'])
 
@@ -631,11 +651,16 @@ def do_sync_all_accounts(account_ids, catalog):
         sync_account_data(account_id, catalog, selected_streams)
 
 def main_impl():
+    global USER_AGENT
+
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
 
     CONFIG.update(args.config)
     STATE.update(args.state)
     account_ids = CONFIG['account_ids'].split(",")
+
+    if 'user_agent' in CONFIG:
+        USER_AGENT = CONFIG['user_agent']
 
     if args.discover:
         do_discover(account_ids)
@@ -651,7 +676,6 @@ def main_impl():
 ## - http_request_timer or generic Timer for each SDK call and
 ##      initalize a client (since it loads the remote WSDL)
 ## - job_timer while waiting on report jobs
-## - user_agent ?
 
 def main():
     try:
