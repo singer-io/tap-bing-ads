@@ -481,7 +481,7 @@ def sync_core_objects(account_id, selected_streams):
             LOGGER.info('Syncing Ads for Account: {}'.format(account_id))
             sync_ads(client, selected_streams, ad_group_ids)
 
-def stream_report(stream_name, report_name, url):
+def stream_report(stream_name, report_name, url, report_time):
     response = SESSION.get(url)
 
     if response.status_code != 200:
@@ -498,8 +498,8 @@ def stream_report(stream_name, report_name, url):
                 reader = csv.DictReader(csv_file, fieldnames=headers)
 
                 for row in reader:
-                    ## TODO: add _sdc_report_datetime
                     ## TODO: data type row
+                    row['_sdc_report_datetime'] = report_time
                     singer.write_record(stream_name, row)
 
 def sync_report(client, account_id, report_stream):
@@ -545,6 +545,8 @@ def sync_report(client, account_id, report_stream):
     report_time.PredefinedTime = None
     report_request.Time = report_time
 
+    report_time = datetime.utcnow().isoformat()
+
     request_id = client.SubmitGenerateReport(report_request)
 
     for _ in range(0, MAX_NUM_REPORT_POLLS):
@@ -553,7 +555,7 @@ def sync_report(client, account_id, report_stream):
             raise Exception('Error running {} report'.format(report_name))
         if response.Status == 'Success':
             if response.ReportDownloadUrl:
-                stream_report(report_stream.stream, report_name, response.ReportDownloadUrl)
+                stream_report(report_stream.stream, report_name, response.ReportDownloadUrl, report_time)
             else:
                 LOGGER.info('No results for report: {} - from {} to {}'.format(
                     report_name,
