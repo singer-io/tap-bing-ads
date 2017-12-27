@@ -203,7 +203,7 @@ def normalize_abstract_types(inherited_types, type_map):
             if base_type in TOP_LEVEL_CORE_OBJECTS:
                 type_map[base_type] = combine_object_schemas(schemas)
             else:
-                type_map[base_type] = {'oneOf': schemas}
+                type_map[base_type] = {'anyOf': schemas}
 
 def fill_in_nested_types(type_map, schema):
     for prop, descriptor in schema['properties'].items():
