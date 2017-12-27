@@ -539,13 +539,14 @@ def sync_report(client, account_id, report_stream):
     report_schema = get_report_schema_from_client(client, report_name)
     singer.write_schema(report_stream.stream, report_schema, [])
 
+    state_key = '{}_{}'.format(account_id, report_stream.stream)
     config_start_date = CONFIG.get('start_date')
     bookmark = singer.get_bookmark(STATE,
-                                   '{}_{}'.format(account_id, report_stream.stream),
+                                   state_key,
                                    'date')
     conversion_window = int(CONFIG.get('conversion_window', '-30'))
     start_date = arrow.get(bookmark or config_start_date).shift(days=conversion_window)
-    end_date = arrow.get(CONFIG.get('end_date'))
+    end_date = arrow.get(CONFIG.get('end_date')) # defaults to now
 
     LOGGER.info('Syncing report: {} - from {} to {}'.format(report_name, start_date, end_date))
 
@@ -597,6 +598,9 @@ def sync_report(client, account_id, report_stream):
                     end_date))
             break
         time.sleep(REPORT_POLL_SLEEP)
+
+    singer.write_bookmark(STATE, state_key, 'date', end_date.isoformat())
+    singer.write_state(STATE)
 
 def sync_reports(account_id, catalog):
     client = create_sdk_client('ReportingService', account_id)
