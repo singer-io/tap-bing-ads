@@ -329,6 +329,14 @@ def get_report_metadata(report_name):
         lambda field: {"metadata": {"inclusion": "automatic"}, "breadcrumb": ["properties", field]},
         required_fields))
 
+def get_report_schema_from_client(client, report_name):
+    column_obj_name = '{}Column'.format(report_name)
+    type_map = get_type_map(client)
+
+    for type_name, type_schema in type_map.items():
+        if type_name == column_obj_name:
+            return get_report_schema(type_schema['enum'])
+
 def discover_reports():
     report_streams = []
     LOGGER.info('Initializing ReportingService client - Loading WSDL')
@@ -525,6 +533,9 @@ def stream_report(stream_name, report_name, url, report_time):
 
 def sync_report(client, account_id, report_stream):
     report_name = stringcase.pascalcase(report_stream.stream)
+
+    report_schema = get_report_schema_from_client(client, report_name)
+    singer.write_schema(report_stream.stream, report_schema, [])
 
     config_start_date = CONFIG.get('start_date')
     bookmark = singer.get_bookmark(STATE,
