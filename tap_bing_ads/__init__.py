@@ -54,7 +54,7 @@ ARRAY_TYPE_REGEX = r'ArrayOf([a-z]+)'
 
 def log_service_call(service_method):
     def wrapper(*args, **kwargs):
-        log_args = list(map(lambda arg: str(arg), args)) + \
+        log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + \
                    list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
         LOGGER.info('Calling: {}({})'.format(service_method._name, ','.join(log_args)))
         return service_method(*args, **kwargs)
