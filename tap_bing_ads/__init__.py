@@ -481,6 +481,21 @@ def sync_core_objects(account_id, selected_streams):
             LOGGER.info('Syncing Ads for Account: {}'.format(account_id))
             sync_ads(client, selected_streams, ad_group_ids)
 
+def type_report_row(row):
+    for field_name, value in row.items():
+        value = value.strip()
+        if value == '':
+           value = None
+
+        if value is not None and field_name in reports.REPORTING_FIELD_TYPES:
+            _type = reports.REPORTING_FIELD_TYPES[field_name]
+            if _type == 'integer':
+                value = int(value)
+            elif _type == 'number':
+                value = float(value.replace('%', ''))
+
+        row[field_name] = value
+
 def stream_report(stream_name, report_name, url, report_time):
     response = SESSION.get(url)
 
@@ -498,7 +513,7 @@ def stream_report(stream_name, report_name, url, report_time):
                 reader = csv.DictReader(csv_file, fieldnames=headers)
 
                 for row in reader:
-                    ## TODO: data type row
+                    type_report_row(row)
                     row['_sdc_report_datetime'] = report_time
                     singer.write_record(stream_name, row)
 
