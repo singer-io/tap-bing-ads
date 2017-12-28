@@ -120,13 +120,11 @@ def xml_to_json_type(xml_type):
 def get_json_schema(element):
     types = []
     _format = None
-    enum = None
 
     if element.nillable:
         types.append('null')
 
     if element.root.name == 'simpleType':
-        enum = list(map(lambda x: x.name, element.rawchildren[0].rawchildren))
         types.append('string')
     else:
         xml_type = element.type[0]
@@ -141,9 +139,6 @@ def get_json_schema(element):
 
     if _format:
         schema['format'] = _format
-
-    if enum:
-        schema['enum'] = enum
 
     return schema
 
@@ -306,9 +301,19 @@ def discover_core_objects():
 
     return core_object_streams
 
-def get_report_schema(report_colums):
+def get_report_schema(client, report_name):
+    column_obj_name = '{}Column'.format(report_name)
+
+    report_columns_type = None
+    for _type in client.soap_client.sd[0].types:
+        if _type[0].name == column_obj_name:
+            report_columns_type = _type[0]
+            break
+
+    report_columns = map(lambda x: x.name, report_columns_type.rawchildren[0].rawchildren)
+
     properties = {}
-    for column in report_colums:
+    for column in report_columns:
         if column in reports.REPORTING_FIELD_TYPES:
             _type = reports.REPORTING_FIELD_TYPES[column]
         else:
@@ -349,14 +354,6 @@ def get_report_metadata(report_name):
         lambda field: {"metadata": {"inclusion": "automatic"}, "breadcrumb": ["properties", field]},
         required_fields))
 
-def get_report_schema_from_client(client, report_name):
-    column_obj_name = '{}Column'.format(report_name)
-    type_map = get_type_map(client)
-
-    for type_name, type_schema in type_map.items():
-        if type_name == column_obj_name:
-            return get_report_schema(type_schema['enum'])
-
 def discover_reports():
     report_streams = []
     LOGGER.info('Initializing ReportingService client - Loading WSDL')
@@ -369,7 +366,7 @@ def discover_reports():
         if match and match.groups()[0] in reports.REPORT_WHITELIST:
             report_name = match.groups()[0]
             stream_name = stringcase.snakecase(report_name)
-            report_schema = get_report_schema(type_schema['enum'])
+            report_schema = get_report_schema(client, report_name)
             report_metadata = get_report_metadata(report_name)
             report_stream_def = get_stream_def(
                 stream_name,
@@ -556,7 +553,7 @@ def stream_report(stream_name, report_name, url, report_time):
 def sync_report(client, account_id, report_stream):
     report_name = stringcase.pascalcase(report_stream.stream)
 
-    report_schema = get_report_schema_from_client(client, report_name)
+    report_schema = get_report_schema(client, report_name)
     singer.write_schema(report_stream.stream, report_schema, [])
 
     state_key = '{}_{}'.format(account_id, report_stream.stream)
