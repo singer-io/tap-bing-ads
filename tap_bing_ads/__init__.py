@@ -349,7 +349,8 @@ def get_report_schema(client, report_name):
 
     return {
         'properties': properties,
-        'additionalProperties': False
+        'additionalProperties': False,
+        'type': 'object'
     }
 
 def get_report_metadata(report_name):
