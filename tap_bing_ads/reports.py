@@ -1,11 +1,40 @@
 REPORT_WHITELIST = [
     'KeywordPerformanceReport',
-    'AdPerformanceReport'
+    'AdPerformanceReport',
+    'AdGroupPerformanceReport',
+    'GeographicPerformanceReport',
+    'AgeGenderDemographicReport',
+    'SearchQueryPerformanceReport'
 ]
 
 REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'GregorianDate']
 
 REPORT_SPECIFIC_REQUIRED_FIELDS = {
+    'GeographicPerformanceReport': ['AccountName'],
+    'AgeGenderDemographicReport': [
+        'AccountName',
+        'AdGroupName',
+        'AgeGroup',
+        'Gender'
+    ],
+    'SearchQueryPerformanceReport': ['SearchQuery']
+}
+
+ALIASES = {
+    'BusinessCatName': 'BusinessCategoryName',
+    'BusinessCatId': 'BusinessCategoryId',
+    'AvgCPP': 'AverageCpp',
+    'PTR': 'Ptr',
+    'FinalAppUrl': 'FinalAppURL',
+    'FinalMobileUrl': 'FinalMobileURL',
+    'FinalUrl': 'FinalURL',
+    'Bid strategy type': 'BidStrategyType'
+}
+
+# the bing reporting API just throws these in - they are not in the docs or WSDL
+EXTRA_FIELDS = {
+    'GeographicPerformanceReport': ['CountryOrRegion'],
+    'SearchQueryPerformanceReport': ['Status']
 }
 
 ## Any not listed here are strings

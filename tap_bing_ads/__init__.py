@@ -325,6 +325,9 @@ def get_report_schema(client, report_name):
 
     report_columns = map(lambda x: x.name, report_columns_type.rawchildren[0].rawchildren)
 
+    if report_name in reports.EXTRA_FIELDS:
+        report_columns = list(report_columns) + reports.EXTRA_FIELDS[report_name]
+
     properties = {}
     for column in report_columns:
         if column in reports.REPORTING_FIELD_TYPES:
@@ -339,9 +342,9 @@ def get_report_schema(client, report_name):
             _type = 'datetime'
 
         if _type == 'datetime':
-            col_schema = {'type': 'string', 'format': 'date-time'}
+            col_schema = {'type': ['null', 'string'], 'format': 'date-time'}
         else:
-            col_schema = {'type': _type}
+            col_schema = {'type': ['null', _type]}
 
         properties[column] = col_schema
 
@@ -356,10 +359,16 @@ def get_report_schema(client, report_name):
     }
 
 def get_report_metadata(report_name):
-    if report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
+    if report_name in reports.EXTRA_FIELDS and \
+       report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
         required_fields = (
             reports.REPORT_REQUIRED_FIELDS +
-            reports.REPORT_REQUIRED_FIELDS[report_name])
+            reports.REPORT_SPECIFIC_REQUIRED_FIELDS[report_name] +
+            reports.EXTRA_FIELDS[report_name])
+    elif report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
+        required_fields = (
+            reports.REPORT_REQUIRED_FIELDS +
+            reports.REPORT_SPECIFIC_REQUIRED_FIELDS[report_name])
     else:
         required_fields = reports.REPORT_REQUIRED_FIELDS
 
@@ -537,6 +546,12 @@ def sync_core_objects(account_id, selected_streams):
             LOGGER.info('Syncing Ads for Account: {}'.format(account_id))
             sync_ads(client, selected_streams, ad_group_ids)
 
+def normalize_report_column_names(row):
+    for alias_name in reports.ALIASES:
+        if alias_name in row:
+            row[reports.ALIASES[alias_name]] = row[alias_name]
+            del row[alias_name]
+
 def type_report_row(row):
     for field_name, value in row.items():
         value = value.strip()
@@ -553,6 +568,20 @@ def type_report_row(row):
                 value = arrow.get(value).isoformat()
 
         row[field_name] = value
+
+def poll_report(client, report_name, request_id):
+    download_url = None
+    with metrics.job_timer('generate_report'):
+        for _ in range(0, MAX_NUM_REPORT_POLLS):
+            response = client.PollGenerateReport(request_id)
+            if response.Status == 'Error':
+                raise Exception('Error running {} report'.format(report_name))
+            if response.Status == 'Success':
+                if response.ReportDownloadUrl:
+                    download_url = response.ReportDownloadUrl
+                break
+            time.sleep(REPORT_POLL_SLEEP)
+    return download_url
 
 def stream_report(stream_name, report_name, url, report_time):
     with metrics.http_request_timer('download_report'):
@@ -573,6 +602,7 @@ def stream_report(stream_name, report_name, url, report_time):
 
                 with metrics.record_counter(stream_name) as counter:
                     for row in reader:
+                        normalize_report_column_names(row)
                         type_report_row(row)
                         row['_sdc_report_datetime'] = report_time
                         singer.write_record(stream_name, row)
@@ -630,28 +660,18 @@ def sync_report(client, account_id, report_stream):
 
     request_id = client.SubmitGenerateReport(report_request)
 
-    download_url = None
-    with metrics.job_timer('generate_report'):
-        for _ in range(0, MAX_NUM_REPORT_POLLS):
-            response = client.PollGenerateReport(request_id)
-            if response.Status == 'Error':
-                raise Exception('Error running {} report'.format(report_name))
-            if response.Status == 'Success':
-                if response.ReportDownloadUrl:
-                    download_url = response.ReportDownloadUrl
-                else:
-                    LOGGER.info('No results for report: {} - from {} to {}'.format(
-                        report_name,
-                        start_date,
-                        end_date))
-                break
-            time.sleep(REPORT_POLL_SLEEP)
+    download_url = poll_report(client, report_name, request_id)
 
     if download_url:
         stream_report(report_stream.stream,
                       report_name,
-                      response.ReportDownloadUrl,
+                      download_url,
                       report_time)
+    else:
+        LOGGER.info('No results for report: {} - from {} to {}'.format(
+            report_name,
+            start_date,
+            end_date))
 
     singer.write_bookmark(STATE, state_key, 'date', end_date.isoformat())
     singer.write_state(STATE)
