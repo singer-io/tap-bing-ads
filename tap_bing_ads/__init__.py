@@ -11,7 +11,7 @@ from zipfile import ZipFile
 
 import pytz
 import singer
-from singer import utils, metadata
+from singer import utils, metadata, metrics
 from bingads import AuthorizationData, OAuthWebAuthCodeGrant, ServiceClient
 import suds
 from suds.sudsobject import asdict
@@ -453,7 +453,9 @@ def sync_accounts_stream(account_ids, catalog_item):
 
     max_accounts_last_modified = max([x['LastModifiedTime'] for x in accounts])
 
-    singer.write_records('accounts', filter_selected_fields_many(selected_fields, accounts))
+    with metrics.record_counter('accounts') as counter:
+        singer.write_records('accounts', filter_selected_fields_many(selected_fields, accounts))
+        counter.increment(len(accounts))
 
     singer.write_bookmark(STATE, 'accounts', 'last_record', max_accounts_last_modified)
     singer.write_state(STATE)
@@ -467,8 +469,10 @@ def sync_campaigns(client, account_id, selected_streams):
         if 'campaigns' in selected_streams:
             selected_fields = get_selected_fields(selected_streams['campaigns'])
             singer.write_schema('campaigns', get_core_schema(client, 'Campaign'), ['Id'])
-            singer.write_records('campaigns',
-                                 filter_selected_fields_many(selected_fields, campaigns))
+            with metrics.record_counter('campaigns') as counter:
+                singer.write_records('campaigns',
+                                     filter_selected_fields_many(selected_fields, campaigns))
+                counter.increment(len(campaigns))
 
         return map(lambda x: x['Id'], campaigns)
 
@@ -486,8 +490,10 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
                     account_id, campaign_id))
                 selected_fields = get_selected_fields(selected_streams['ad_groups'])
                 singer.write_schema('ad_groups', get_core_schema(client, 'AdGroup'), ['Id'])
-                singer.write_records('ad_groups',
-                                     filter_selected_fields_many(selected_fields, ad_groups))
+                with metrics.record_counter('ad_groups') as counter:
+                    singer.write_records('ad_groups',
+                                         filter_selected_fields_many(selected_fields, ad_groups))
+                    counter.increment(len(ad_groups))
 
             ad_group_ids.append(list(map(lambda x: x['Id'], ad_groups)))
     return ad_group_ids
@@ -511,8 +517,10 @@ def sync_ads(client, selected_streams, ad_group_ids):
         if 'Ad' in response_dict:
             selected_fields = get_selected_fields(selected_streams['ads'])
             singer.write_schema('ads', get_core_schema(client, 'Ad'), ['Id'])
-            singer.write_records('ads', filter_selected_fields_many(selected_fields,
-                                                                    response_dict['Ad']))
+            with metrics.record_counter('ads') as counter:
+                ads = response_dict['Ad']
+                singer.write_records('ads', filter_selected_fields_many(selected_fields, ads))
+                counter.increment(len(ads))
 
 def sync_core_objects(account_id, selected_streams):
     client = create_sdk_client('CampaignManagementService', account_id)
@@ -559,10 +567,12 @@ def stream_report(stream_name, report_name, url, report_time):
 
                 reader = csv.DictReader(csv_file, fieldnames=headers)
 
-                for row in reader:
-                    type_report_row(row)
-                    row['_sdc_report_datetime'] = report_time
-                    singer.write_record(stream_name, row)
+                with metrics.record_counter(stream_name) as counter:
+                    for row in reader:
+                        type_report_row(row)
+                        row['_sdc_report_datetime'] = report_time
+                        singer.write_record(stream_name, row)
+                        counter.increment()
 
 def sync_report(client, account_id, report_stream):
     report_name = stringcase.pascalcase(report_stream.stream)
@@ -682,7 +692,6 @@ def main_impl():
         LOGGER.info("No catalog was provided")
 
 ## TODO:
-## - record_counter metric each time rows are streamed
 ## - http_request_timer or generic Timer for each SDK call and
 ##      initalize a client (since it loads the remote WSDL)
 ## - job_timer while waiting on report jobs
