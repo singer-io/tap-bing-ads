@@ -48,7 +48,7 @@ MAX_NUM_REPORT_POLLS = 10
 REPORT_POLL_SLEEP = 5
 
 SESSION = requests.Session()
-USER_AGENT = 'Singer.io Bing Ads Tap'
+DEFAULT_USER_AGENT = 'Singer.io Bing Ads Tap'
 
 ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z]+)'
 
@@ -56,7 +56,7 @@ def log_service_call(service_method):
     def wrapper(*args, **kwargs):
         log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + \
                    list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
-        LOGGER.info('Calling: {}({})'.format(service_method._name, ','.join(log_args)))
+        LOGGER.info('Calling: {}({})'.format(service_method.name, ','.join(log_args)))
         return service_method(*args, **kwargs)
     return wrapper
 
@@ -68,7 +68,7 @@ class CustomServiceClient(ServiceClient):
     def set_options(self, **kwargs):
         self._options = kwargs
         kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
-        kwargs['headers']['User-Agent'] = USER_AGENT
+        kwargs['headers']['User-Agent'] = CONFIG.get('user_agent', DEFAULT_USER_AGENT)
         self._soap_client.set_options(**kwargs)
 
 def create_sdk_client(service, account_id):
@@ -262,7 +262,7 @@ def get_type_map(client):
 
     return type_map
 
-def get_stream_def(stream_name, schema, metadata=None, pks=None, replication_key=None):
+def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replication_key=None):
     stream_def = {
         'tap_stream_id': stream_name,
         'stream': stream_name,
@@ -278,8 +278,8 @@ def get_stream_def(stream_name, schema, metadata=None, pks=None, replication_key
     else:
         stream_def['replication_method'] = 'FULL_TABLE'
 
-    if metadata:
-        stream_def['metadata'] = metadata
+    if stream_metadata:
+        stream_def['metadata'] = stream_metadata
 
     return stream_def
 
@@ -371,7 +371,7 @@ def discover_reports():
     type_map = get_type_map(client)
     report_column_regex = r'^(?!ArrayOf)(.+Report)Column$'
 
-    for type_name, type_schema in type_map.items():
+    for type_name in type_map:
         match = re.match(report_column_regex, type_name)
         if match and match.groups()[0] in reports.REPORT_WHITELIST:
             report_name = match.groups()[0]
@@ -381,7 +381,7 @@ def discover_reports():
             report_stream_def = get_stream_def(
                 stream_name,
                 report_schema,
-                metadata=report_metadata)
+                stream_metadata=report_metadata)
             report_streams.append(report_stream_def)
 
     return report_streams
@@ -404,23 +404,26 @@ def do_discover(account_ids):
 
     json.dump({'streams': core_object_streams + report_streams}, sys.stdout, indent=2)
 
-def get_selected_fields(catalog_item, exclude=[]):
+def get_selected_fields(catalog_item, exclude=None):
     if not catalog_item.metadata:
         return None
 
+    if not exclude:
+        exclude = []
+
     mdata = metadata.to_map(catalog_item.metadata)
     selected_fields = []
-    for prop, prop_schema in catalog_item.schema.properties.items():
+    for prop in catalog_item.schema.properties:
         if prop not in exclude and \
            ((catalog_item.key_properties and prop in catalog_item.key_properties) or \
             metadata.get(mdata, ('properties', prop), 'inclusion') == 'automatic' or \
-            metadata.get(mdata, ('properties', prop), 'selected') == True):
+            metadata.get(mdata, ('properties', prop), 'selected') is True):
             selected_fields.append(prop)
     return selected_fields
 
 def filter_selected_fields(selected_fields, obj):
     if selected_fields:
-        return {key:value for key,value in obj.items() if key in selected_fields}
+        return {key:value for key, value in obj.items() if key in selected_fields}
     return obj
 
 def filter_selected_fields_many(selected_fields, objs):
@@ -464,7 +467,8 @@ def sync_campaigns(client, account_id, selected_streams):
         if 'campaigns' in selected_streams:
             selected_fields = get_selected_fields(selected_streams['campaigns'])
             singer.write_schema('campaigns', get_core_schema(client, 'Campaign'), ['Id'])
-            singer.write_records('campaigns', filter_selected_fields_many(selected_fields, campaigns))
+            singer.write_records('campaigns',
+                                 filter_selected_fields_many(selected_fields, campaigns))
 
         return map(lambda x: x['Id'], campaigns)
 
@@ -526,7 +530,7 @@ def type_report_row(row):
     for field_name, value in row.items():
         value = value.strip()
         if value == '':
-           value = None
+            value = None
 
         if value is not None and field_name in reports.REPORTING_FIELD_TYPES:
             _type = reports.REPORTING_FIELD_TYPES[field_name]
@@ -584,7 +588,8 @@ def sync_report(client, account_id, report_stream):
     report_request.ExcludeReportHeader = True
     report_request.ExcludeReportFooter = True
 
-    selected_fields = get_selected_fields(report_stream, exclude=['GregorianDate', '_sdc_report_datetime'])
+    selected_fields = get_selected_fields(report_stream,
+                                          exclude=['GregorianDate', '_sdc_report_datetime'])
     selected_fields.append('TimePeriod')
 
     report_columns = client.factory.create('ArrayOf{}Column'.format(report_name))
@@ -617,7 +622,10 @@ def sync_report(client, account_id, report_stream):
             raise Exception('Error running {} report'.format(report_name))
         if response.Status == 'Success':
             if response.ReportDownloadUrl:
-                stream_report(report_stream.stream, report_name, response.ReportDownloadUrl, report_time)
+                stream_report(report_stream.stream,
+                              report_name,
+                              response.ReportDownloadUrl,
+                              report_time)
             else:
                 LOGGER.info('No results for report: {} - from {} to {}'.format(
                     report_name,
@@ -658,16 +666,11 @@ def do_sync_all_accounts(account_ids, catalog):
         sync_account_data(account_id, catalog, selected_streams)
 
 def main_impl():
-    global USER_AGENT
-
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
 
     CONFIG.update(args.config)
     STATE.update(args.state)
     account_ids = CONFIG['account_ids'].split(",")
-
-    if 'user_agent' in CONFIG:
-        USER_AGENT = CONFIG['user_agent']
 
     if args.discover:
         do_discover(account_ids)
