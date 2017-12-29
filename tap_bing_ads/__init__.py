@@ -50,7 +50,7 @@ REPORT_POLL_SLEEP = 5
 SESSION = requests.Session()
 USER_AGENT = 'Singer.io Bing Ads Tap'
 
-ARRAY_TYPE_REGEX = r'ArrayOf([a-z]+)'
+ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z]+)'
 
 def log_service_call(service_method):
     def wrapper(*args, **kwargs):
@@ -125,6 +125,7 @@ def get_json_schema(element):
         types.append('null')
 
     if element.root.name == 'simpleType':
+        types.append('null')
         types.append('string')
     else:
         xml_type = element.type[0]
@@ -145,6 +146,14 @@ def get_json_schema(element):
 def get_array_type(array_type):
     xml_type = re.match(ARRAY_TYPE_REGEX, array_type).groups()[0]
     json_type = xml_to_json_type(xml_type)
+    if json_type == 'string' and xml_type != 'string':
+        # complex type
+        items = xml_type # will be filled in fill_in_nested_types
+    else:
+        items = {
+            'type': json_type
+        }
+
     array_obj = {
         'type': ['null', 'object'],
         'properties': {}
@@ -152,9 +161,7 @@ def get_array_type(array_type):
 
     array_obj['properties'][xml_type] = {
         'type': ['null', 'array'],
-        'items': {
-            'type': json_type
-        }
+        'items': items
     }
 
     return array_obj
@@ -189,7 +196,7 @@ def wsdl_type_to_schema(inherited_types, wsdl_type):
             properties[element.name] = element.ref[0] ## set to service type name for now
         elif element.type[1] != 'http://www.w3.org/2001/XMLSchema': ## not a built-in XML type
             _type = element.type[0]
-            if 'ArrayOfstring' in _type:
+            if 'ArrayOf' in _type:
                 properties[element.name] = get_array_type(_type)
             else:
                 properties[element.name] = _type ## set to service type name for now
@@ -227,9 +234,15 @@ def normalize_abstract_types(inherited_types, type_map):
                 type_map[base_type] = {'anyOf': schemas}
 
 def fill_in_nested_types(type_map, schema):
-    for prop, descriptor in schema['properties'].items():
-        if isinstance(descriptor, str) and descriptor in type_map:
-            schema['properties'][prop] = type_map[descriptor]
+    if 'properties' in schema:
+        for prop, descriptor in schema['properties'].items():
+            schema['properties'][prop] = fill_in_nested_types(type_map, descriptor)
+    elif 'items' in schema:
+        schema['items'] = fill_in_nested_types(type_map, schema['items'])
+    else:
+        if isinstance(schema, str) and schema in type_map:
+            return type_map[schema]
+    return schema
 
 def get_type_map(client):
     inherited_types = {}
@@ -244,11 +257,8 @@ def get_type_map(client):
 
     normalize_abstract_types(inherited_types, type_map)
 
-    for schema in type_map.values():
-        if 'properties' in schema:
-            fill_in_nested_types(type_map, schema)
-        elif 'items' in schema and 'properties' in schema['items']:
-            fill_in_nested_types(type_map, schema['items'])
+    for _type, schema in type_map.items():
+        type_map[_type] = fill_in_nested_types(type_map, schema)
 
     return type_map
 
