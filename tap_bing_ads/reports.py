@@ -1,5 +1,6 @@
 REPORT_WHITELIST = [
-    'KeywordPerformanceReport'
+    'KeywordPerformanceReport',
+    'AdPerformanceReport'
 ]
 
 REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'GregorianDate']
@@ -10,13 +11,11 @@ REPORT_SPECIFIC_REQUIRED_FIELDS = {
 ## Any not listed here are strings
 REPORTING_FIELD_TYPES = {
     'GregorianDate': 'date',
-    'AccountNumber': 'integer',
     'AccountId': 'integer',
     'CampaignId': 'integer',
     'AdGroupId': 'integer',
     'KeywordId': 'integer',
     'AdId': 'integer',
-    'AdType': 'integer',
     'CurrentMaxCpc': 'number',
     'Impressions': 'integer',
     'Clicks': 'integer',
@@ -36,6 +35,7 @@ REPORTING_FIELD_TYPES = {
     'QualityImpact': 'number',
     'BusinessListingId': 'integer',
     'BusinessCategoryId': 'integer',
+    'BusinessCatId': 'integer',
     'Assists': 'integer',
     'Revenue': 'number',
     'ReturnOnAdSpend': 'number',

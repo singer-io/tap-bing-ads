@@ -607,7 +607,7 @@ def sync_report(client, account_id, report_stream):
     selected_fields.append('TimePeriod')
 
     report_columns = client.factory.create('ArrayOf{}Column'.format(report_name))
-    report_columns.KeywordPerformanceReportColumn.append(selected_fields)
+    getattr(report_columns, '{}Column'.format(report_name)).append(selected_fields)
     report_request.Columns = report_columns
 
     request_start_date = client.factory.create('Date')
