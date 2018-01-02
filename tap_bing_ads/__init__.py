@@ -9,9 +9,8 @@ import io
 from datetime import datetime, timedelta
 from zipfile import ZipFile
 
-import pytz
 import singer
-from singer import utils, metadata
+from singer import utils, metadata, metrics
 from bingads import AuthorizationData, OAuthWebAuthCodeGrant, ServiceClient
 import suds
 from suds.sudsobject import asdict
@@ -52,12 +51,16 @@ DEFAULT_USER_AGENT = 'Singer.io Bing Ads Tap'
 
 ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z]+)'
 
+def get_user_agent():
+    return CONFIG.get('user_agent', DEFAULT_USER_AGENT)
+
 def log_service_call(service_method):
     def wrapper(*args, **kwargs):
         log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + \
                    list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
         LOGGER.info('Calling: {}({})'.format(service_method.name, ','.join(log_args)))
-        return service_method(*args, **kwargs)
+        with metrics.http_request_timer(service_method.name):
+            return service_method(*args, **kwargs)
     return wrapper
 
 class CustomServiceClient(ServiceClient):
@@ -68,7 +71,7 @@ class CustomServiceClient(ServiceClient):
     def set_options(self, **kwargs):
         self._options = kwargs
         kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
-        kwargs['headers']['User-Agent'] = CONFIG.get('user_agent', DEFAULT_USER_AGENT)
+        kwargs['headers']['User-Agent'] = get_user_agent()
         self._soap_client.set_options(**kwargs)
 
 def create_sdk_client(service, account_id):
@@ -322,6 +325,9 @@ def get_report_schema(client, report_name):
 
     report_columns = map(lambda x: x.name, report_columns_type.rawchildren[0].rawchildren)
 
+    if report_name in reports.EXTRA_FIELDS:
+        report_columns = list(report_columns) + reports.EXTRA_FIELDS[report_name]
+
     properties = {}
     for column in report_columns:
         if column in reports.REPORTING_FIELD_TYPES:
@@ -336,9 +342,9 @@ def get_report_schema(client, report_name):
             _type = 'datetime'
 
         if _type == 'datetime':
-            col_schema = {'type': 'string', 'format': 'date-time'}
+            col_schema = {'type': ['null', 'string'], 'format': 'date-time'}
         else:
-            col_schema = {'type': _type}
+            col_schema = {'type': ['null', _type]}
 
         properties[column] = col_schema
 
@@ -354,10 +360,16 @@ def get_report_schema(client, report_name):
     }
 
 def get_report_metadata(report_name):
-    if report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
+    if report_name in reports.EXTRA_FIELDS and \
+       report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
         required_fields = (
             reports.REPORT_REQUIRED_FIELDS +
-            reports.REPORT_REQUIRED_FIELDS[report_name])
+            reports.REPORT_SPECIFIC_REQUIRED_FIELDS[report_name] +
+            reports.EXTRA_FIELDS[report_name])
+    elif report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
+        required_fields = (
+            reports.REPORT_REQUIRED_FIELDS +
+            reports.REPORT_SPECIFIC_REQUIRED_FIELDS[report_name])
     else:
         required_fields = reports.REPORT_REQUIRED_FIELDS
 
@@ -454,7 +466,9 @@ def sync_accounts_stream(account_ids, catalog_item):
 
     max_accounts_last_modified = max([x['LastModifiedTime'] for x in accounts])
 
-    singer.write_records('accounts', filter_selected_fields_many(selected_fields, accounts))
+    with metrics.record_counter('accounts') as counter:
+        singer.write_records('accounts', filter_selected_fields_many(selected_fields, accounts))
+        counter.increment(len(accounts))
 
     singer.write_bookmark(STATE, 'accounts', 'last_record', max_accounts_last_modified)
     singer.write_state(STATE)
@@ -468,8 +482,10 @@ def sync_campaigns(client, account_id, selected_streams):
         if 'campaigns' in selected_streams:
             selected_fields = get_selected_fields(selected_streams['campaigns'])
             singer.write_schema('campaigns', get_core_schema(client, 'Campaign'), ['Id'])
-            singer.write_records('campaigns',
-                                 filter_selected_fields_many(selected_fields, campaigns))
+            with metrics.record_counter('campaigns') as counter:
+                singer.write_records('campaigns',
+                                     filter_selected_fields_many(selected_fields, campaigns))
+                counter.increment(len(campaigns))
 
         return map(lambda x: x['Id'], campaigns)
 
@@ -487,8 +503,10 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
                     account_id, campaign_id))
                 selected_fields = get_selected_fields(selected_streams['ad_groups'])
                 singer.write_schema('ad_groups', get_core_schema(client, 'AdGroup'), ['Id'])
-                singer.write_records('ad_groups',
-                                     filter_selected_fields_many(selected_fields, ad_groups))
+                with metrics.record_counter('ad_groups') as counter:
+                    singer.write_records('ad_groups',
+                                         filter_selected_fields_many(selected_fields, ad_groups))
+                    counter.increment(len(ad_groups))
 
             ad_group_ids.append(list(map(lambda x: x['Id'], ad_groups)))
     return ad_group_ids
@@ -512,8 +530,10 @@ def sync_ads(client, selected_streams, ad_group_ids):
         if 'Ad' in response_dict:
             selected_fields = get_selected_fields(selected_streams['ads'])
             singer.write_schema('ads', get_core_schema(client, 'Ad'), ['Id'])
-            singer.write_records('ads', filter_selected_fields_many(selected_fields,
-                                                                    response_dict['Ad']))
+            with metrics.record_counter('ads') as counter:
+                ads = response_dict['Ad']
+                singer.write_records('ads', filter_selected_fields_many(selected_fields, ads))
+                counter.increment(len(ads))
 
 def sync_core_objects(account_id, selected_streams):
     client = create_sdk_client('CampaignManagementService', account_id)
@@ -526,6 +546,12 @@ def sync_core_objects(account_id, selected_streams):
         if 'ads' in selected_streams:
             LOGGER.info('Syncing Ads for Account: {}'.format(account_id))
             sync_ads(client, selected_streams, ad_group_ids)
+
+def normalize_report_column_names(row):
+    for alias_name in reports.ALIASES:
+        if alias_name in row:
+            row[reports.ALIASES[alias_name]] = row[alias_name]
+            del row[alias_name]
 
 def type_report_row(row):
     for field_name, value in row.items():
@@ -544,8 +570,23 @@ def type_report_row(row):
 
         row[field_name] = value
 
+def poll_report(client, report_name, request_id):
+    download_url = None
+    with metrics.job_timer('generate_report'):
+        for _ in range(0, MAX_NUM_REPORT_POLLS):
+            response = client.PollGenerateReport(request_id)
+            if response.Status == 'Error':
+                raise Exception('Error running {} report'.format(report_name))
+            if response.Status == 'Success':
+                if response.ReportDownloadUrl:
+                    download_url = response.ReportDownloadUrl
+                break
+            time.sleep(REPORT_POLL_SLEEP)
+    return download_url
+
 def stream_report(stream_name, report_name, url, report_time):
-    response = SESSION.get(url)
+    with metrics.http_request_timer('download_report'):
+        response = SESSION.get(url, headers={'User-Agent': get_user_agent()})
 
     if response.status_code != 200:
         raise Exception('Non-200 ({}) response downloading report: {}'.format(
@@ -560,10 +601,13 @@ def stream_report(stream_name, report_name, url, report_time):
 
                 reader = csv.DictReader(csv_file, fieldnames=headers)
 
-                for row in reader:
-                    type_report_row(row)
-                    row['_sdc_report_datetime'] = report_time
-                    singer.write_record(stream_name, row)
+                with metrics.record_counter(stream_name) as counter:
+                    for row in reader:
+                        normalize_report_column_names(row)
+                        type_report_row(row)
+                        row['_sdc_report_datetime'] = report_time
+                        singer.write_record(stream_name, row)
+                        counter.increment()
 
 def sync_report(client, account_id, report_stream):
     report_name = stringcase.pascalcase(report_stream.stream)
@@ -594,7 +638,7 @@ def sync_report(client, account_id, report_stream):
     selected_fields.append('TimePeriod')
 
     report_columns = client.factory.create('ArrayOf{}Column'.format(report_name))
-    report_columns.KeywordPerformanceReportColumn.append(selected_fields)
+    getattr(report_columns, '{}Column'.format(report_name)).append(selected_fields)
     report_request.Columns = report_columns
 
     request_start_date = client.factory.create('Date')
@@ -617,23 +661,18 @@ def sync_report(client, account_id, report_stream):
 
     request_id = client.SubmitGenerateReport(report_request)
 
-    for _ in range(0, MAX_NUM_REPORT_POLLS):
-        response = client.PollGenerateReport(request_id)
-        if response.Status == 'Error':
-            raise Exception('Error running {} report'.format(report_name))
-        if response.Status == 'Success':
-            if response.ReportDownloadUrl:
-                stream_report(report_stream.stream,
-                              report_name,
-                              response.ReportDownloadUrl,
-                              report_time)
-            else:
-                LOGGER.info('No results for report: {} - from {} to {}'.format(
-                    report_name,
-                    start_date,
-                    end_date))
-            break
-        time.sleep(REPORT_POLL_SLEEP)
+    download_url = poll_report(client, report_name, request_id)
+
+    if download_url:
+        stream_report(report_stream.stream,
+                      report_name,
+                      download_url,
+                      report_time)
+    else:
+        LOGGER.info('No results for report: {} - from {} to {}'.format(
+            report_name,
+            start_date,
+            end_date))
 
     singer.write_bookmark(STATE, state_key, 'date', end_date.isoformat())
     singer.write_state(STATE)
@@ -681,12 +720,6 @@ def main_impl():
         LOGGER.info("Sync Completed")
     else:
         LOGGER.info("No catalog was provided")
-
-## TODO:
-## - record_counter metric each time rows are streamed
-## - http_request_timer or generic Timer for each SDK call and
-##      initalize a client (since it loads the remote WSDL)
-## - job_timer while waiting on report jobs
 
 def main():
     try:
