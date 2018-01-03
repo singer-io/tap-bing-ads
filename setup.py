@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='tap-bing-ads',
-    version="0.0.1",
+    version="0.0.2",
     description='Singer.io tap for extracting data from the Bing Ads API',
     author='Stitch',
     url='http://singer.io',
