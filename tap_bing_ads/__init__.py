@@ -273,17 +273,24 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
         'schema': schema
     }
 
+    excluded_inclusion_fields = []
     if pks:
         stream_def['key_properties'] = pks
+        excluded_inclusion_fields = pks
 
     if replication_key:
         stream_def['replication_key'] = replication_key
         stream_def['replication_method'] = 'INCREMENTAL'
+        excluded_inclusion_fields += [replication_key]
     else:
         stream_def['replication_method'] = 'FULL_TABLE'
 
     if stream_metadata:
         stream_def['metadata'] = stream_metadata
+    else:
+        stream_def['metadata'] = list(map(
+          lambda field: {"metadata": {"inclusion": "available"}, "breadcrumb": ["properties", field]},
+          (schema['properties'].keys() - excluded_inclusion_fields)))
 
     return stream_def
 
@@ -356,10 +363,17 @@ def get_report_schema(client, report_name):
 
     return {
         'properties': properties,
-        'additionalProperties': False
+        'additionalProperties': False,
+        'type': 'object'
     }
 
-def get_report_metadata(report_name):
+def inclusion_fn(field, required_fields):
+    if field in required_fields:
+        return {"metadata": {"inclusion": "automatic"}, "breadcrumb": ["properties", field]}
+    else:
+        return {"metadata": {"inclusion": "available"}, "breadcrumb": ["properties", field]}
+
+def get_report_metadata(report_name, report_schema):
     if report_name in reports.EXTRA_FIELDS and \
        report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
         required_fields = (
@@ -374,8 +388,8 @@ def get_report_metadata(report_name):
         required_fields = reports.REPORT_REQUIRED_FIELDS
 
     return list(map(
-        lambda field: {"metadata": {"inclusion": "automatic"}, "breadcrumb": ["properties", field]},
-        required_fields))
+        lambda field: inclusion_fn(field, required_fields),
+        report_schema['properties']))
 
 def discover_reports():
     report_streams = []
@@ -390,7 +404,7 @@ def discover_reports():
             report_name = match.groups()[0]
             stream_name = stringcase.snakecase(report_name)
             report_schema = get_report_schema(client, report_name)
-            report_metadata = get_report_metadata(report_name)
+            report_metadata = get_report_metadata(report_name, report_schema)
             report_stream_def = get_stream_def(
                 stream_name,
                 report_schema,
@@ -613,7 +627,7 @@ def stream_report(stream_name, report_name, url, report_time):
 
     with ZipFile(io.BytesIO(response.content)) as zip_file:
         with zip_file.open(zip_file.namelist()[0]) as binary_file:
-            with io.TextIOWrapper(binary_file) as csv_file:
+            with io.TextIOWrapper(binary_file, encoding='utf-8') as csv_file:
                 # handle control character at the start of the file and extra next line
                 header_line = next(csv_file)[1:-1]
                 headers = header_line.replace('"', '').split(',')
