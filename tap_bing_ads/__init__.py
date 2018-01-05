@@ -43,9 +43,9 @@ TOP_LEVEL_CORE_OBJECTS = [
 CONFIG = {}
 STATE = {}
 
-# 10 secs * 60 polls = ~10 minutes max
-MAX_NUM_REPORT_POLLS = 60
-REPORT_POLL_SLEEP = 10
+# ~30 minute job timeout
+MAX_NUM_REPORT_POLLS = 360
+REPORT_POLL_SLEEP = 5
 
 SESSION = requests.Session()
 DEFAULT_USER_AGENT = 'Singer.io Bing Ads Tap'
@@ -665,6 +665,10 @@ def sync_report(client, account_id, report_stream):
     report_request.Language = 'English'
     report_request.ExcludeReportHeader = True
     report_request.ExcludeReportFooter = True
+
+    scope = client.factory.create('AccountThroughAdGroupReportScope')
+    scope.AccountIds = {'long': [account_id]}
+    report_request.Scope = scope
 
     selected_fields = get_selected_fields(report_stream,
                                           exclude=['GregorianDate', '_sdc_report_datetime'])
