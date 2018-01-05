@@ -43,7 +43,8 @@ TOP_LEVEL_CORE_OBJECTS = [
 CONFIG = {}
 STATE = {}
 
-MAX_NUM_REPORT_POLLS = 10
+# ~30 minute job timeout
+MAX_NUM_REPORT_POLLS = 360
 REPORT_POLL_SLEEP = 5
 
 SESSION = requests.Session()
@@ -521,7 +522,7 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
                                          filter_selected_fields_many(selected_fields, ad_groups))
                     counter.increment(len(ad_groups))
 
-            ad_group_ids.append(list(map(lambda x: x['Id'], ad_groups)))
+            ad_group_ids += list(map(lambda x: x['Id'], ad_groups))
     return ad_group_ids
 
 def sync_ads(client, selected_streams, ad_group_ids):
@@ -583,18 +584,37 @@ def type_report_row(row):
 
         row[field_name] = value
 
-def poll_report(client, report_name, request_id):
+def poll_report(client, report_name, start_date, end_date, request_id):
     download_url = None
     with metrics.job_timer('generate_report'):
-        for _ in range(0, MAX_NUM_REPORT_POLLS):
+        for i in range(1, MAX_NUM_REPORT_POLLS + 1):
+            LOGGER.info('Polling report job {}/{} - {} - from {} to {}'.format(
+                i,
+                MAX_NUM_REPORT_POLLS,
+                report_name,
+                start_date,
+                end_date))
             response = client.PollGenerateReport(request_id)
             if response.Status == 'Error':
                 raise Exception('Error running {} report'.format(report_name))
             if response.Status == 'Success':
                 if response.ReportDownloadUrl:
                     download_url = response.ReportDownloadUrl
+                else:
+                    LOGGER.info('No results for report: {} - from {} to {}'.format(
+                        report_name,
+                        start_date,
+                        end_date))
                 break
-            time.sleep(REPORT_POLL_SLEEP)
+
+            if i == MAX_NUM_REPORT_POLLS:
+                LOGGER.info('Generating report timed out: {} - from {} to {}'.format(
+                        report_name,
+                        start_date,
+                        end_date))
+            else:
+                time.sleep(REPORT_POLL_SLEEP)
+
     return download_url
 
 def stream_report(stream_name, report_name, url, report_time):
@@ -646,6 +666,10 @@ def sync_report(client, account_id, report_stream):
     report_request.ExcludeReportHeader = True
     report_request.ExcludeReportFooter = True
 
+    scope = client.factory.create('AccountThroughAdGroupReportScope')
+    scope.AccountIds = {'long': [account_id]}
+    report_request.Scope = scope
+
     selected_fields = get_selected_fields(report_stream,
                                           exclude=['GregorianDate', '_sdc_report_datetime'])
     selected_fields.append('TimePeriod')
@@ -674,18 +698,13 @@ def sync_report(client, account_id, report_stream):
 
     request_id = client.SubmitGenerateReport(report_request)
 
-    download_url = poll_report(client, report_name, request_id)
+    download_url = poll_report(client, report_name, start_date, end_date, request_id)
 
     if download_url:
         stream_report(report_stream.stream,
                       report_name,
                       download_url,
                       report_time)
-    else:
-        LOGGER.info('No results for report: {} - from {} to {}'.format(
-            report_name,
-            start_date,
-            end_date))
 
     singer.write_bookmark(STATE, state_key, 'date', end_date.isoformat())
     singer.write_state(STATE)
