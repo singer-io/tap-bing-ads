@@ -670,8 +670,12 @@ def sync_report(client, account_id, report_stream):
     scope.AccountIds = {'long': [account_id]}
     report_request.Scope = scope
 
+    excluded_fields = ['GregorianDate', '_sdc_report_datetime']
+    if report_name in reports.EXTRA_FIELDS:
+        excluded_fields += reports.EXTRA_FIELDS[report_name]
+
     selected_fields = get_selected_fields(report_stream,
-                                          exclude=['GregorianDate', '_sdc_report_datetime'])
+                                          exclude=excluded_fields)
     selected_fields.append('TimePeriod')
 
     report_columns = client.factory.create('ArrayOf{}Column'.format(report_name))
