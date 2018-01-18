@@ -578,7 +578,7 @@ def type_report_row(row):
             if _type == 'integer':
                 value = int(value)
             elif _type == 'number':
-                value = float(value.replace('%', ''))
+                value = float(value.replace('%', '').replace(',', ''))
             elif _type in ['date', 'datetime']:
                 value = arrow.get(value).isoformat()
 
