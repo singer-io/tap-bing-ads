@@ -576,7 +576,7 @@ def type_report_row(row):
         if value is not None and field_name in reports.REPORTING_FIELD_TYPES:
             _type = reports.REPORTING_FIELD_TYPES[field_name]
             if _type == 'integer':
-                value = int(value)
+                value = int(value.replace(',', ''))
             elif _type == 'number':
                 value = float(value.replace('%', ''))
             elif _type in ['date', 'datetime']:
