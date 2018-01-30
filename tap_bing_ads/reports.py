@@ -4,7 +4,9 @@ REPORT_WHITELIST = [
     'AdGroupPerformanceReport',
     'GeographicPerformanceReport',
     'AgeGenderDemographicReport',
-    'SearchQueryPerformanceReport'
+    'SearchQueryPerformanceReport',
+    'CampaignPerformanceReport',
+    'GoalsAndFunnelsReport'
 ]
 
 REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'GregorianDate']
@@ -68,6 +70,7 @@ REPORTING_FIELD_TYPES = {
     'EstimatedImpressions': 'integer',
     'ExactMatchImpressionSharePercent': 'number',
     'ExpectedCtr': 'number',
+    'GoalId': 'integer',
     'GregorianDate': 'date',
     'HistoricAdRelevance':  'number',
     'HistoricExpectedCtr': 'number',
@@ -83,6 +86,14 @@ REPORTING_FIELD_TYPES = {
     'KeywordId': 'integer',
     'LandingPageExperience': 'number',
     'LocationId': 'integer',
+    'LowQualityClicks': 'integer',
+    'LowQualityClicksPercent': 'number',
+    'LowQualityConversionRate': 'number',
+    'LowQualityConversions': 'integer',
+    'LowQualityGeneralClicks': 'integer',
+    'LowQualityImpressions': 'integer',
+    'LowQualityImpressionsPercent': 'number',
+    'LowQualitySophisticatedClicks': 'integer',
     'Mainline1Bid': 'number',
     'MainlineBid': 'number',
     'ManualCalls': 'integer',
