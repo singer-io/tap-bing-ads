@@ -665,6 +665,7 @@ async def sync_report(client, account_id, report_stream):
                                        state_key)
 
     singer.write_bookmark(STATE, state_key, 'request_id', request_id)
+    singer.write_state(STATE)
 
     download_url = await poll_report(client, report_name, start_date, end_date,
                                      request_id)
