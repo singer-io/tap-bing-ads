@@ -43,8 +43,8 @@ TOP_LEVEL_CORE_OBJECTS = [
 CONFIG = {}
 STATE = {}
 
-# ~30 minute job timeout
-MAX_NUM_REPORT_POLLS = 360
+# ~2 hour polling timeout
+MAX_NUM_REPORT_POLLS = 1440
 REPORT_POLL_SLEEP = 5
 
 SESSION = requests.Session()
@@ -644,20 +644,64 @@ def stream_report(stream_name, report_name, url, report_time):
 
 async def sync_report(client, account_id, report_stream):
     report_name = stringcase.pascalcase(report_stream.stream)
+    state_key = '{}_{}'.format(account_id, report_stream.stream)
+
+    bookmark = singer.get_bookmark(STATE,
+                                   state_key,
+                                   'date')
+    config_start_date = CONFIG.get('start_date')
+    conversion_window = int(CONFIG.get('conversion_window', '-30'))
+    start_date = arrow.get(bookmark or config_start_date) \
+                      .shift(days=conversion_window)
+    end_date = arrow.get(CONFIG.get('end_date'))  # defaults to now
 
     report_schema = get_report_schema(client, report_name)
     singer.write_schema(report_stream.stream, report_schema, [])
 
-    state_key = '{}_{}'.format(account_id, report_stream.stream)
-    config_start_date = CONFIG.get('start_date')
-    bookmark = singer.get_bookmark(STATE,
-                                   state_key,
-                                   'date')
-    conversion_window = int(CONFIG.get('conversion_window', '-30'))
-    start_date = arrow.get(bookmark or config_start_date).shift(days=conversion_window)
-    end_date = arrow.get(CONFIG.get('end_date')) # defaults to now
+    report_time = arrow.get().isoformat()
 
-    LOGGER.info('Syncing report: {} - from {} to {}'.format(report_name, start_date, end_date))
+    request_id = get_report_request_id(client, account_id, report_stream,
+                                       report_name, start_date, end_date,
+                                       state_key)
+
+    singer.write_bookmark(STATE, state_key, 'request_id', request_id)
+    singer.write_state(STATE)
+
+    download_url = await poll_report(client, report_name, start_date, end_date,
+                                     request_id)
+
+    if download_url:
+        stream_report(report_stream.stream,
+                      report_name,
+                      download_url,
+                      report_time)
+        singer.write_bookmark(STATE, state_key, 'request_id', None)
+        singer.write_bookmark(STATE, state_key, 'date', end_date.isoformat())
+
+    singer.write_state(STATE)
+
+def get_report_request_id(client, account_id, report_stream, report_name,
+                          start_date, end_date, state_key):
+    saved_request_id = singer.get_bookmark(STATE, state_key, 'request_id')
+
+    if saved_request_id:
+        LOGGER.info(
+            'Resuming polling for account {}: {}'
+            .format(account_id, report_name)
+        )
+        return saved_request_id
+
+    report_request = build_report_request(client, account_id, report_stream,
+                                          report_name, start_date, end_date)
+    return client.SubmitGenerateReport(report_request)
+
+
+def build_report_request(client, account_id, report_stream, report_name,
+                         start_date, end_date):
+    LOGGER.info(
+        'Syncing report for account {}: {} - from {} to {}'
+        .format(account_id, report_name, start_date, end_date)
+    )
 
     report_request = client.factory.create('{}Request'.format(report_name))
     report_request.Format = 'Csv'
@@ -678,8 +722,11 @@ async def sync_report(client, account_id, report_stream):
                                           exclude=excluded_fields)
     selected_fields.append('TimePeriod')
 
-    report_columns = client.factory.create('ArrayOf{}Column'.format(report_name))
-    getattr(report_columns, '{}Column'.format(report_name)).append(selected_fields)
+    report_columns = client.factory.create(
+        'ArrayOf{}Column'.format(report_name)
+    )
+    getattr(report_columns, '{}Column'.format(report_name)) \
+        .append(selected_fields)
     report_request.Columns = report_columns
 
     request_start_date = client.factory.create('Date')
@@ -698,20 +745,7 @@ async def sync_report(client, account_id, report_stream):
     report_time.PredefinedTime = None
     report_request.Time = report_time
 
-    report_time = arrow.get().isoformat()
-
-    request_id = client.SubmitGenerateReport(report_request)
-
-    download_url = await poll_report(client, report_name, start_date, end_date, request_id)
-
-    if download_url:
-        stream_report(report_stream.stream,
-                      report_name,
-                      download_url,
-                      report_time)
-
-    singer.write_bookmark(STATE, state_key, 'date', end_date.isoformat())
-    singer.write_state(STATE)
+    return report_request
 
 async def sync_reports(account_id, catalog):
     client = create_sdk_client('ReportingService', account_id)
