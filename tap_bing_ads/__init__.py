@@ -642,18 +642,54 @@ def stream_report(stream_name, report_name, url, report_time):
                         singer.write_record(stream_name, row)
                         counter.increment()
 
+def get_report_interval(state_key):
+    report_max_days = int(CONFIG.get('report_max_days', 30))
+    conversion_window = int(CONFIG.get('conversion_window', -30))
+
+    config_start_date = arrow.get(CONFIG.get('start_date'))
+    config_end_date = arrow.get(CONFIG.get('end_date')).floor('day')
+
+    bookmark_end_date = singer.get_bookmark(STATE, state_key, 'date')
+    conversion_min_date = arrow.get().floor('day').shift(days=conversion_window)
+
+    start_date = None
+    if bookmark_end_date:
+        start_date = arrow.get(bookmark_end_date).floor('day').shift(days=1)
+    else:
+        # Will default to today
+        start_date = config_start_date.floor('day')
+
+    start_date = min(start_date, conversion_min_date)
+
+    end_date = min(config_end_date, arrow.get().floor('day'))
+
+    return start_date, end_date
+
 async def sync_report(client, account_id, report_stream):
-    report_name = stringcase.pascalcase(report_stream.stream)
+    report_max_days = int(CONFIG.get('report_max_days', 30))
+
     state_key = '{}_{}'.format(account_id, report_stream.stream)
 
-    bookmark = singer.get_bookmark(STATE,
-                                   state_key,
-                                   'date')
-    config_start_date = CONFIG.get('start_date')
-    conversion_window = int(CONFIG.get('conversion_window', '-30'))
-    start_date = arrow.get(bookmark or config_start_date) \
-                      .shift(days=conversion_window)
-    end_date = arrow.get(CONFIG.get('end_date'))  # defaults to now
+    start_date, end_date = get_report_interval(state_key)
+
+    LOGGER.info('Generating {} reports for account {} between {} - {}'.format(
+        report_stream.stream, account_id, start_date, end_date))
+
+    current_start_date = start_date
+    while current_start_date <= end_date:
+        current_end_date = min(
+            current_start_date.shift(days=report_max_days),
+            end_date
+        )
+        #  await sync_report_interval(client, account_id, report_stream,
+                                   #  current_start_date, current_end_date)
+        print(current_start_date, current_end_date, "<=", end_date)
+        current_start_date = current_end_date.shift(days=1)
+
+async def sync_report_interval(client, account_id, report_stream,
+                               start_date, end_date):
+    state_key = '{}_{}'.format(account_id, report_stream.stream)
+    report_name = stringcase.pascalcase(report_stream.stream)
 
     report_schema = get_report_schema(client, report_name)
     singer.write_schema(report_stream.stream, report_schema, [])
@@ -671,6 +707,12 @@ async def sync_report(client, account_id, report_stream):
                                      request_id)
 
     if download_url:
+        LOGGER.info('Streaming report: {} for account {} - from {} to {}'.format(
+            report_name,
+            account_id,
+            start_date,
+            end_date))
+
         stream_report(report_stream.stream,
                       report_name,
                       download_url,
@@ -760,11 +802,20 @@ async def sync_reports(account_id, catalog):
     await asyncio.gather(*sync_report_tasks)
 
 async def sync_account_data(account_id, catalog, selected_streams):
-    LOGGER.info('Syncing core objects')
-    sync_core_objects(account_id, selected_streams)
+    all_core_streams = {
+        stringcase.snakecase(o) + 's' for o in TOP_LEVEL_CORE_OBJECTS
+    }
+    all_report_streams = {
+        stringcase.snakecase(r) for r in reports.REPORT_WHITELIST
+    }
 
-    LOGGER.info('Syncing reports')
-    await sync_reports(account_id, catalog)
+    if len(all_core_streams & set(selected_streams)) > 0:
+        LOGGER.info('Syncing core objects')
+        sync_core_objects(account_id, selected_streams)
+
+    if len(all_report_streams & set(selected_streams)) > 0:
+        LOGGER.info('Syncing reports')
+        await sync_reports(account_id, catalog)
 
 async def do_sync_all_accounts(account_ids, catalog):
     selected_streams = {}
