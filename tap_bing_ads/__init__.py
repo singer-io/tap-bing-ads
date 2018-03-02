@@ -681,9 +681,8 @@ async def sync_report(client, account_id, report_stream):
             current_start_date.shift(days=report_max_days),
             end_date
         )
-        #  await sync_report_interval(client, account_id, report_stream,
-                                   #  current_start_date, current_end_date)
-        print(current_start_date, current_end_date, "<=", end_date)
+        await sync_report_interval(client, account_id, report_stream,
+                                   current_start_date, current_end_date)
         current_start_date = current_end_date.shift(days=1)
 
 async def sync_report_interval(client, account_id, report_stream,
@@ -809,11 +808,11 @@ async def sync_account_data(account_id, catalog, selected_streams):
         stringcase.snakecase(r) for r in reports.REPORT_WHITELIST
     }
 
-    if len(all_core_streams & set(selected_streams)) > 0:
+    if len(all_core_streams & set(selected_streams)):
         LOGGER.info('Syncing core objects')
         sync_core_objects(account_id, selected_streams)
 
-    if len(all_report_streams & set(selected_streams)) > 0:
+    if len(all_report_streams & set(selected_streams)):
         LOGGER.info('Syncing reports')
         await sync_reports(account_id, catalog)
 
