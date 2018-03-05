@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.0
+  * Adds a feature to load 30 days of report data and skip syncing core streams unless they are selected [#15](https://github.com/singer-io/tap-bing-ads/pull/15)
+
 ## 0.2.0
   * Adds a feature to save an incomplete reports' request in state [#14](https://github.com/singer-io/tap-bing-ads/pull/14)
 
