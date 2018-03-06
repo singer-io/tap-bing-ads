@@ -681,9 +681,13 @@ async def sync_report(client, account_id, report_stream):
             current_start_date.shift(days=report_max_days),
             end_date
         )
-        await sync_report_interval(client, account_id, report_stream,
-                                   current_start_date, current_end_date)
-        current_start_date = current_end_date.shift(days=1)
+        success = await sync_report_interval(client,
+                                             account_id,
+                                             report_stream,
+                                             current_start_date,
+                                             current_end_date)
+        if success:
+            current_start_date = current_end_date.shift(days=1)
 
 async def sync_report_interval(client, account_id, report_stream,
                                start_date, end_date):
@@ -718,8 +722,13 @@ async def sync_report_interval(client, account_id, report_stream,
                       report_time)
         singer.write_bookmark(STATE, state_key, 'request_id', None)
         singer.write_bookmark(STATE, state_key, 'date', end_date.isoformat())
+        singer.write_state(STATE)
+        return True
+    else:
+        singer.write_bookmark(STATE, state_key, 'request_id', None)
+        singer.write_state(STATE)
+        return False
 
-    singer.write_state(STATE)
 
 def get_report_request_id(client, account_id, report_stream, report_name,
                           start_date, end_date, state_key):
