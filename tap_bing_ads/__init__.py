@@ -584,7 +584,7 @@ def type_report_row(row):
 
         row[field_name] = value
 
-async def poll_report(client, report_name, start_date, end_date, request_id):
+async def poll_report(client, account_id, report_name, start_date, end_date, request_id):
     download_url = None
     with metrics.job_timer('generate_report'):
         for i in range(1, MAX_NUM_REPORT_POLLS + 1):
@@ -596,7 +596,10 @@ async def poll_report(client, report_name, start_date, end_date, request_id):
                 end_date))
             response = client.PollGenerateReport(request_id)
             if response.Status == 'Error':
-                raise Exception('Error running {} report'.format(report_name))
+                LOGGER.warn(
+                        'Error polling {} for account {} with request id {}'
+                        .format(report_name, account_id, request_id))
+                return False, None
             if response.Status == 'Success':
                 if response.ReportDownloadUrl:
                     download_url = response.ReportDownloadUrl
@@ -615,7 +618,7 @@ async def poll_report(client, report_name, start_date, end_date, request_id):
             else:
                 await asyncio.sleep(REPORT_POLL_SLEEP)
 
-    return download_url
+    return True, download_url
 
 def stream_report(stream_name, report_name, url, report_time):
     with metrics.http_request_timer('download_report'):
@@ -706,15 +709,12 @@ async def sync_report_interval(client, account_id, report_stream,
     singer.write_bookmark(STATE, state_key, 'request_id', request_id)
     singer.write_state(STATE)
 
-    download_url = await poll_report(client, report_name, start_date, end_date,
-                                     request_id)
+    success, download_url = await poll_report(client, account_id, report_name,
+                                              start_date, end_date, request_id)
 
-    if download_url:
-        LOGGER.info('Streaming report: {} for account {} - from {} to {}'.format(
-            report_name,
-            account_id,
-            start_date,
-            end_date))
+    if success and download_url:
+        LOGGER.info('Streaming report: {} for account {} - from {} to {}'
+                    .format(report_name, account_id, start_date, end_date))
 
         stream_report(report_stream.stream,
                       report_name,
@@ -724,7 +724,16 @@ async def sync_report_interval(client, account_id, report_stream,
         singer.write_bookmark(STATE, state_key, 'date', end_date.isoformat())
         singer.write_state(STATE)
         return True
+    elif success and not download_url:
+        LOGGER.info('No data for report: {} for account {} - from {} to {}'
+                    .format(report_name, account_id, start_date, end_date))
+        singer.write_bookmark(STATE, state_key, 'request_id', None)
+        singer.write_bookmark(STATE, state_key, 'date', end_date.isoformat())
+        singer.write_state(STATE)
+        return True
     else:
+        LOGGER.info('Unsuccessful request for report: {} for account {} - from {} to {}'
+                    .format(report_name, account_id, start_date, end_date))
         singer.write_bookmark(STATE, state_key, 'request_id', None)
         singer.write_state(STATE)
         return False
