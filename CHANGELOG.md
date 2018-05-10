@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.1
+  * Generate proper JSON schema for elements of type `unsignedByte` [#20](https://github.com/singer-io/tap-bing-ads/pull/20)
+
 ## 1.0.0
   * Initial Release to Stitch platform for production
 
