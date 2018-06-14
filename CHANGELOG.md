@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.2
+  * Provide suds error messages to the tap so that we can see what went wrong [#21](https://github.com/singer-io/tap-bing-ads/pull/21)
+
 ## 1.0.1
   * Generate proper JSON schema for elements of type `unsignedByte` [#20](https://github.com/singer-io/tap-bing-ads/pull/20)
 
