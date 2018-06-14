@@ -61,7 +61,11 @@ def log_service_call(service_method):
                    list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
         LOGGER.info('Calling: {}({})'.format(service_method.name, ','.join(log_args)))
         with metrics.http_request_timer(service_method.name):
-            return service_method(*args, **kwargs)
+            try:
+                return service_method(*args, **kwargs)
+            except suds.WebFault as e:
+                raise Exception(e.fault.detail.ApiFaultDetail.OperationErrors) from e
+
     return wrapper
 
 class CustomServiceClient(ServiceClient):
