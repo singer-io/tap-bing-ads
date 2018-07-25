@@ -64,7 +64,10 @@ def log_service_call(service_method):
             try:
                 return service_method(*args, **kwargs)
             except suds.WebFault as e:
-                raise Exception(e.fault.detail.ApiFaultDetail.OperationErrors) from e
+                if hasattr(e.fault.detail, 'ApiFaultDetail'):
+                    raise Exception(e.fault.detail.ApiFaultDetail.OperationErrors) from e
+                if hasattr(e.fault.detail, 'AdApiFaultDetail'):
+                    raise Exception(e.fault.detail.AdApiFaultDetail.Errors) from e
 
     return wrapper
 
