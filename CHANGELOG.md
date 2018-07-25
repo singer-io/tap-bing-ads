@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.3
+  * Handle AdApiFault in addition to ApiFault
+
 ## 1.0.2
   * Provide suds error messages to the tap so that we can see what went wrong [#21](https://github.com/singer-io/tap-bing-ads/pull/21)
 
