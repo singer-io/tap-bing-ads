@@ -482,7 +482,7 @@ def sync_accounts_stream(account_ids, catalog_item):
     accounts_bookmark = singer.get_bookmark(STATE, 'accounts', 'last_record')
     if accounts_bookmark:
         accounts = list(
-            filter(lambda x: x['LastModifiedTime'] >= accounts_bookmark,
+            filter(lambda x: x is not None and x['LastModifiedTime'] >= accounts_bookmark,
                    accounts))
 
     max_accounts_last_modified = max([x['LastModifiedTime'] for x in accounts])
