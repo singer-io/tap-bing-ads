@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.0
+  * Add `audience_performance_report` stream [#26](https://github.com/singer-io/tap-bing-ads/pull/26)
+
 ## 1.0.3
   * Handle AdApiFault in addition to ApiFault
 
