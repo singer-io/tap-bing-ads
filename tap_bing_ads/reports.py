@@ -7,7 +7,8 @@ REPORT_WHITELIST = [
     'SearchQueryPerformanceReport',
     'CampaignPerformanceReport',
     'GoalsAndFunnelsReport',
-    'AudiencePerformanceReport'
+    'AudiencePerformanceReport',
+    'AdExtensionDetailReport'
 ]
 
 REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'GregorianDate']
@@ -21,7 +22,16 @@ REPORT_SPECIFIC_REQUIRED_FIELDS = {
         'Gender'
     ],
     'SearchQueryPerformanceReport': ['SearchQuery'],
-    'AudiencePerformanceReport': ['AudienceId']
+    'AudiencePerformanceReport': ['AudienceId'],
+    'AdExtensionDetailReport': [
+        'AdExtensionId',
+        'AdExtensionPropertyValue',
+        'AdExtensionType',
+        'AdExtensionTypeId',
+        'Clicks',
+        'Ctr',
+        'Impressions'
+    ]
 }
 
 ALIASES = {
