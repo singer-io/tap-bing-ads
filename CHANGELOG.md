@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.0
+  * Add `ad_extension_detail_report` stream [#27](https://github.com/singer-io/tap-bing-ads/pull/27)
+
 ## 1.1.0
   * Add `audience_performance_report` stream [#26](https://github.com/singer-io/tap-bing-ads/pull/26)
 
