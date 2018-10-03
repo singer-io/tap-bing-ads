@@ -19,6 +19,7 @@ import requests
 import arrow
 
 from tap_bing_ads import reports
+from tap_bing_ads.exclusions import EXCLUSIONS
 
 LOGGER = singer.get_logger()
 
@@ -376,11 +377,19 @@ def get_report_schema(client, report_name):
         'type': 'object'
     }
 
-def inclusion_fn(field, required_fields):
+def metadata_fn(report_name, field, required_fields):
     if field in required_fields:
-        return {"metadata": {"inclusion": "automatic"}, "breadcrumb": ["properties", field]}
+        mdata = {"metadata": {"inclusion": "automatic"}, "breadcrumb": ["properties", field]}
     else:
-        return {"metadata": {"inclusion": "available"}, "breadcrumb": ["properties", field]}
+        mdata = {"metadata": {"inclusion": "available"}, "breadcrumb": ["properties", field]}
+
+    if EXCLUSIONS.get(report_name):
+        if field in EXCLUSIONS[report_name]['Attributes']:
+            mdata['metadata']['fieldExclusions'] = [['properties', p] for p in EXCLUSIONS[report_name]['ImpressionSharePerformanceStatistics']]
+        if field in EXCLUSIONS[report_name]['ImpressionSharePerformanceStatistics']:
+            mdata['metadata']['fieldExclusions'] = [['properties', p] for p in EXCLUSIONS[report_name]['Attributes']]
+
+    return mdata
 
 def get_report_metadata(report_name, report_schema):
     if report_name in reports.EXTRA_FIELDS and \
@@ -397,7 +406,7 @@ def get_report_metadata(report_name, report_schema):
         required_fields = reports.REPORT_REQUIRED_FIELDS
 
     return list(map(
-        lambda field: inclusion_fn(field, required_fields),
+        lambda field: metadata_fn(report_name, field, required_fields),
         report_schema['properties']))
 
 def discover_reports():
