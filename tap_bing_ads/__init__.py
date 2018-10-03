@@ -579,12 +579,6 @@ def sync_core_objects(account_id, selected_streams):
             LOGGER.info('Syncing Ads for Account: {}'.format(account_id))
             sync_ads(client, selected_streams, ad_group_ids)
 
-def normalize_report_column_names(row):
-    for alias_name in reports.ALIASES:
-        if alias_name in row:
-            row[reports.ALIASES[alias_name]] = row[alias_name]
-            del row[alias_name]
-
 def type_report_row(row):
     for field_name, value in row.items():
         value = value.strip()
@@ -657,7 +651,6 @@ def stream_report(stream_name, report_name, url, report_time):
 
                 with metrics.record_counter(stream_name) as counter:
                     for row in reader:
-                        normalize_report_column_names(row)
                         type_report_row(row)
                         row['_sdc_report_datetime'] = report_time
                         singer.write_record(stream_name, row)
