@@ -11,7 +11,7 @@ REPORT_WHITELIST = [
     'AdExtensionDetailReport'
 ]
 
-REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'GregorianDate']
+REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'TimePeriod']
 
 REPORT_SPECIFIC_REQUIRED_FIELDS = {
     'GeographicPerformanceReport': ['AccountName'],
@@ -35,14 +35,14 @@ REPORT_SPECIFIC_REQUIRED_FIELDS = {
 }
 
 ALIASES = {
-    'BusinessCatName': 'BusinessCategoryName',
-    'BusinessCatId': 'BusinessCategoryId',
-    'AvgCPP': 'AverageCpp',
-    'PTR': 'Ptr',
-    'FinalAppUrl': 'FinalAppURL',
-    'FinalMobileUrl': 'FinalMobileURL',
-    'FinalUrl': 'FinalURL',
-    'Bid strategy type': 'BidStrategyType'
+    #'BusinessCatName': 'BusinessCategoryName',
+    #'BusinessCatId': 'BusinessCategoryId',
+    #'AvgCPP': 'AverageCpp',
+    #'PTR': 'Ptr',
+    #'Bid strategy type': 'BidStrategyType'
+    'FinalAppUrl': 'FinalAppURL', # v12 is the opposite
+    'FinalMobileUrl': 'FinalMobileURL', # v12 is the opposite
+    'FinalUrl': 'FinalURL', # v12 is the opposite
 }
 
 # the bing reporting API just throws these in - they are not in the docs or WSDL
