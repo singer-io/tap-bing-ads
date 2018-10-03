@@ -72,6 +72,9 @@ def log_service_call(service_method):
     return wrapper
 
 class CustomServiceClient(ServiceClient):
+    def __init__(self, name, **kwargs):
+        return super().__init__(name, 'v12', **kwargs)
+
     def __getattr__(self, name):
         service_method = super(CustomServiceClient, self).__getattr__(name)
         return log_service_call(service_method)
@@ -98,7 +101,7 @@ def create_sdk_client(service, account_id):
         developer_token=CONFIG['developer_token'],
         authentication=authentication)
 
-    return CustomServiceClient(service, authorization_data)
+    return CustomServiceClient(service, authorization_data=authorization_data)
 
 def sobject_to_dict(obj):
     if not hasattr(obj, '__keylist__'):
@@ -353,7 +356,6 @@ def get_report_schema(client, report_name):
         # TimePeriod's column name changes depending on aggregation level
         # This tap always uses daily aggregation
         if column == 'TimePeriod':
-            column = 'GregorianDate'
             _type = 'datetime'
 
         if _type == 'datetime':
@@ -780,13 +782,12 @@ def build_report_request(client, account_id, report_stream, report_name,
     scope.AccountIds = {'long': [account_id]}
     report_request.Scope = scope
 
-    excluded_fields = ['GregorianDate', '_sdc_report_datetime']
+    excluded_fields = ['_sdc_report_datetime']
     if report_name in reports.EXTRA_FIELDS:
         excluded_fields += reports.EXTRA_FIELDS[report_name]
 
     selected_fields = get_selected_fields(report_stream,
                                           exclude=excluded_fields)
-    selected_fields.append('TimePeriod')
 
     report_columns = client.factory.create(
         'ArrayOf{}Column'.format(report_name)
@@ -805,10 +806,14 @@ def build_report_request(client, account_id, report_stream, report_name,
     request_end_date.Month = end_date.month
     request_end_date.Year = end_date.year
 
+    request_time_zone = client.factory.create('ReportTimeZone')
+
     report_time = client.factory.create('ReportTime')
     report_time.CustomDateRangeStart = request_start_date
     report_time.CustomDateRangeEnd = request_end_date
     report_time.PredefinedTime = None
+    report_time.ReportTimeZone = request_time_zone.GreenwichMeanTimeDublinEdinburghLisbonLondon
+
     report_request.Time = report_time
 
     return report_request
