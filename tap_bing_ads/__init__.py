@@ -435,6 +435,21 @@ def do_discover(account_ids):
 
     json.dump({'streams': core_object_streams + report_streams}, sys.stdout, indent=2)
 
+
+def check_for_invalid_selections(prop, mdata, invalid_selections):
+    field_exclusions = metadata.get(mdata, ('properties', prop), 'fieldExclusions')
+    is_prop_selected = metadata.get(mdata, ('properties', prop), 'selected')
+    if field_exclusions and is_prop_selected:
+        for exclusion in field_exclusions:
+            is_exclusion_selected = metadata.get(mdata, tuple(exclusion), 'selected')
+            if not is_exclusion_selected:
+                continue
+            if invalid_selections.get(prop):
+                invalid_selections[prop].append(exclusion[1])
+            else:
+                invalid_selections[prop] = [exclusion[1]]
+
+
 def get_selected_fields(catalog_item, exclude=None):
     if not catalog_item.metadata:
         return None
@@ -444,12 +459,17 @@ def get_selected_fields(catalog_item, exclude=None):
 
     mdata = metadata.to_map(catalog_item.metadata)
     selected_fields = []
+    invalid_selections = {}
     for prop in catalog_item.schema.properties:
+        check_for_invalid_selections(prop, mdata, invalid_selections)
         if prop not in exclude and \
            ((catalog_item.key_properties and prop in catalog_item.key_properties) or \
             metadata.get(mdata, ('properties', prop), 'inclusion') == 'automatic' or \
             metadata.get(mdata, ('properties', prop), 'selected') is True):
             selected_fields.append(prop)
+
+    if any(invalid_selections):
+        raise Exception("Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{}".format(json.dumps(invalid_selections, indent=4)))
     return selected_fields
 
 def filter_selected_fields(selected_fields, obj):
