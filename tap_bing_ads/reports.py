@@ -11,7 +11,7 @@ REPORT_WHITELIST = [
     'AdExtensionDetailReport'
 ]
 
-REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'GregorianDate']
+REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'TimePeriod']
 
 REPORT_SPECIFIC_REQUIRED_FIELDS = {
     'GeographicPerformanceReport': ['AccountName'],
@@ -32,23 +32,6 @@ REPORT_SPECIFIC_REQUIRED_FIELDS = {
         'Ctr',
         'Impressions'
     ]
-}
-
-ALIASES = {
-    'BusinessCatName': 'BusinessCategoryName',
-    'BusinessCatId': 'BusinessCategoryId',
-    'AvgCPP': 'AverageCpp',
-    'PTR': 'Ptr',
-    'FinalAppUrl': 'FinalAppURL',
-    'FinalMobileUrl': 'FinalMobileURL',
-    'FinalUrl': 'FinalURL',
-    'Bid strategy type': 'BidStrategyType'
-}
-
-# the bing reporting API just throws these in - they are not in the docs or WSDL
-EXTRA_FIELDS = {
-    'GeographicPerformanceReport': ['CountryOrRegion'],
-    'SearchQueryPerformanceReport': ['Status']
 }
 
 ## Any not listed here are strings
@@ -83,7 +66,6 @@ REPORTING_FIELD_TYPES = {
     'ExactMatchImpressionSharePercent': 'number',
     'ExpectedCtr': 'number',
     'GoalId': 'integer',
-    'GregorianDate': 'date',
     'HistoricAdRelevance':  'number',
     'HistoricExpectedCtr': 'number',
     'HistoricLandingPageExperience': 'number',
@@ -120,5 +102,6 @@ REPORTING_FIELD_TYPES = {
     'RevenuePerAssist': 'number',
     'RevenuePerConversion': 'number',
     'SidebarBid': 'number',
-    'Spend': 'number'
+    'Spend': 'number',
+    'TimePeriod': 'datetime'
 }
