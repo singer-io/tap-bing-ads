@@ -34,12 +34,6 @@ REPORT_SPECIFIC_REQUIRED_FIELDS = {
     ]
 }
 
-# the bing reporting API just throws these in - they are not in the docs or WSDL
-EXTRA_FIELDS = {
-    'GeographicPerformanceReport': ['CountryOrRegion'],
-    'SearchQueryPerformanceReport': ['Status']
-}
-
 ## Any not listed here are strings
 REPORTING_FIELD_TYPES = {
     'AccountId': 'integer',

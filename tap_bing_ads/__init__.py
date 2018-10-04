@@ -344,9 +344,6 @@ def get_report_schema(client, report_name):
 
     report_columns = map(lambda x: x.name, report_columns_type.rawchildren[0].rawchildren)
 
-    if report_name in reports.EXTRA_FIELDS:
-        report_columns = list(report_columns) + reports.EXTRA_FIELDS[report_name]
-
     properties = {}
     for column in report_columns:
         if column in reports.REPORTING_FIELD_TYPES:
@@ -387,13 +384,7 @@ def metadata_fn(report_name, field, required_fields):
     return mdata
 
 def get_report_metadata(report_name, report_schema):
-    if report_name in reports.EXTRA_FIELDS and \
-       report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
-        required_fields = (
-            reports.REPORT_REQUIRED_FIELDS +
-            reports.REPORT_SPECIFIC_REQUIRED_FIELDS[report_name] +
-            reports.EXTRA_FIELDS[report_name])
-    elif report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
+    if report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
         required_fields = (
             reports.REPORT_REQUIRED_FIELDS +
             reports.REPORT_SPECIFIC_REQUIRED_FIELDS[report_name])
@@ -780,8 +771,6 @@ def build_report_request(client, account_id, report_stream, report_name,
     report_request.Scope = scope
 
     excluded_fields = ['_sdc_report_datetime']
-    if report_name in reports.EXTRA_FIELDS:
-        excluded_fields += reports.EXTRA_FIELDS[report_name]
 
     selected_fields = get_selected_fields(report_stream,
                                           exclude=excluded_fields)
