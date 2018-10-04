@@ -19,6 +19,7 @@ import requests
 import arrow
 
 from tap_bing_ads import reports
+from tap_bing_ads.exclusions import EXCLUSIONS
 
 LOGGER = singer.get_logger()
 
@@ -72,6 +73,9 @@ def log_service_call(service_method):
     return wrapper
 
 class CustomServiceClient(ServiceClient):
+    def __init__(self, name, **kwargs):
+        return super().__init__(name, 'v12', **kwargs)
+
     def __getattr__(self, name):
         service_method = super(CustomServiceClient, self).__getattr__(name)
         return log_service_call(service_method)
@@ -98,7 +102,7 @@ def create_sdk_client(service, account_id):
         developer_token=CONFIG['developer_token'],
         authentication=authentication)
 
-    return CustomServiceClient(service, authorization_data)
+    return CustomServiceClient(service, authorization_data=authorization_data)
 
 def sobject_to_dict(obj):
     if not hasattr(obj, '__keylist__'):
@@ -340,21 +344,12 @@ def get_report_schema(client, report_name):
 
     report_columns = map(lambda x: x.name, report_columns_type.rawchildren[0].rawchildren)
 
-    if report_name in reports.EXTRA_FIELDS:
-        report_columns = list(report_columns) + reports.EXTRA_FIELDS[report_name]
-
     properties = {}
     for column in report_columns:
         if column in reports.REPORTING_FIELD_TYPES:
             _type = reports.REPORTING_FIELD_TYPES[column]
         else:
             _type = 'string'
-
-        # TimePeriod's column name changes depending on aggregation level
-        # This tap always uses daily aggregation
-        if column == 'TimePeriod':
-            column = 'GregorianDate'
-            _type = 'datetime'
 
         if _type == 'datetime':
             col_schema = {'type': ['null', 'string'], 'format': 'date-time'}
@@ -374,20 +369,22 @@ def get_report_schema(client, report_name):
         'type': 'object'
     }
 
-def inclusion_fn(field, required_fields):
+def metadata_fn(report_name, field, required_fields):
     if field in required_fields:
-        return {"metadata": {"inclusion": "automatic"}, "breadcrumb": ["properties", field]}
+        mdata = {"metadata": {"inclusion": "automatic"}, "breadcrumb": ["properties", field]}
     else:
-        return {"metadata": {"inclusion": "available"}, "breadcrumb": ["properties", field]}
+        mdata = {"metadata": {"inclusion": "available"}, "breadcrumb": ["properties", field]}
+
+    if EXCLUSIONS.get(report_name):
+        if field in EXCLUSIONS[report_name]['Attributes']:
+            mdata['metadata']['fieldExclusions'] = [['properties', p] for p in EXCLUSIONS[report_name]['ImpressionSharePerformanceStatistics']]
+        if field in EXCLUSIONS[report_name]['ImpressionSharePerformanceStatistics']:
+            mdata['metadata']['fieldExclusions'] = [['properties', p] for p in EXCLUSIONS[report_name]['Attributes']]
+
+    return mdata
 
 def get_report_metadata(report_name, report_schema):
-    if report_name in reports.EXTRA_FIELDS and \
-       report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
-        required_fields = (
-            reports.REPORT_REQUIRED_FIELDS +
-            reports.REPORT_SPECIFIC_REQUIRED_FIELDS[report_name] +
-            reports.EXTRA_FIELDS[report_name])
-    elif report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
+    if report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
         required_fields = (
             reports.REPORT_REQUIRED_FIELDS +
             reports.REPORT_SPECIFIC_REQUIRED_FIELDS[report_name])
@@ -395,7 +392,7 @@ def get_report_metadata(report_name, report_schema):
         required_fields = reports.REPORT_REQUIRED_FIELDS
 
     return list(map(
-        lambda field: inclusion_fn(field, required_fields),
+        lambda field: metadata_fn(report_name, field, required_fields),
         report_schema['properties']))
 
 def discover_reports():
@@ -438,6 +435,21 @@ def do_discover(account_ids):
 
     json.dump({'streams': core_object_streams + report_streams}, sys.stdout, indent=2)
 
+
+def check_for_invalid_selections(prop, mdata, invalid_selections):
+    field_exclusions = metadata.get(mdata, ('properties', prop), 'fieldExclusions')
+    is_prop_selected = metadata.get(mdata, ('properties', prop), 'selected')
+    if field_exclusions and is_prop_selected:
+        for exclusion in field_exclusions:
+            is_exclusion_selected = metadata.get(mdata, tuple(exclusion), 'selected')
+            if not is_exclusion_selected:
+                continue
+            if invalid_selections.get(prop):
+                invalid_selections[prop].append(exclusion[1])
+            else:
+                invalid_selections[prop] = [exclusion[1]]
+
+
 def get_selected_fields(catalog_item, exclude=None):
     if not catalog_item.metadata:
         return None
@@ -447,12 +459,17 @@ def get_selected_fields(catalog_item, exclude=None):
 
     mdata = metadata.to_map(catalog_item.metadata)
     selected_fields = []
+    invalid_selections = {}
     for prop in catalog_item.schema.properties:
+        check_for_invalid_selections(prop, mdata, invalid_selections)
         if prop not in exclude and \
            ((catalog_item.key_properties and prop in catalog_item.key_properties) or \
             metadata.get(mdata, ('properties', prop), 'inclusion') == 'automatic' or \
             metadata.get(mdata, ('properties', prop), 'selected') is True):
             selected_fields.append(prop)
+
+    if any(invalid_selections):
+        raise Exception("Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{}".format(json.dumps(invalid_selections, indent=4)))
     return selected_fields
 
 def filter_selected_fields(selected_fields, obj):
@@ -568,12 +585,6 @@ def sync_core_objects(account_id, selected_streams):
             LOGGER.info('Syncing Ads for Account: {}'.format(account_id))
             sync_ads(client, selected_streams, ad_group_ids)
 
-def normalize_report_column_names(row):
-    for alias_name in reports.ALIASES:
-        if alias_name in row:
-            row[reports.ALIASES[alias_name]] = row[alias_name]
-            del row[alias_name]
-
 def type_report_row(row):
     for field_name, value in row.items():
         value = value.strip()
@@ -646,7 +657,6 @@ def stream_report(stream_name, report_name, url, report_time):
 
                 with metrics.record_counter(stream_name) as counter:
                     for row in reader:
-                        normalize_report_column_names(row)
                         type_report_row(row)
                         row['_sdc_report_datetime'] = report_time
                         singer.write_record(stream_name, row)
@@ -780,13 +790,10 @@ def build_report_request(client, account_id, report_stream, report_name,
     scope.AccountIds = {'long': [account_id]}
     report_request.Scope = scope
 
-    excluded_fields = ['GregorianDate', '_sdc_report_datetime']
-    if report_name in reports.EXTRA_FIELDS:
-        excluded_fields += reports.EXTRA_FIELDS[report_name]
+    excluded_fields = ['_sdc_report_datetime']
 
     selected_fields = get_selected_fields(report_stream,
                                           exclude=excluded_fields)
-    selected_fields.append('TimePeriod')
 
     report_columns = client.factory.create(
         'ArrayOf{}Column'.format(report_name)
@@ -805,10 +812,14 @@ def build_report_request(client, account_id, report_stream, report_name,
     request_end_date.Month = end_date.month
     request_end_date.Year = end_date.year
 
+    request_time_zone = client.factory.create('ReportTimeZone')
+
     report_time = client.factory.create('ReportTime')
     report_time.CustomDateRangeStart = request_start_date
     report_time.CustomDateRangeEnd = request_end_date
     report_time.PredefinedTime = None
+    report_time.ReportTimeZone = request_time_zone.GreenwichMeanTimeDublinEdinburghLisbonLondon
+
     report_request.Time = report_time
 
     return report_request
