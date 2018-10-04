@@ -72,7 +72,6 @@ REPORTING_FIELD_TYPES = {
     'ExactMatchImpressionSharePercent': 'number',
     'ExpectedCtr': 'number',
     'GoalId': 'integer',
-    'GregorianDate': 'date',
     'HistoricAdRelevance':  'number',
     'HistoricExpectedCtr': 'number',
     'HistoricLandingPageExperience': 'number',
@@ -109,5 +108,6 @@ REPORTING_FIELD_TYPES = {
     'RevenuePerAssist': 'number',
     'RevenuePerConversion': 'number',
     'SidebarBid': 'number',
-    'Spend': 'number'
+    'Spend': 'number',
+    'TimePeriod': 'datetime'
 }
