@@ -354,11 +354,6 @@ def get_report_schema(client, report_name):
         else:
             _type = 'string'
 
-        # TimePeriod's column name changes depending on aggregation level
-        # This tap always uses daily aggregation
-        if column == 'TimePeriod':
-            _type = 'datetime'
-
         if _type == 'datetime':
             col_schema = {'type': ['null', 'string'], 'format': 'date-time'}
         else:
