@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.0
+  * Adds support for v12 of the Bing API as v11 is sunset as of Oct 31 2018 [#28](https://github.com/singer-io/tap-bing-ads/pull/28)
+
 ## 1.2.0
   * Add `ad_extension_detail_report` stream [#27](https://github.com/singer-io/tap-bing-ads/pull/27)
 
