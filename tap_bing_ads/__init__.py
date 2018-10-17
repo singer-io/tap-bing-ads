@@ -56,6 +56,9 @@ ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z]+)'
 def get_user_agent():
     return CONFIG.get('user_agent', DEFAULT_USER_AGENT)
 
+class InvalidDateRangeEnd(Exception):
+    pass
+
 def log_service_call(service_method):
     def wrapper(*args, **kwargs):
         log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + \
@@ -66,7 +69,13 @@ def log_service_call(service_method):
                 return service_method(*args, **kwargs)
             except suds.WebFault as e:
                 if hasattr(e.fault.detail, 'ApiFaultDetail'):
-                    raise Exception(e.fault.detail.ApiFaultDetail.OperationErrors) from e
+                    # The Web fault structure is heavily nested. This is to be sure we catch the error we want.
+                    operation_errors = e.fault.detail.ApiFaultDetail.OperationErrors
+                    invalid_date_range_end_errors = [oe for (_, oe) in operation_errors
+                                                     if oe.ErrorCode == 'InvalidCustomDateRangeEnd']
+                    if any(invalid_date_range_end_errors):
+                        raise InvalidDateRangeEnd(invalid_date_range_end_errors) from e
+                    raise Exception(operation_errors) from e
                 if hasattr(e.fault.detail, 'AdApiFaultDetail'):
                     raise Exception(e.fault.detail.AdApiFaultDetail.Errors) from e
 
@@ -701,11 +710,17 @@ async def sync_report(client, account_id, report_stream):
             current_start_date.shift(days=report_max_days),
             end_date
         )
-        success = await sync_report_interval(client,
-                                             account_id,
-                                             report_stream,
-                                             current_start_date,
-                                             current_end_date)
+        try:
+            success = await sync_report_interval(client,
+                                                 account_id,
+                                                 report_stream,
+                                                 current_start_date,
+                                                 current_end_date)
+        except InvalidDateRangeEnd as ex:
+            LOGGER.warn("Bing reported that the requested report date range ended outside of "
+                        "their data retention period. Skipping to next range...")
+            success = True
+
         if success:
             current_start_date = current_end_date.shift(days=1)
 
@@ -769,6 +784,7 @@ def get_report_request_id(client, account_id, report_stream, report_name,
 
     report_request = build_report_request(client, account_id, report_stream,
                                           report_name, start_date, end_date)
+
     return client.SubmitGenerateReport(report_request)
 
 
