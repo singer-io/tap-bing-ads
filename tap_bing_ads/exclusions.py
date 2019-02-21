@@ -6,6 +6,8 @@ EXCLUSIONS = {
             'TopVsOther'
         ],
         'ImpressionSharePerformanceStatistics': [
+            'AbsoluteTopImpressionSharePercent',
+            'ClickSharePercent',
             'ExactMatchImpressionSharePercent',
             'ImpressionLostToAdRelevancePercent',
             'ImpressionLostToBidPercent',
@@ -22,6 +24,8 @@ EXCLUSIONS = {
             'TopVsOther'
         ],
         'ImpressionSharePerformanceStatistics': [
+            'AbsoluteTopImpressionSharePercent',
+            'ClickSharePercent',
             'ExactMatchImpressionSharePercent',
             'ImpressionLostToAdRelevancePercent',
             'ImpressionLostToBidPercent',
@@ -41,6 +45,8 @@ EXCLUSIONS = {
             'BudgetStatus'
         ],
         'ImpressionSharePerformanceStatistics': [
+            'AbsoluteTopImpressionSharePercent',
+            'ClickSharePercent',
             'ExactMatchImpressionSharePercent',
             'ImpressionLostToAdRelevancePercent',
             'ImpressionLostToBidPercent',
@@ -62,8 +68,10 @@ EXCLUSIONS = {
             'TopVsOther'
         ],
         'ImpressionSharePerformanceStatistics': [
+            'AbsoluteTopImpressionSharePercent',
             'BenchmarkBid',
             'BenchmarkCtr',
+            'ClickSharePercent',
             'ImpressionLostToBudgetPercent',
             'ImpressionLostToRankPercent',
             'ImpressionSharePercent'
@@ -83,8 +91,10 @@ EXCLUSIONS = {
             'TopVsOther'
         ],
         'ImpressionSharePerformanceStatistics': [
+            'AbsoluteTopImpressionSharePercent',
             'BenchmarkBid',
             'BenchmarkCtr',
+            'ClickSharePercent',
             'ImpressionLostToBudgetPercent',
             'ImpressionLostToRankPercent',
             'ImpressionSharePercent'
