@@ -17,6 +17,11 @@ setup(
         'singer-python==5.0.4',
         'stringcase==1.2.0'
     ],
+    extras_require={
+        'dev': [
+            'ipdb'
+        ]
+    },
     entry_points='''
       [console_scripts]
       tap-bing-ads=tap_bing_ads:main
