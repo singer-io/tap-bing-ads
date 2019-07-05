@@ -657,7 +657,11 @@ def stream_report(stream_name, report_name, url, report_time):
 
     with ZipFile(io.BytesIO(response.content)) as zip_file:
         with zip_file.open(zip_file.namelist()[0]) as binary_file:
-            with io.TextIOWrapper(binary_file, encoding='utf-8') as csv_file:
+            # NB: Using 'backslashreplace' to prevent data loss in the
+            # event of an encoding issue with the raw data. E.g., \xfa is
+            # not valid utf-8, but corresponds to the character ú, so it
+            # will come through as \\xfa in the data
+            with io.TextIOWrapper(binary_file, encoding='utf-8', errors='backslashreplace') as csv_file:
                 # handle control character at the start of the file and extra next line
                 header_line = next(csv_file)[1:-1]
                 headers = header_line.replace('"', '').split(',')
