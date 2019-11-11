@@ -741,8 +741,23 @@ async def sync_report_interval(client, account_id, report_stream,
     singer.write_bookmark(STATE, state_key, 'request_id', request_id)
     singer.write_state(STATE)
 
-    success, download_url = await poll_report(client, account_id, report_name,
-                                              start_date, end_date, request_id)
+    try:
+        success, download_url = await poll_report(client, account_id, report_name,
+                                                  start_date, end_date, request_id)
+
+    except Exception as some_error:
+        LOGGER.info('The request_id %s for %s is invalid, generating a new one',
+                    request_id,
+                    state_key)
+        request_id = get_report_request_id(client, account_id, report_stream,
+                                           report_name, start_date, end_date,
+                                           state_key, force_refresh=True)
+
+        singer.write_bookmark(STATE, state_key, 'request_id', request_id)
+        singer.write_state(STATE)
+
+        success, download_url = await poll_report(client, account_id, report_name,
+                                                  start_date, end_date, request_id)
 
     if success and download_url:
         LOGGER.info('Streaming report: {} for account {} - from {} to {}'
@@ -772,10 +787,11 @@ async def sync_report_interval(client, account_id, report_stream,
 
 
 def get_report_request_id(client, account_id, report_stream, report_name,
-                          start_date, end_date, state_key):
-    saved_request_id = singer.get_bookmark(STATE, state_key, 'request_id')
+                          start_date, end_date, state_key, force_refresh=False):
 
-    if saved_request_id:
+    if not force_refresh:
+        saved_request_id = singer.get_bookmark(STATE, state_key, 'request_id')
+
         LOGGER.info(
             'Resuming polling for account {}: {}'
             .format(account_id, report_name)
