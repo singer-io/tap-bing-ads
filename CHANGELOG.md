@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.4
+  * Add some simple retry logic to refresh stale `request_id`s [#33](https://github.com/singer-io/tap-bing-ads/pull/33)
+
 ## 2.0.3
   * Update field exclusion rules to match an API change [#30](https://github.com/singer-io/tap-bing-ads/pull/30)
 
