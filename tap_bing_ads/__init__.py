@@ -83,7 +83,7 @@ def log_service_call(service_method):
 
 class CustomServiceClient(ServiceClient):
     def __init__(self, name, **kwargs):
-        return super().__init__(name, 'v12', **kwargs)
+        return super().__init__(name, 'v13', **kwargs)
 
     def __getattr__(self, name):
         service_method = super(CustomServiceClient, self).__getattr__(name)
@@ -814,7 +814,6 @@ def build_report_request(client, account_id, report_stream, report_name,
     report_request = client.factory.create('{}Request'.format(report_name))
     report_request.Format = 'Csv'
     report_request.Aggregation = 'Daily'
-    report_request.Language = 'English'
     report_request.ExcludeReportHeader = True
     report_request.ExcludeReportFooter = True
 
