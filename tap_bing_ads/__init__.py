@@ -88,7 +88,7 @@ def log_service_call(service_method, account_id):
 
 class CustomServiceClient(ServiceClient):
     def __init__(self, name, **kwargs):
-        return super().__init__(name, 'v12', **kwargs)
+        return super().__init__(name, 'v13', **kwargs)
 
     def __getattr__(self, name):
         service_method = super(CustomServiceClient, self).__getattr__(name)
