@@ -3,7 +3,7 @@ REPORT_WHITELIST = [
     'AdPerformanceReport',
     'AdGroupPerformanceReport',
     'GeographicPerformanceReport',
-    'AgeGenderDemographicReport',
+    'AgeGenderAudienceReport',
     'SearchQueryPerformanceReport',
     'CampaignPerformanceReport',
     'GoalsAndFunnelsReport',
