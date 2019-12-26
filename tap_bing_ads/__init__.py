@@ -789,9 +789,8 @@ async def sync_report_interval(client, account_id, report_stream,
 def get_report_request_id(client, account_id, report_stream, report_name,
                           start_date, end_date, state_key, force_refresh=False):
 
-    if not force_refresh:
-        saved_request_id = singer.get_bookmark(STATE, state_key, 'request_id')
-
+    saved_request_id = singer.get_bookmark(STATE, state_key, 'request_id')
+    if not force_refresh and saved_request_id is not None:
         LOGGER.info(
             'Resuming polling for account {}: {}'
             .format(account_id, report_name)
