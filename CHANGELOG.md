@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.5
+  * Only attempt to resume prior requests from STATE if they are non-null [#38](https://github.com/singer-io/tap-bing-ads/pull/38/)
+
 ## 2.0.4
   * Add some simple retry logic to refresh stale `request_id`s [#33](https://github.com/singer-io/tap-bing-ads/pull/33)
 
