@@ -14,8 +14,9 @@ setup(
         'arrow==0.12.0',
         'bingads==11.12.6',
         'requests==2.20.0',
-        'singer-python==5.0.4',
-        'stringcase==1.2.0'
+        'singer-python==5.9.0',
+        'stringcase==1.2.0',
+        'backoff==1.8.0',
     ],
     extras_require={
         'dev': [

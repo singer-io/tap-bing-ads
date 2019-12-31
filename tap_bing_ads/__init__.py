@@ -17,6 +17,7 @@ from suds.sudsobject import asdict
 import stringcase
 import requests
 import arrow
+import backoff
 
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
@@ -647,6 +648,13 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
 
     return True, download_url
 
+def log_retry_attempt(details):
+    LOGGER.info('Retrieving report timed out, triggering retry #%d', details.get('tries'))
+
+@backoff.on_exception(backoff.constant,
+                      requests.exceptions.ConnectionError,
+                      max_tries=5,
+                      on_backoff=log_retry_attempt)
 def stream_report(stream_name, report_name, url, report_time):
     with metrics.http_request_timer('download_report'):
         response = SESSION.get(url, headers={'User-Agent': get_user_agent()})
