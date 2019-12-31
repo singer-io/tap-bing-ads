@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.6
+  * Add retry up to 5 times for report retrieval [#39](https://github.com/singer-io/tap-bing-ads/pull/39)
+
 ## 2.0.5
   * Only attempt to resume prior requests from STATE if they are non-null [#38](https://github.com/singer-io/tap-bing-ads/pull/38/)
 
