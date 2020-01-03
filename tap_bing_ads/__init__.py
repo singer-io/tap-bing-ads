@@ -60,11 +60,14 @@ def get_user_agent():
 class InvalidDateRangeEnd(Exception):
     pass
 
-def log_service_call(service_method):
+def log_service_call(service_method, account_id):
     def wrapper(*args, **kwargs):
         log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + \
                    list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
-        LOGGER.info('Calling: {}({})'.format(service_method.name, ','.join(log_args)))
+        LOGGER.info('Calling: {}({}) for account: {}'.format(
+            service_method.name,
+            ','.join(log_args),
+            account_id))
         with metrics.http_request_timer(service_method.name):
             try:
                 return service_method(*args, **kwargs)
@@ -76,6 +79,7 @@ def log_service_call(service_method):
                                                      if oe.ErrorCode == 'InvalidCustomDateRangeEnd']
                     if any(invalid_date_range_end_errors):
                         raise InvalidDateRangeEnd(invalid_date_range_end_errors) from e
+                    LOGGER.info('Caught exception for account: {}'.format(account_id))
                     raise Exception(operation_errors) from e
                 if hasattr(e.fault.detail, 'AdApiFaultDetail'):
                     raise Exception(e.fault.detail.AdApiFaultDetail.Errors) from e
@@ -88,7 +92,7 @@ class CustomServiceClient(ServiceClient):
 
     def __getattr__(self, name):
         service_method = super(CustomServiceClient, self).__getattr__(name)
-        return log_service_call(service_method)
+        return log_service_call(service_method, self._authorization_data.account_id)
 
     def set_options(self, **kwargs):
         self._options = kwargs
@@ -97,7 +101,8 @@ class CustomServiceClient(ServiceClient):
         self._soap_client.set_options(**kwargs)
 
 def create_sdk_client(service, account_id):
-    LOGGER.info('Creating SOAP client with OAuth refresh credentials')
+    LOGGER.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
+                service, account_id)
 
     authentication = OAuthWebAuthCodeGrant(
         CONFIG['oauth_client_id'],
