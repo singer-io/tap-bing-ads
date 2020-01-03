@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.7
+  * Add logging when client is created, service message is sent, exception is caught [#41](https://github.com/singer-io/tap-bing-ads/pull/41)
+
 ## 2.0.6
   * Add retry up to 5 times for report retrieval [#39](https://github.com/singer-io/tap-bing-ads/pull/39)
 
