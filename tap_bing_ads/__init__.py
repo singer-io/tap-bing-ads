@@ -88,7 +88,7 @@ def log_service_call(service_method, account_id):
 
 class CustomServiceClient(ServiceClient):
     def __init__(self, name, **kwargs):
-        return super().__init__(name, 'v12', **kwargs)
+        return super().__init__(name, 'v13', **kwargs)
 
     def __getattr__(self, name):
         service_method = super(CustomServiceClient, self).__getattr__(name)
@@ -609,9 +609,15 @@ def type_report_row(row):
         if value is not None and field_name in reports.REPORTING_FIELD_TYPES:
             _type = reports.REPORTING_FIELD_TYPES[field_name]
             if _type == 'integer':
-                value = int(value.replace(',', ''))
+                if value == '--':
+                    value = 0
+                else:
+                    value = int(value.replace(',', ''))
             elif _type == 'number':
-                value = float(value.replace('%', '').replace(',', ''))
+                if value == '--':
+                    value = 0.0
+                else:
+                    value = float(value.replace('%', '').replace(',', ''))
             elif _type in ['date', 'datetime']:
                 value = arrow.get(value).isoformat()
 
@@ -826,7 +832,6 @@ def build_report_request(client, account_id, report_stream, report_name,
     report_request = client.factory.create('{}Request'.format(report_name))
     report_request.Format = 'Csv'
     report_request.Aggregation = 'Daily'
-    report_request.Language = 'English'
     report_request.ExcludeReportHeader = True
     report_request.ExcludeReportFooter = True
 
