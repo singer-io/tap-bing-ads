@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.8
+  * Updates bing-ads dependency to support v13 and implements the version migration [#37](https://github.com/singer-io/tap-bing-ads/pull/37)
+
 ## 2.0.7
   * Add logging when client is created, service message is sent, exception is caught [#41](https://github.com/singer-io/tap-bing-ads/pull/41)
 
