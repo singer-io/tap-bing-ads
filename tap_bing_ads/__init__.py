@@ -57,6 +57,10 @@ ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z]+)'
 def get_user_agent():
     return CONFIG.get('user_agent', DEFAULT_USER_AGENT)
 
+def get_table_key_properties(catalog_item):
+    mdata = metadata.to_map(catalog_item.metadata)
+    return metadata.get(mdata, (), 'table-key-properties')
+
 class InvalidDateRangeEnd(Exception):
     pass
 
@@ -497,7 +501,8 @@ def sync_accounts_stream(account_ids, catalog_item):
     LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
     client = CustomServiceClient('CustomerManagementService')
     account_schema = get_core_schema(client, 'AdvertiserAccount')
-    singer.write_schema('accounts', account_schema, ['Id'])
+    pks = get_table_key_properties(catalog_item) or catalog_item.key_properties
+    singer.write_schema('accounts', account_schema, pks)
 
     for account_id in account_ids:
         client = create_sdk_client('CustomerManagementService', account_id)
@@ -527,7 +532,9 @@ def sync_campaigns(client, account_id, selected_streams):
 
         if 'campaigns' in selected_streams:
             selected_fields = get_selected_fields(selected_streams['campaigns'])
-            singer.write_schema('campaigns', get_core_schema(client, 'Campaign'), ['Id'])
+            schema = get_core_schema(client, 'Campaign')
+            pks = get_table_key_properties(selected_streams['campaigns']) or selected_streams['campaigns'].key_properties
+            singer.write_schema('campaigns', schema, pks)
             with metrics.record_counter('campaigns') as counter:
                 singer.write_records('campaigns',
                                      filter_selected_fields_many(selected_fields, campaigns))
@@ -548,7 +555,9 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
                 LOGGER.info('Syncing AdGroups for Account: {}, Campaign: {}'.format(
                     account_id, campaign_id))
                 selected_fields = get_selected_fields(selected_streams['ad_groups'])
-                singer.write_schema('ad_groups', get_core_schema(client, 'AdGroup'), ['Id'])
+                schema = get_core_schema(client, 'AdGroup')
+                pks = get_table_key_properties(selected_streams['ad_groups']) or selected_streams['ad_groups'].key_properties
+                singer.write_schema('ad_groups', schema, pks)
                 with metrics.record_counter('ad_groups') as counter:
                     singer.write_records('ad_groups',
                                          filter_selected_fields_many(selected_fields, ad_groups))
@@ -575,7 +584,9 @@ def sync_ads(client, selected_streams, ad_group_ids):
 
         if 'Ad' in response_dict:
             selected_fields = get_selected_fields(selected_streams['ads'])
-            singer.write_schema('ads', get_core_schema(client, 'Ad'), ['Id'])
+            schema = get_core_schema(client, 'Ad')
+            pks = get_table_key_properties(selected_streams['ads']) or selected_streams['ads'].key_properties
+            singer.write_schema('ads', schema, pks)
             with metrics.record_counter('ads') as counter:
                 ads = response_dict['Ad']
                 singer.write_records('ads', filter_selected_fields_many(selected_fields, ads))
@@ -742,7 +753,8 @@ async def sync_report_interval(client, account_id, report_stream,
     report_name = stringcase.pascalcase(report_stream.stream)
 
     report_schema = get_report_schema(client, report_name)
-    singer.write_schema(report_stream.stream, report_schema, [])
+    pks = get_table_key_properties(report_stream) or report_stream.key_properties
+    singer.write_schema(report_stream.stream, report_schema, pks=pks)
 
     report_time = arrow.get().isoformat()
 
@@ -756,7 +768,6 @@ async def sync_report_interval(client, account_id, report_stream,
     try:
         success, download_url = await poll_report(client, account_id, report_name,
                                                   start_date, end_date, request_id)
-
     except Exception as some_error:
         LOGGER.info('The request_id %s for %s is invalid, generating a new one',
                     request_id,
