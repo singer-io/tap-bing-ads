@@ -60,6 +60,12 @@ def get_user_agent():
 class InvalidDateRangeEnd(Exception):
     pass
 
+def on_giveup(details):
+    LOGGER.error("Giving up on request after %d tries with args: %s", details.get('tries'), details.get('args'))
+    t, v, tb = sys.exc_info()
+    raise v.with_traceback(tb)
+
+
 def log_service_call(service_method, account_id):
     def wrapper(*args, **kwargs):
         log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + \
@@ -79,6 +85,7 @@ def log_service_call(service_method, account_id):
                                                      if oe.ErrorCode == 'InvalidCustomDateRangeEnd']
                     if any(invalid_date_range_end_errors):
                         raise InvalidDateRangeEnd(invalid_date_range_end_errors) from e
+                    LOGGER.info(e)
                     LOGGER.info('Caught exception for account: {}'.format(account_id))
                     raise Exception(operation_errors) from e
                 if hasattr(e.fault.detail, 'AdApiFaultDetail'):
@@ -623,6 +630,11 @@ def type_report_row(row):
 
         row[field_name] = value
 
+@backoff.on_exception(backoff.expo,
+                      Exception,
+                      max_tries=5,
+                      on_giveup=on_giveup,
+                      factor=2)
 async def poll_report(client, account_id, report_name, start_date, end_date, request_id):
     download_url = None
     with metrics.job_timer('generate_report'):
@@ -743,6 +755,11 @@ async def sync_report(client, account_id, report_stream):
         if success:
             current_start_date = current_end_date.shift(days=1)
 
+@backoff.on_exception(backoff.expo,
+                      Exception,
+                      max_tries=5,
+                      on_giveup=on_giveup,
+                      factor=2)
 async def sync_report_interval(client, account_id, report_stream,
                                start_date, end_date):
     state_key = '{}_{}'.format(account_id, report_stream.stream)
