@@ -527,7 +527,8 @@ def sync_accounts_stream(account_ids, catalog_item):
     singer.write_state(STATE)
 
 def sync_campaigns(client, account_id, selected_streams):
-    response = client.GetCampaignsByAccountId(AccountId=account_id)
+    # CampaignType defaults to 'Search', but there are other types of campaigns
+    response = client.GetCampaignsByAccountId(AccountId=account_id, CampaignType='Search Shopping DynamicSearchAds')
     response_dict = sobject_to_dict(response)
     if 'Campaign' in response_dict:
         campaigns = response_dict['Campaign']
