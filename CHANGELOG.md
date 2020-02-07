@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.9
+  * Adds a CampaignType to the call to GetCampaignsByAccountId to bring back more than the default "Search" campaigns [#46](https://github.com/singer-io/tap-bing-ads/pull/46)
+
 ## 2.0.8
   * Updates bing-ads dependency to support v13 and implements the version migration [#37](https://github.com/singer-io/tap-bing-ads/pull/37)
 
