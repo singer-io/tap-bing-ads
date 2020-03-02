@@ -750,7 +750,8 @@ async def sync_report_interval(client, account_id, report_stream,
     report_name = stringcase.pascalcase(report_stream.stream)
 
     report_schema = get_report_schema(client, report_name)
-    singer.write_schema(report_stream.stream, report_schema, [])
+    report_key_properties = report_stream.to_dict().get('key_properties', [])
+    singer.write_schema(report_stream.stream, report_schema, report_key_properties)
 
     report_time = arrow.get().isoformat()
 
