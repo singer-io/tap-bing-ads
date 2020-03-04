@@ -93,5 +93,7 @@ ENV/
 ._*
 
 # Singer files
-*.config.json
-*.catalog.json
+*config.json
+*catalog.json
+.vscode
+Pipfile*

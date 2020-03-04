@@ -34,7 +34,7 @@ REPORT_SPECIFIC_REQUIRED_FIELDS = {
     ]
 }
 
-## Any not listed here are strings
+# Any not listed here are strings
 REPORTING_FIELD_TYPES = {
     'AccountId': 'integer',
     'AdId': 'integer',
