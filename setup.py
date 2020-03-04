@@ -3,29 +3,25 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='tap-bing-ads',
+    name="tap-bing-ads",
     version="2.0.9",
-    description='Singer.io tap for extracting data from the Bing Ads API',
-    author='Stitch',
-    url='http://singer.io',
-    classifiers=['Programming Language :: Python :: 3 :: Only'],
-    py_modules=['tap_bingads'],
+    description="Singer.io tap for extracting data from the Bing Ads API",
+    author="Stitch",
+    url="http://singer.io",
+    classifiers=["Programming Language :: Python :: 3 :: Only"],
+    py_modules=["tap_bingads"],
     install_requires=[
-        'arrow==0.12.0',
-        'bingads==13.0.1',
-        'requests==2.20.0',
-        'singer-python==5.9.0',
-        'stringcase==1.2.0',
-        'backoff==1.8.0',
+        "arrow==0.12.0",
+        "bingads==13.0.1",
+        "requests==2.20.0",
+        "singer-python==5.9.0",
+        "stringcase==1.2.0",
+        "backoff==1.8.0",
     ],
-    extras_require={
-        'dev': [
-            'ipdb'
-        ]
-    },
-    entry_points='''
+    extras_require={"dev": ["ipdb"]},
+    entry_points="""
       [console_scripts]
       tap-bing-ads=tap_bing_ads:main
-    ''',
-    packages=find_packages()
+    """,
+    packages=find_packages(),
 )
