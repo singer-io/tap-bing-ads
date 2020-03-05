@@ -1072,13 +1072,12 @@ def get_accounts_customer():
     except Exception as err:
         LOGGER.error(f"Other error occurred: {err}")
     response = response.content.decode("utf-8")
-    customer_id = response[
-        response.find("<a:CustomerId>") + 14 : response.find("</a:CustomerId>")
-    ]
-    account_ids = response[
-        response.find("<a:AccountId>") + 13 : response.find("</a:AccountId>")
-    ]
 
+    response = xmltodict.parse(response)["s:Envelope"]["s:Body"][
+        "FindAccountsOrCustomersInfoResponse"
+    ]["AccountInfoWithCustomerData"]["a:AccountInfoWithCustomerData"]
+    customer_id = response["a:CustomerId"]
+    account_ids = response["a:AccountId"]
     return customer_id, account_ids
 
 
