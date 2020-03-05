@@ -21,6 +21,7 @@ import backoff
 from requests.exceptions import HTTPError
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
+import xmltodict
 
 LOGGER = singer.get_logger()
 
