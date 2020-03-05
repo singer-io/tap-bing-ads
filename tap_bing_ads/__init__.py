@@ -18,16 +18,15 @@ import stringcase
 import requests
 import arrow
 import backoff
-
+from requests.exceptions import HTTPError
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
+import xmltodict
 
 LOGGER = singer.get_logger()
 
 REQUIRED_CONFIG_KEYS = [
     "start_date",
-    "customer_id",
-    "account_ids",
     "oauth_client_id",
     "oauth_client_secret",
     "refresh_token",
@@ -1037,12 +1036,60 @@ async def do_sync_all_accounts(account_ids, catalog):
     await asyncio.gather(*sync_account_data_tasks)
 
 
+def refresh_access_token():
+    authentication = OAuthWebAuthCodeGrant(
+        CONFIG["oauth_client_id"], CONFIG["oauth_client_secret"], ""
+    )
+    return authentication.request_oauth_tokens_by_refresh_token(
+        CONFIG["refresh_token"]
+    )._access_token
+
+
+def get_accounts_customer():
+    access_token = refresh_access_token()
+    TOPN = 1
+    url = "https://clientcenter.api.bingads.microsoft.com/Api/CustomerManagement/v13/CustomerManagementService.svc"
+    headers = {"content-type": "text/xml", "SOAPAction": "FindAccountsOrCustomersInfo"}
+    body = f"""<s:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+    <s:Header xmlns="https://bingads.microsoft.com/Customer/v13">
+        <Action mustUnderstand="1">FindAccountsOrCustomersInfo</Action>
+        <AuthenticationToken i:nil="false">{access_token}</AuthenticationToken>
+        <DeveloperToken i:nil="false">{CONFIG['developer_token']}</DeveloperToken>
+    </s:Header>
+    <s:Body>
+        <FindAccountsOrCustomersInfoRequest xmlns="https://bingads.microsoft.com/Customer/v13">
+            <CustomerNameFilter i:nil="false">" "</CustomerNameFilter>
+            <TopN>{TOPN}</TopN>
+        </FindAccountsOrCustomersInfoRequest>
+    </s:Body>
+    </s:Envelope>"""
+
+    try:
+        response = requests.post(url, data=body, headers=headers)
+        response.raise_for_status()
+    except HTTPError as http_err:
+        LOGGER.error(f"HTTP error occurred: {http_err}")
+    except Exception as err:
+        LOGGER.error(f"Other error occurred: {err}")
+    response = response.content.decode("utf-8")
+
+    response = xmltodict.parse(response)["s:Envelope"]["s:Body"][
+        "FindAccountsOrCustomersInfoResponse"
+    ]["AccountInfoWithCustomerData"]["a:AccountInfoWithCustomerData"]
+    customer_id = response["a:CustomerId"]
+    account_ids = response["a:AccountId"]
+    return customer_id, account_ids
+
+
 async def main_impl():
+
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
 
     CONFIG.update(args.config)
+    customer_id, account_ids = get_accounts_customer()
+    CONFIG.update({"customer_id": customer_id})
     STATE.update(args.state)
-    account_ids = CONFIG["account_ids"].split(",")
+    account_ids = account_ids.split(",")
 
     if args.discover:
         do_discover(account_ids)

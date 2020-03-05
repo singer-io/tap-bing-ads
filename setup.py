@@ -17,6 +17,7 @@ setup(
         "singer-python==5.9.0",
         "stringcase==1.2.0",
         "backoff==1.8.0",
+        "xmltodict==0.12.0",
     ],
     extras_require={"dev": ["ipdb"]},
     entry_points="""
