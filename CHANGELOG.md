@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.10
+  * Adds `TopImpressionRatePercent`, `TopImpressionShareLostToBudgetPercent`, `TopImpressionShareLostToRankPercent`, `TopImpressionSharePercent` to field exclusions [#51](https://github.com/singer-io/tap-bing-ads/pull/51)
+
 ## 2.0.9
   * Adds a CampaignType to the call to GetCampaignsByAccountId to bring back more than the default "Search" campaigns [#46](https://github.com/singer-io/tap-bing-ads/pull/46)
 
