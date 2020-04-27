@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.11
+  * Adds `Goal` and `GoalType` as exclusions to the `AdGroupPerformanceReport` report [#53](https://github.com/singer-io/tap-bing-ads/pull/53)
+
 ## 2.0.10
   * Adds `TopImpressionRatePercent`, `TopImpressionShareLostToBudgetPercent`, `TopImpressionShareLostToRankPercent`, `TopImpressionSharePercent` to field exclusions [#51](https://github.com/singer-io/tap-bing-ads/pull/51)
 
