@@ -25,7 +25,9 @@ EXCLUSIONS = {
         'Attributes': [
             'BidMatchType',
             'DeviceOS',
-            'TopVsOther'
+            'TopVsOther',
+            'Goal',
+            'GoalType'
         ],
         'ImpressionSharePerformanceStatistics': [
             'AbsoluteTopImpressionSharePercent',
