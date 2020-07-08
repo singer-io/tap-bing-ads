@@ -48,26 +48,24 @@ EXCLUSIONS = {
     'CampaignPerformanceReport': {
         'Attributes': [
             'BidMatchType',
-            'DeviceOS',
-            'TopVsOther',
             'BudgetAssociationStatus',
             'BudgetName',
             'BudgetStatus'
+            'DeviceOS',
+            'Goal',
+            'GoalType',
+            'TopVsOther',
         ],
         'ImpressionSharePerformanceStatistics': [
             'AbsoluteTopImpressionSharePercent',
+            'AudienceImpressionLostToBudgetPercent',
+            'AudienceImpressionLostToRankPercent',
+            'AudienceImpressionSharePercent',
             'ClickSharePercent',
             'ExactMatchImpressionSharePercent',
-            'ImpressionLostToAdRelevancePercent',
-            'ImpressionLostToBidPercent',
             'ImpressionLostToBudgetPercent',
-            'ImpressionLostToExpectedCtrPercent',
-            'ImpressionLostToRankPercent',
-            'ImpressionSharePercent',
-            'TopImpressionRatePercent',
-            'TopImpressionShareLostToBudgetPercent',
-            'TopImpressionShareLostToRankPercent',
-            'TopImpressionSharePercent'
+            'ImpressionLostToRankAggPercent',
+            'ImpressionSharePercent'
         ]
     },
     'ProductDimensionPerformanceReport': {
