@@ -391,10 +391,17 @@ def metadata_fn(report_name, field, required_fields):
         mdata = {"metadata": {"inclusion": "available"}, "breadcrumb": ["properties", field]}
 
     if EXCLUSIONS.get(report_name):
-        if field in EXCLUSIONS[report_name]['Attributes']:
-            mdata['metadata']['fieldExclusions'] = [['properties', p] for p in EXCLUSIONS[report_name]['ImpressionSharePerformanceStatistics']]
-        if field in EXCLUSIONS[report_name]['ImpressionSharePerformanceStatistics']:
-            mdata['metadata']['fieldExclusions'] = [['properties', p] for p in EXCLUSIONS[report_name]['Attributes']]
+        for group_set in EXCLUSIONS[report_name]:
+            if field in group_set['Attributes']:
+                mdata['metadata']['fieldExclusions'] = [
+                    *mdata['metadata'].get('fieldExclusions', []),
+                    *[['properties', p] for p in group_set['ImpressionSharePerformanceStatistics']]
+                ]
+            if field in group_set['ImpressionSharePerformanceStatistics']:
+                mdata['metadata']['fieldExclusions'] = [
+                    *mdata['metadata'].get('fieldExclusions', []),
+                    *[['properties', p] for p in group_set['Attributes']]
+                ]
 
     return mdata
 
