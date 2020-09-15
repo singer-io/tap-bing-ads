@@ -20,19 +20,12 @@ jobs:
             source dev_env.sh
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
             run-test --tap=tap-bing-ads \
-                       --target=target-stitch \
-                       --orchestrator=stitch-orchestrator \
-                       --email=harrison+sandboxtest@stitchdata.com \
-                       --password=$SANDBOX_PASSWORD \
-                       --client-id=50 \
-                       tests
-            # run-a-test --tap=tap-bing-ads \
-            #            --target=target-stitch \
-            #            --orchestrator=stitch-orchestrator \
-            #            --email=harrison+sandboxtest@stitchdata.com \
-            #            --password=$SANDBOX_PASSWORD \
-            #            --client-id=50 \
-            #            tap_tester.suites.bing_ads
+                     --target=target-stitch \
+                     --orchestrator=stitch-orchestrator \
+                     --email=harrison+sandboxtest@stitchdata.com \
+                     --password=$SANDBOX_PASSWORD \
+                     --client-id=50 \
+                     tests
 workflows:
   version: 2
   commit:
