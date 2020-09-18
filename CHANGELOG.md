@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.13
+  * Add exclusions for 3 fields missing from the Microsoft Ads documentation for the `ad_group_performance_report` [#58](https://github.com/singer-io/tap-bing-ads/pull/58)
+
+## 2.0.12
+  * Exclusions pattern update to include the second group of exclusions for `ad_group_performace_report` and `campaign_performance_report` mentioned in Microsoft's documentation above the exclusion tables. [#56](https://github.com/singer-io/tap-bing-ads/pull/56)
+
 ## 2.0.11
   * Adds `Goal` and `GoalType` as exclusions to the `AdGroupPerformanceReport` report [#53](https://github.com/singer-io/tap-bing-ads/pull/53)
 
