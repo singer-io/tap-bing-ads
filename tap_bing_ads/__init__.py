@@ -108,7 +108,7 @@ def create_sdk_client(service, account_id):
         CONFIG['oauth_client_id'],
         CONFIG['oauth_client_secret'],
         '',
-        require_live_connect=True) ## redirect URL not needed for refresh token
+        require_live_connect=CONFIG.get('require_live_connect', True)) ## redirect URL not needed for refresh token
 
     authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
 
