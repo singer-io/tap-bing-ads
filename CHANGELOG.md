@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.14
+  * Added optional `require_live_connect` config parameter [#63](https://github.com/singer-io/tap-bing-ads/pull/63)
+
 ## 2.0.13
   * Add exclusions for 3 fields missing from the Microsoft Ads documentation for the `ad_group_performance_report` [#58](https://github.com/singer-io/tap-bing-ads/pull/58)
 
