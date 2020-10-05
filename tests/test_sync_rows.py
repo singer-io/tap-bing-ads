@@ -37,7 +37,7 @@ class BingAdsSyncRows(BingAdsBaseTest):
         #     c_annotated = menagerie.get_annotated_schema(conn_id, c['stream_id'])
         #     c_metadata = metadata.to_map(c_annotated['metadata'])
         #     connections.select_catalog_and_fields_via_metadata(conn_id, c, c_annotated, [], [])
-        assert None
+
         conn_id = self.create_connection()
 
         # Clear state before our run
