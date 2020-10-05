@@ -30,7 +30,8 @@ jobs:
                      --client-id=50 \
                      tests
       - slack/notify-on-failure:
-          only_for_branches: master,add-slack-orb
+          only_for_branches: master
+
 workflows:
   version: 2
   commit:
