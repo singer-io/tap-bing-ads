@@ -32,7 +32,7 @@ jobs:
       - slack/status:
           #-slack/notify-on-failure
           channel: tap-tester
-          only_for_branches: master, add-slack-orb
+          only_for_branches: master,add-slack-orb
 workflows:
   version: 2
   commit:
