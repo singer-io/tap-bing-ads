@@ -29,8 +29,7 @@ jobs:
                      --password=$SANDBOX_PASSWORD \
                      --client-id=50 \
                      tests
-      - slack/status:
-          #-slack/notify-on-failure
+      - slack/notify-on-failure:
           channel: tap-tester
           only_for_branches: master,add-slack-orb
 workflows:
