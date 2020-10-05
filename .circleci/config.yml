@@ -31,8 +31,8 @@ jobs:
                      tests
       - slack/status:
           #-slack/notify-on-failure
-          channel: 'tap-tester'
-
+          channel: tap-tester
+          only_for_branches: master
 workflows:
   version: 2
   commit:
