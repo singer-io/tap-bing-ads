@@ -15,7 +15,7 @@ class BingAdsBaseTest(unittest.TestCase):
     Setup expectations for test sub classes
     Run discovery for as a prerequisite for most tests
     """
-
+    AUTOMATIC_FIELDS = "automatic"
     REPLICATION_KEYS = "valid-replication-keys"
     PRIMARY_KEYS = "table-key-properties"
     FOREIGN_KEYS = "table-foreign-key-properties"
@@ -71,22 +71,19 @@ class BingAdsBaseTest(unittest.TestCase):
         }
 
         accounts_meta = {
-            self.PRIMARY_KEYS: {"Id", "LastModifiedTime"},
+            self.PRIMARY_KEYS: {"Id"},
             self.REPLICATION_METHOD: self.INCREMENTAL,
-            self.REPLICATION_KEYS: 'LastModifiedTime'
+            self.REPLICATION_KEYS: {"LastModifiedTime"}
         }
 
         return {
-            'accounts': accounts_meta,
-            'campaigns': default,
-            'ad_groups': default,
-            'ads': default,
+            "accounts": accounts_meta,
             "ad_extension_detail_report": default,
             "ad_group_performance_report": default,
             "ad_groups": default,
             "ad_performance_report": default,
             "ads": default,
-            "age_gender_demographic_report": default,
+            "age_gender_audience_report": default,
             "audience_performance_report": default,
             "campaign_performance_report": default,
             "campaigns": default,
@@ -94,8 +91,6 @@ class BingAdsBaseTest(unittest.TestCase):
             "goals_and_funnels_report": default,
             "keyword_performance_report": default,
             "search_query_performance_report": default,
-            "accounts": default,
-            "ad_extension_detail_report": default,
         }
 
     def expected_streams(self):
@@ -142,6 +137,12 @@ class BingAdsBaseTest(unittest.TestCase):
         return {table: properties.get(self.REPLICATION_METHOD, None)
                 for table, properties
                 in self.expected_metadata().items()}
+
+    def expected_automatic_fields(self):
+        auto_fields = {}
+        for k, v in self.expected_metadata().items():
+            auto_fields[k] = v.get(self.PRIMARY_KEYS, set()) | v.get(self.REPLICATION_KEYS, set())
+        return auto_fields
 
     def setUp(self):
         """Verify that you have set the prerequisites to run the tap (creds, etc.)"""
