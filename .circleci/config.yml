@@ -15,11 +15,6 @@ jobs:
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
             pip install -U 'pip<19.2' setuptools
             pip install .[dev]
-      - run:
-          name: 'JSON Validator'
-          command: |
-            source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            stitch-validate-json /usr/local/share/virtualenvs/tap-bing-ads/lib/python3.5/site-packages/tap_bing_ads/schemas/*.json
       - add_ssh_keys
       - run:
           name: 'Integration Tests'
