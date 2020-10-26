@@ -31,7 +31,8 @@ REPORT_SPECIFIC_REQUIRED_FIELDS = {
         'Clicks',
         'Ctr',
         'Impressions'
-    ]
+    ],
+    'GoalsAndFunnelsReport': ['Goal']
 }
 
 ## Any not listed here are strings
