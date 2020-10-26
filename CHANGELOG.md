@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.15
+  * Add Required Field for GoalsAndFunnels Report [#55](https://github.com/singer-io/tap-bing-ads/pull/55)
+  * Update exclusions.py [#66](https://github.com/singer-io/tap-bing-ads/pull/66)
+    * Adds several new fields to Attributes and ImpressionSharePerformanceStatistics for most reports.
+    * Alphabetizes Attributes and ImpressionSharePerformanceStatistics objects in each report for easier updates / cross reference against Microsoft Documentation in the future.
+
 ## 2.0.14
   * Added optional `require_live_connect` config parameter [#63](https://github.com/singer-io/tap-bing-ads/pull/63)
 
