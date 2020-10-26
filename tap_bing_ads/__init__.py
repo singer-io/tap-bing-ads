@@ -104,10 +104,13 @@ def create_sdk_client(service, account_id):
     LOGGER.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
                 service, account_id)
 
+    require_live_connect = CONFIG.get('require_live_connect', 'True') == 'True'
+
     authentication = OAuthWebAuthCodeGrant(
         CONFIG['oauth_client_id'],
         CONFIG['oauth_client_secret'],
-        '') ## redirect URL not needed for refresh token
+        '',
+        require_live_connect=require_live_connect) ## redirect URL not needed for refresh token
 
     authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
 
@@ -391,10 +394,17 @@ def metadata_fn(report_name, field, required_fields):
         mdata = {"metadata": {"inclusion": "available"}, "breadcrumb": ["properties", field]}
 
     if EXCLUSIONS.get(report_name):
-        if field in EXCLUSIONS[report_name]['Attributes']:
-            mdata['metadata']['fieldExclusions'] = [['properties', p] for p in EXCLUSIONS[report_name]['ImpressionSharePerformanceStatistics']]
-        if field in EXCLUSIONS[report_name]['ImpressionSharePerformanceStatistics']:
-            mdata['metadata']['fieldExclusions'] = [['properties', p] for p in EXCLUSIONS[report_name]['Attributes']]
+        for group_set in EXCLUSIONS[report_name]:
+            if field in group_set['Attributes']:
+                mdata['metadata']['fieldExclusions'] = [
+                    *mdata['metadata'].get('fieldExclusions', []),
+                    *[['properties', p] for p in group_set['ImpressionSharePerformanceStatistics']]
+                ]
+            if field in group_set['ImpressionSharePerformanceStatistics']:
+                mdata['metadata']['fieldExclusions'] = [
+                    *mdata['metadata'].get('fieldExclusions', []),
+                    *[['properties', p] for p in group_set['Attributes']]
+                ]
 
     return mdata
 
