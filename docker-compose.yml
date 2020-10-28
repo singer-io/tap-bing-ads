@@ -1,0 +1,11 @@
+version: '3.7'
+services:
+  notebook:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    ports:
+      - "8889:8888"
+    command: bash -c "pip install jupyter && jupyter notebook --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token=''"

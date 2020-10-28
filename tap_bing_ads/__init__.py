@@ -10,8 +10,8 @@ from datetime import datetime
 from zipfile import ZipFile
 
 import singer
-from singer import utils, metadata, metrics
-from bingads import AuthorizationData, OAuthWebAuthCodeGrant, ServiceClient
+from singer import metadata, metrics, utils
+from bingads import AuthorizationData, OAuthDesktopMobileAuthCodeGrant, OAuthWebAuthCodeGrant, ServiceClient
 import suds
 from suds.sudsobject import asdict
 import stringcase
@@ -20,7 +20,9 @@ import arrow
 import backoff
 
 from tap_bing_ads import reports
+from tap_bing_ads.clients import log_service_call, BingBulkClient
 from tap_bing_ads.exclusions import EXCLUSIONS
+from tap_bing_ads.transform import sobject_to_dict
 
 LOGGER = singer.get_logger()
 
@@ -60,32 +62,6 @@ def get_user_agent():
 class InvalidDateRangeEnd(Exception):
     pass
 
-def log_service_call(service_method, account_id):
-    def wrapper(*args, **kwargs):
-        log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + \
-                   list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
-        LOGGER.info('Calling: {}({}) for account: {}'.format(
-            service_method.name,
-            ','.join(log_args),
-            account_id))
-        with metrics.http_request_timer(service_method.name):
-            try:
-                return service_method(*args, **kwargs)
-            except suds.WebFault as e:
-                if hasattr(e.fault.detail, 'ApiFaultDetail'):
-                    # The Web fault structure is heavily nested. This is to be sure we catch the error we want.
-                    operation_errors = e.fault.detail.ApiFaultDetail.OperationErrors
-                    invalid_date_range_end_errors = [oe for (_, oe) in operation_errors
-                                                     if oe.ErrorCode == 'InvalidCustomDateRangeEnd']
-                    if any(invalid_date_range_end_errors):
-                        raise InvalidDateRangeEnd(invalid_date_range_end_errors) from e
-                    LOGGER.info('Caught exception for account: {}'.format(account_id))
-                    raise Exception(operation_errors) from e
-                if hasattr(e.fault.detail, 'AdApiFaultDetail'):
-                    raise Exception(e.fault.detail.AdApiFaultDetail.Errors) from e
-
-    return wrapper
-
 class CustomServiceClient(ServiceClient):
     def __init__(self, name, **kwargs):
         return super().__init__(name, 'v13', **kwargs)
@@ -105,12 +81,17 @@ def create_sdk_client(service, account_id):
                 service, account_id)
 
     require_live_connect = CONFIG.get('require_live_connect', 'True') == 'True'
+    auth_flow_type = CONFIG.get('authentication_flow_type', 'web')
 
-    authentication = OAuthWebAuthCodeGrant(
-        CONFIG['oauth_client_id'],
-        CONFIG['oauth_client_secret'],
-        '',
-        require_live_connect=require_live_connect) ## redirect URL not needed for refresh token
+    if auth_flow_type == 'web':
+        authentication = OAuthWebAuthCodeGrant(
+            CONFIG['oauth_client_id'],
+            CONFIG['oauth_client_secret'],
+            '',
+            require_live_connect=require_live_connect) ## redirect URL not needed for refresh token
+    elif auth_flow_type == 'desktop_mobile':
+        authentication = OAuthDesktopMobileAuthCodeGrant(
+            client_id=CONFIG['oauth_client_id'])
 
     authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
 
@@ -122,23 +103,7 @@ def create_sdk_client(service, account_id):
 
     return CustomServiceClient(service, authorization_data=authorization_data)
 
-def sobject_to_dict(obj):
-    if not hasattr(obj, '__keylist__'):
-        return obj
 
-    out = {}
-    for key, value in asdict(obj).items():
-        if hasattr(value, '__keylist__'):
-            out[key] = sobject_to_dict(value)
-        elif isinstance(value, list):
-            out[key] = []
-            for item in value:
-                out[key].append(sobject_to_dict(item))
-        elif isinstance(value, datetime):
-            out[key] = arrow.get(value).isoformat()
-        else:
-            out[key] = value
-    return out
 
 def xml_to_json_type(xml_type):
     if xml_type == 'boolean':
@@ -552,6 +517,44 @@ def sync_campaigns(client, account_id, selected_streams):
                 counter.increment(len(campaigns))
 
         return map(lambda x: x['Id'], campaigns)
+
+
+def sync_campaigns(client, account_id, selected_streams):
+    bulk_client = BingBulkClient(CONFIG, account_id)
+
+    campaigns = []
+
+    stream = selected_streams.get('campaigns')
+
+    if stream:
+        schema = stream.schema.to_dict()
+        stream_metadata = metadata.to_map(stream.metadata)
+        singer.write_schema('campaigns', schema, ['Id'])
+
+    with metrics.record_counter('campaigns') as counter:
+        for entity in bulk_client.entities_generator(['Campaigns'], CONFIG['start_date']):
+            if not hasattr(entity, 'campaign'):
+                continue
+            # 'CampaignType' is a singleton list in the Bulk service
+            entity.campaign.CampaignType = (
+                entity.campaign.CampaignType[0]
+                if entity.campaign.CampaignType else None
+            )
+            campaign = singer.transform(
+                sobject_to_dict(entity.campaign),
+                schema,
+                stream_metadata)
+            campaigns.append(campaign)
+
+            if stream.is_selected():
+                singer.write_record(
+                    'campaigns',
+                    campaign
+                )
+                counter.increment()
+
+    return map(lambda x: x['Id'], campaigns)
+
 
 def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
     ad_group_ids = []
