@@ -7,7 +7,6 @@ from tap_tester import runner, menagerie
 from base import BingAdsBaseTest
 
 
-
 class MinimumSelectionTest(BingAdsBaseTest):
     """Test that with no fields selected for a stream automatic fields are still replicated"""
 
@@ -57,8 +56,14 @@ class MinimumSelectionTest(BingAdsBaseTest):
         # IF THERE ARE NO AUTOMATIC FIELDS FOR A STREAM
         # WE WILL NEED TO UPDATE THE BELOW TO SELECT ONE
         found_catalogs = menagerie.get_catalogs(conn_id)
-        our_catalogs = [catalog for catalog in found_catalogs if catalog.get('tap_stream_id') in self.expected_sync_streams()]
-        self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=False)
+        test_catalogs = [catalog for catalog in found_catalogs
+                         if catalog.get('tap_stream_id') in self.expected_sync_streams()]
+
+        # BUG (https://stitchdata.atlassian.net/browse/SRCE-4304)
+        # self.perform_and_verify_table_and_field_selection( # UNCOMMENT HERE
+        #     conn_id, test_catalogs, select_all_fields=False
+        # )
+        self.select_all_streams_and_fields(conn_id, test_catalogs, select_all_fields=False) # REMOVE ME when BUG fixed
 
         # Run a sync job using orchestrator
         sync_job_name = runner.run_sync_mode(self, conn_id)

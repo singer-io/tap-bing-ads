@@ -167,6 +167,30 @@ class BingAdsBaseTest(unittest.TestCase):
         menagerie.verify_check_exit_status(self, exit_status, check_job_name)
         return conn_id
 
+    def run_and_verify_check_mode(self, conn_id):
+        """
+        Run the tap in check mode and verify it succeeds.
+        This should be ran prior to field selection and initial sync.
+
+        Return the connection id and found catalogs from menagerie.
+        """
+        # run in check mode
+        check_job_name = runner.run_check_mode(self, conn_id)
+
+        # verify check exit codes
+        exit_status = menagerie.get_exit_status(conn_id, check_job_name)
+        menagerie.verify_check_exit_status(self, exit_status, check_job_name)
+
+        found_catalogs = menagerie.get_catalogs(conn_id)
+        self.assertGreater(len(found_catalogs), 0, msg="unable to locate schemas for connection {}".format(conn_id))
+
+        found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
+        diff = self.expected_check_streams().symmetric_difference(found_catalog_names)
+        self.assertEqual(len(diff), 0, msg="discovered schemas do not match: {}".format(diff))
+        print("discovered schemas are OK")
+
+        return found_catalogs
+
     def run_sync(self, conn_id):
         """
         Run a sync job and make sure it exited properly.
@@ -247,6 +271,64 @@ class BingAdsBaseTest(unittest.TestCase):
                 if bk_value < min_bookmarks[stream][stream_bookmark_key]:
                     min_bookmarks[stream][stream_bookmark_key] = bk_value
         return min_bookmarks
+
+    def perform_and_verify_table_and_field_selection(self,
+                                                     conn_id,
+                                                     test_catalogs,
+                                                     select_all_fields=True):
+        """
+        Perform table and field selection based off of the streams to select
+        set and field selection parameters. 
+
+        Verify this results in the expected streams selected and all or no
+        fields selected for those streams.
+        """
+
+        # Select all available fields or select no fields from all testable streams
+        self.select_all_streams_and_fields(
+            conn_id=conn_id, catalogs=test_catalogs, select_all_fields=select_all_fields
+        )
+
+        catalogs = menagerie.get_catalogs(conn_id)
+
+        # Ensure our selection affects the catalog
+        expected_selected = [tc.get('tap_stream_id') for tc in test_catalogs]
+        for cat in catalogs:
+            catalog_entry = menagerie.get_annotated_schema(conn_id, cat['stream_id'])
+
+            # Verify all testable streams are selected
+            selected = catalog_entry.get('annotated-schema').get('selected')
+            print("Validating selection on {}: {}".format(cat['stream_name'], selected))
+            if cat['stream_name'] not in expected_selected:
+                self.assertFalse(selected, msg="Stream selected, but not testable.")
+                continue # Skip remaining assertions if we aren't selecting this stream
+            self.assertTrue(selected, msg="Stream not selected.")
+
+            if select_all_fields:
+                # Verify all fields within each selected stream are selected
+                for field, field_props in catalog_entry.get('annotated-schema').get('properties').items():
+                    field_selected = field_props.get('selected')
+                    print("\tValidating selection on {}.{}: {}".format(
+                        cat['stream_name'], field, field_selected))
+                    self.assertTrue(field_selected, msg="Field not selected.")
+            else:
+                # Verify only automatic fields are selected
+                expected_automatic_fields = self.expected_automatic_fields().get(cat['tap_stream_id'])
+                selected_fields = self.get_selected_fields_from_metadata(catalog_entry['metadata'])
+                self.assertEqual(expected_automatic_fields, selected_fields)
+
+    @staticmethod
+    def get_selected_fields_from_metadata(metadata):
+        selected_fields = set()
+        for field in metadata:
+            is_field_metadata = len(field['breadcrumb']) > 1
+            inclusion_automatic_or_selected = (
+                field['metadata']['selected'] is True or \
+                field['metadata']['inclusion'] == 'automatic'
+            )
+            if is_field_metadata and inclusion_automatic_or_selected:
+                selected_fields.add(field['breadcrumb'][1])
+        return selected_fields
 
     @staticmethod
     def select_all_streams_and_fields(conn_id, catalogs, select_all_fields: bool = True):
