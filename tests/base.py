@@ -23,7 +23,7 @@ class BingAdsBaseTest(unittest.TestCase):
     API_LIMIT = "max-row-limit"
     INCREMENTAL = "INCREMENTAL"
     FULL_TABLE = "FULL_TABLE"
-    START_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+    START_DATE_FORMAT = "%Y-%m-%dT00:00:00Z"
 
     @staticmethod
     def tap_name():
@@ -185,13 +185,13 @@ class BingAdsBaseTest(unittest.TestCase):
         self.assertGreater(len(found_catalogs), 0, msg="unable to locate schemas for connection {}".format(conn_id))
 
         found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
-        diff = self.expected_check_streams().symmetric_difference(found_catalog_names)
+        diff = self.expected_streams().symmetric_difference(found_catalog_names)
         self.assertEqual(len(diff), 0, msg="discovered schemas do not match: {}".format(diff))
         print("discovered schemas are OK")
 
         return found_catalogs
 
-    def run_sync(self, conn_id):
+    def run_and_verify_sync(self, conn_id):
         """
         Run a sync job and make sure it exited properly.
         Return a dictionary with keys of streams synced
@@ -207,6 +207,12 @@ class BingAdsBaseTest(unittest.TestCase):
         # Verify actual rows were synced
         sync_record_count = runner.examine_target_output_file(
             self, conn_id, self.expected_streams(), self.expected_primary_keys())
+        self.assertGreater(
+            sum(sync_record_count.values()), 0,
+            msg="failed to replicate any data: {}".format(sync_record_count)
+        )
+        print("total replicated row count: {}".format(sum(sync_record_count.values())))
+
         return sync_record_count
 
     @staticmethod
