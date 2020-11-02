@@ -284,7 +284,7 @@ class BingAdsBaseTest(unittest.TestCase):
                                                      select_all_fields=True):
         """
         Perform table and field selection based off of the streams to select
-        set and field selection parameters. 
+        set and field selection parameters.
 
         Verify this results in the expected streams selected and all or no
         fields selected for those streams.
@@ -350,6 +350,29 @@ class BingAdsBaseTest(unittest.TestCase):
 
             connections.select_catalog_and_fields_via_metadata(
                 conn_id, catalog, schema, [], non_selected_properties)
+
+    @staticmethod
+    def parse_date(date_value):
+        """
+        Pass in string-formatted-datetime, parse the value, and return it as an unformatted datetime object.
+        """
+        try:
+            date_stripped = dt.strptime(date_value, "%Y-%m-%dT%H:%M:%S.%fZ")
+            return date_stripped
+        except ValueError:
+            try:
+                date_stripped = dt.strptime(date_value, "%Y-%m-%dT%H:%M:%SZ")
+                return date_stripped
+            except ValueError:
+                try:
+                    date_stripped = dt.strptime(date_value, "%Y-%m-%dT%H:%M:%S.%f+00:00")
+                    return date_stripped
+                except ValueError:
+                    try:
+                        date_stripped = dt.strptime(date_value, "%Y-%m-%dT%H:%M:%S+00:00")
+                        return date_stripped
+                    except ValueError:
+                        raise NotImplementedError("We are not accounting for dates of this format: {}".format(date_value))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
