@@ -3,6 +3,7 @@ Setup expectations for test sub classes
 Run discovery for as a prerequisite for most tests
 """
 import unittest
+import copy
 import os
 from datetime import datetime as dt
 from datetime import timezone as tz
@@ -69,28 +70,45 @@ class BingAdsBaseTest(unittest.TestCase):
             self.PRIMARY_KEYS: {"Id"},
             self.REPLICATION_METHOD: self.FULL_TABLE,
         }
-
+        default_report = {
+            self.PRIMARY_KEYS: {"_sdc_report_datetime"},
+            self.REPLICATION_METHOD: self.INCREMENTAL,
+            self.REPLICATION_KEYS: {"TimePeriod"},
+            self.FOREIGN_KEYS: {"AccountId"}
+        }
         accounts_meta = {
             self.PRIMARY_KEYS: {"Id"},
             self.REPLICATION_METHOD: self.INCREMENTAL,
             self.REPLICATION_KEYS: {"LastModifiedTime"}
         }
+        audience_report = copy.deepcopy(default_report)
+        audience_report[self.FOREIGN_KEYS].add('AudienceId')
 
+        geographic_report = copy.deepcopy(default_report)
+        geographic_report[self.FOREIGN_KEYS].add('AccountName')
+
+        search_report = copy.deepcopy(default_report)
+        search_report[self.FOREIGN_KEYS].add('SearchQuery')
+
+        extension_report = copy.deepcopy(default_report)
+        extension_report[self.FOREIGN_KEYS].update({
+            'Impressions', 'AdExtensionType', 'Ctr', 'AdExtensionPropertyValue', 'AdExtensionTypeId', 'AdExtensionId', 'Clicks'
+        })
         return {
             "accounts": accounts_meta,
-            "ad_extension_detail_report": default,
-            "ad_group_performance_report": default,
+            "ad_extension_detail_report": extension_report, # TODO |  DOCS_BUG| not in v2 docs
+            "ad_group_performance_report": default_report, # TODO | DOCS_BUG | 'ad_group' not 'adgroup'
             "ad_groups": default,
-            "ad_performance_report": default,
+            "ad_performance_report": default_report,
             "ads": default,
-            "age_gender_audience_report": default,
-            "audience_performance_report": default,
-            "campaign_performance_report": default,
+            "age_gender_audience_report": default_report, # TODO | DOCS_BUG |'_audience_' not '_performance_'
+            "audience_performance_report": audience_report, # TODO | DOCS_BUG | not in v2 docs
+            "campaign_performance_report": default_report,
             "campaigns": default,
-            "geographic_performance_report": default,
-            "goals_and_funnels_report": default,
-            "keyword_performance_report": default,
-            "search_query_performance_report": default,
+            "geographic_performance_report": geographic_report,
+            "goals_and_funnels_report": default_report,
+            "keyword_performance_report": default_report,
+            "search_query_performance_report": search_report,
         }
 
     def expected_streams(self):
