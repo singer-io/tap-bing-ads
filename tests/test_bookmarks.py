@@ -83,8 +83,7 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
         For EACH stream that is incrementally replicated there are multiple rows of data with
             different values for the replication key
         """
-        # default_start_date = self.get_properties().get('start_date')
-        self.START_DATE = '2017-06-29T00:00:00Z'
+        self.START_DATE = self.get_properties().get('start_date')
 
         # Instantiate connection with default start
         conn_id = connections.ensure_connection(self)
