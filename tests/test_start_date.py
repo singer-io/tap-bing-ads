@@ -16,9 +16,8 @@ class MySqlStartDateTest(BingAdsBaseTest):
         return "tap_tester_bing_ads_start_date_test"
 
     def expected_sync_streams(self):
-        return {
+        return {  # TODO get all these streams covered!!
             'accounts',
-            # 'ad_extension_detail_report',
             # 'ad_extension_detail_report',
             # 'ad_group_performance_report',
             'ad_groups',
@@ -30,8 +29,8 @@ class MySqlStartDateTest(BingAdsBaseTest):
             'campaigns',
             # 'geographic_performance_report',
             # 'goals_and_funnels_report',
-            # 'keyword_performance_report',
-            # 'search_query_performance_report',
+            # 'keyword_performance_report', # TODO errors on pk during sync
+            # 'search_query_performance_report', # TODO errors on pk during sync
         }
 
     def timedelta_formatted(self, dtime, days=0):
