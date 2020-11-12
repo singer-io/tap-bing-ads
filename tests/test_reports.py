@@ -44,7 +44,7 @@ class MySqlStartDateTest(BingAdsBaseTest):
         # self.start_date_2 = self.timedelta_formatted(self.start_date, days=1)
 
         # instantiate connection
-        conn_id = connections.ensure_connection(self)
+        conn_id = self.create_connection()
 
         # run check mode
         found_catalogs = self.run_and_verify_check_mode(conn_id)

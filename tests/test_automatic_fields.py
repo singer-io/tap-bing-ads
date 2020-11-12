@@ -18,12 +18,11 @@ class MinimumSelectionTest(BingAdsBaseTest):
         return {
             'accounts',
             # 'ad_extension_detail_report',
-            # 'ad_extension_detail_report',
             # 'ad_group_performance_report',
             'ad_groups',
             # 'ad_performance_report',
             'ads',
-            # 'age_gender_demographic_report',
+            # 'age_gender_audience_report',
             # 'audience_performance_report',
             # 'campaign_performance_report',
             'campaigns',
@@ -50,7 +49,8 @@ class MinimumSelectionTest(BingAdsBaseTest):
         fetch of data.  For instance if you have a limit of 250 records ensure
         that 251 (or more) records have been posted for that stream.
         """
-        conn_id = self.create_connection()
+        self.start_date = '2020-01-01T00:00:00Z'
+        conn_id = self.create_connection(original_properties=False)
 
         # Select all streams and no fields within streams
         # IF THERE ARE NO AUTOMATIC FIELDS FOR A STREAM

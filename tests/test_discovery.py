@@ -34,12 +34,7 @@ class DiscoveryTest(BingAdsBaseTest):
         """
         streams_to_test = self.expected_streams() # .difference(self.malformed_metadata_streams())
 
-        conn_id = connections.ensure_connection(self)
-        check_job_name = runner.run_check_mode(self, conn_id)
-
-        #verify check exit codes
-        exit_status = menagerie.get_exit_status(conn_id, check_job_name)
-        menagerie.verify_check_exit_status(self, exit_status, check_job_name)
+        conn_id = self.create_connection()
 
         # Verify number of actual streams discovered match expected
         catalogs = menagerie.get_catalogs(conn_id)

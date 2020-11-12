@@ -86,7 +86,7 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
         self.START_DATE = self.get_properties().get('start_date')
 
         # Instantiate connection with default start
-        conn_id = connections.ensure_connection(self)
+        conn_id = self.create_connection()
 
         # run in check mode
         found_catalogs = self.run_and_verify_check_mode(conn_id)

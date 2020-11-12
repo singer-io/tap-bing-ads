@@ -52,7 +52,7 @@ class MySqlStartDateTest(BingAdsBaseTest):
         ##########################################################################
 
         # instantiate connection
-        conn_id = connections.ensure_connection(self)
+        conn_id = self.create_connection()
 
         # run check mode
         found_catalogs = self.run_and_verify_check_mode(conn_id)
@@ -86,7 +86,7 @@ class MySqlStartDateTest(BingAdsBaseTest):
         ##########################################################################
 
         # create a new connection with the new start_date
-        conn_id = connections.ensure_connection(self, original_properties=False)
+        conn_id = self.create_connection(original_properties=False)
 
         # run check mode
         found_catalogs = self.run_and_verify_check_mode(conn_id)
