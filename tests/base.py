@@ -41,8 +41,11 @@ class BingAdsBaseTest(unittest.TestCase):
         return_value = {
             'start_date': '2017-07-01T00:00:00Z',
             'customer_id': '163875182',
-            'account_ids': '163078754',
+            'account_ids': '163078754,140168565,71086605',
         }
+        # cid=42183085 aid=71086605  uid=71069166 (RJMetrics)
+        # cid=42183085 aid=163078754 uid=71069166 (Stitch)
+        # cid=42183085 aid=140168565 uid=71069166 (TestAccount)
 
         if original:
             return return_value
@@ -96,13 +99,13 @@ class BingAdsBaseTest(unittest.TestCase):
         })
         return {
             "accounts": accounts_meta,
-            "ad_extension_detail_report": extension_report, # TODO |  DOCS_BUG| not in v2 docs
+            "ad_extension_detail_report": extension_report, # DOCS_BUG | https://stitchdata.atlassian.net/browse/DOC-1504
             "ad_group_performance_report": default_report, # TODO | DOCS_BUG | 'ad_group' not 'adgroup'
             "ad_groups": default,
             "ad_performance_report": default_report,
             "ads": default,
             "age_gender_audience_report": default_report, # TODO | DOCS_BUG |'_audience_' not '_performance_'
-            "audience_performance_report": audience_report, # TODO | DOCS_BUG | not in v2 docs
+            "audience_performance_report": audience_report, # DOCS_BUG | https://stitchdata.atlassian.net/browse/DOC-1504
             "campaign_performance_report": default_report,
             "campaigns": default,
             "geographic_performance_report": geographic_report,
@@ -167,6 +170,9 @@ class BingAdsBaseTest(unittest.TestCase):
         missing_envs = [x for x in ['TAP_BING_ADS_OAUTH_CLIENT_ID', 'TAP_BING_ADS_OAUTH_CLIENT_SECRET', 'TAP_BING_ADS_REFRESH_TOKEN', 'TAP_BING_ADS_DEVELOPER_TOKEN'] if os.getenv(x) is None]
         if missing_envs:
             raise Exception("set environment variables")
+
+    def is_report(self, stream):
+        return stream.endswith('_report')
 
     #########################
     #   Helper Methods      #
@@ -391,6 +397,7 @@ class BingAdsBaseTest(unittest.TestCase):
                         return date_stripped
                     except ValueError:
                         raise NotImplementedError("We are not accounting for dates of this format: {}".format(date_value))
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

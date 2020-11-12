@@ -69,7 +69,7 @@ class MySqlStartDateTest(BingAdsBaseTest):
                 replication_type = self.expected_replication_method().get(stream)
                 record_count = first_sync_record_count.get(stream, 0)
 
-                if stream.endswith('_report'):
+                if self.is_report(stream):
                     # Verify that all reports replicate at least 1 record
                     self.assertGreater(record_count, 0, msg="No records were replicated.")
 

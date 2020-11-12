@@ -19,7 +19,7 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
         return "tap_tester_bing_ads_incremental_replication"
 
     def expected_sync_streams(self):
-        return {  # TODO get all these streams covered!! 
+        return {  # TODO get all these streams covered!!
             'accounts',
             # 'ad_extension_detail_report',
             # 'ad_group_performance_report',
@@ -31,7 +31,7 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
             # 'campaign_performance_report',
             'campaigns',
             # 'geographic_performance_report',
-            # 'goals_and_funnels_report', 
+            # 'goals_and_funnels_report',
             # 'keyword_performance_report',
             # 'search_query_performance_report',
         }
@@ -118,7 +118,7 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
         second_sync_record_count = self.run_and_verify_sync(conn_id)
         second_sync_records = runner.get_records_from_target_output()
         second_sync_bookmarks = menagerie.get_state(conn_id)
-        
+
 
         # Test by stream
         for stream in self.expected_sync_streams():
@@ -139,7 +139,7 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
 
                 if replication_method == self.INCREMENTAL:
                     replication_key = self.expected_replication_keys().get(stream).pop()
-                    bookmark_key = 'last_record' # TODO | BUG?
+                    bookmark_key = 'last_record' # TODO | will have to adjust for reports
 
                     # Verify the first sync sets a bookmark of the expected form
                     self.assertIsNotNone(first_bookmark_key_value)
@@ -176,9 +176,8 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
                         self.assertLessEqual(replication_key_value, second_bookmark_value_utc,
                                              msg="Second sync bookmark was set incorrectly, a record with a greater rep key value was synced")
 
-                    # TODO | This requires test data to be set up correctly which proved to be difficult for accounts and reports.
-                    # # Verify the number of records in the 2nd sync is less then the first
-                    # self.assertLess(second_sync_count, first_sync_count)
+                    # Verify the number of records in the 2nd sync is less then the first
+                    self.assertLess(second_sync_count, first_sync_count)
 
                     # Verify at least 1 record was replicated in the second sync
                     self.assertGreater(second_sync_count, 0, msg="We are not fully testing bookmarking for {}".format(stream))

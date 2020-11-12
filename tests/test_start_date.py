@@ -115,37 +115,53 @@ class MySqlStartDateTest(BingAdsBaseTest):
                 record_count_1 = first_record_count_by_stream.get(stream, 0)
                 record_count_2 = record_count_by_stream_2.get(stream, 0)
 
-                # Verify that the 2nd sync resutls in less records than the 1st sync.
-                self.assertLessEqual(
-                    record_count_2, record_count_1,
-                    msg="\nStream '{}' is {}\n".format(stream, self.FULL_TABLE) +
-                    "Second sync should result in fewer records\n" +
-                    "Sync 1 start_date: {} ".format(self.start_date) +
-                    "Sync 1 record_count: {}\n".format(record_count_1) +
-                    "Sync 2 start_date: {} ".format(self.start_date_2) +
-                    "Sync 2 record_count: {}".format(record_count_2))
-
                 if replication_type == self.INCREMENTAL:
                     replication_key = next(iter(self.expected_replication_keys().get(stream)))
 
-                    # Verify replication key is greater or equal to start_date
-                    replication_dates_1 =[row.get('data').get(replication_key)
-                                for row in synced_records_1.get(stream, []).get('messages', [])]
-                    replication_dates_2 =[row.get('data').get(replication_key)
-                                for row in synced_records_2.get(stream, []).get('messages', [])]
-                    for replication_dates in [replication_dates_1, replication_dates_2]:
-                        for date in replication_dates:
-                            self.assertGreaterEqual(
-                                self.parse_date(date), self.parse_date(self.start_date),
-                                msg="Record was created prior to start date for this sync.\n" +
-                                "Sync start_date: {}\n".format(self.start_date) +
-                                "Record date: {} ".format(date)
-                            )
+                    if self.is_report(stream):
+                        # TODO keep this for now might need it for reports, delete once test is complete\
+                        # # Verify replication key is greater or equal to start_date
+                        # replication_dates_1 =[row.get('data').get(replication_key)
+                        #             for row in synced_records_1.get(stream, []).get('messages', [])]
+                        # replication_dates_2 =[row.get('data').get(replication_key)
+                        #             for row in synced_records_2.get(stream, []).get('messages', [])]
+                        # for replication_dates in [replication_dates_1, replication_dates_2]:
+                        #     for date in replication_dates:
+                        #         self.assertGreaterEqual(
+                        #             self.parse_date(date), self.parse_date(self.start_date),
+                        #             msg="Record was created prior to start date for this sync.\n" +
+                        #             "Sync start_date: {}\n".format(self.start_date) +
+                        #             "Record date: {} ".format(date)
+                        #         )
+                        pass # TODO need assertions here once data is available
 
-                    # Verify 1st sync record count > 2nd sync record count for incremental streams
-                    self.assertGreaterEqual(record_count_1, record_count_2,
-                                            msg="Expected less records on 2nd sync.")
+                    elif stream == 'accounts':
 
-                elif replication_type != self.FULL_TABLE:
+                        # Verify that the 2nd sync with a later start date replicates the same number of
+                        # records as the 1st sync.
+                        self.assertEqual(
+                            record_count_2, record_count_1,
+                            msg="Second sync should result in fewer records\n" +
+                            "Sync 1 start_date: {} ".format(self.start_date) +
+                            "Sync 1 record_count: {}\n".format(record_count_1) +
+                            "Sync 2 start_date: {} ".format(self.start_date_2) +
+                            "Sync 2 record_count: {}".format(record_count_2))
+
+                    else:
+                        raise NotImplementedError("Stream is not report-based and incremental. Must add assertion for it.")
+
+                elif replication_type == self.FULL_TABLE:
+
+                    # Verify that the 2nd sync with a later start date replicates the same number of
+                    # records as the 1st sync.
+                    self.assertEqual(
+                        record_count_2, record_count_1,
+                        msg="Second sync should result in fewer records\n" +
+                        "Sync 1 start_date: {} ".format(self.start_date) +
+                        "Sync 1 record_count: {}\n".format(record_count_1) +
+                        "Sync 2 start_date: {} ".format(self.start_date_2) +
+                        "Sync 2 record_count: {}".format(record_count_2))
+
+                else:
                     raise Exception("Expectations are set incorrectly. {} cannot have a "
                                     "replication method of {}".format(stream, replication_type))
