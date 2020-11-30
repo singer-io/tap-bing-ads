@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.16
+  * Temporary fix for `wsdl_type_to_schema` [#71](https://github.com/singer-io/tap-bing-ads/pull/71)
+
 ## 2.0.15
   * Add Required Field for GoalsAndFunnels Report [#55](https://github.com/singer-io/tap-bing-ads/pull/55)
   * Update exclusions.py [#66](https://github.com/singer-io/tap-bing-ads/pull/66)

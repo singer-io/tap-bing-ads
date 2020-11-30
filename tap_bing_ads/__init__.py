@@ -52,7 +52,7 @@ REPORT_POLL_SLEEP = 5
 SESSION = requests.Session()
 DEFAULT_USER_AGENT = 'Singer.io Bing Ads Tap'
 
-ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z]+)'
+ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z0-9]+)'
 
 def get_user_agent():
     return CONFIG.get('user_agent', DEFAULT_USER_AGENT)
@@ -288,6 +288,9 @@ def get_type_map(client):
             continue
         type_map[_type.name] = wsdl_type_to_schema(inherited_types, _type)
 
+    # Temporary change to add a new wsdl property to the type map so it can be resolved below and filled in with correct JSON schema
+    if not type_map.get('KeyValueOfstringbase64Binary'):
+        type_map['KeyValueOfstringbase64Binary'] = {'additionalProperties': False, 'type': ['null', 'object'], 'properties': {'key': {'type': ['null', 'string']}, 'value': {'type': ['null', 'string']}}}
     normalize_abstract_types(inherited_types, type_map)
 
     for _type, schema in type_map.items():
