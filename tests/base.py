@@ -20,6 +20,7 @@ class BingAdsBaseTest(unittest.TestCase):
     REPLICATION_KEYS = "valid-replication-keys"
     PRIMARY_KEYS = "table-key-properties"
     FOREIGN_KEYS = "table-foreign-key-properties"
+    REQUIRED_KEYS = "required_keys"
     REPLICATION_METHOD = "forced-replication-method"
     API_LIMIT = "max-row-limit"
     INCREMENTAL = "INCREMENTAL"
@@ -74,7 +75,7 @@ class BingAdsBaseTest(unittest.TestCase):
             self.REPLICATION_METHOD: self.FULL_TABLE,
         }
         default_report = {
-            self.PRIMARY_KEYS: set(), # TOOD BUG? {"_sdc_report_datetime"},
+            self.PRIMARY_KEYS: set(), # "_sdc_report_datetime" is added by tap
             self.REPLICATION_METHOD: self.INCREMENTAL,
             self.REPLICATION_KEYS: {"TimePeriod"},
             self.FOREIGN_KEYS: {"AccountId"}
@@ -84,19 +85,30 @@ class BingAdsBaseTest(unittest.TestCase):
             self.REPLICATION_METHOD: self.INCREMENTAL,
             self.REPLICATION_KEYS: {"LastModifiedTime"}
         }
+
+        goals_report = copy.deepcopy(default_report)
+        goals_report[self.REQUIRED_KEYS] = {'Goal', 'TimePeriod'}
+
         audience_report = copy.deepcopy(default_report)
-        audience_report[self.FOREIGN_KEYS].add('AudienceId')
+        audience_report[self.REQUIRED_KEYS] = {'AudienceId'}
 
         geographic_report = copy.deepcopy(default_report)
-        geographic_report[self.FOREIGN_KEYS].add('AccountName')
+        geographic_report[self.REQUIRED_KEYS] = {'AccountName'}
 
         search_report = copy.deepcopy(default_report)
-        search_report[self.FOREIGN_KEYS].add('SearchQuery')
+        search_report[self.REQUIRED_KEYS] = {'SearchQuery'}
 
+        # BUG_SRCE-4578 (https://stitchdata.atlassian.net/browse/SRCE-4578)
+        #               'Impressions', 'Ctr', 'Clicks' shouldn't be automatic
         extension_report = copy.deepcopy(default_report)
-        extension_report[self.FOREIGN_KEYS].update({
-            'Impressions', 'AdExtensionType', 'Ctr', 'AdExtensionPropertyValue', 'AdExtensionTypeId', 'AdExtensionId', 'Clicks'
-        })
+        extension_report[self.REQUIRED_KEYS] = {
+            'AdExtensionId', 'AdExtensionPropertyValue', 'AdExtensionType', 'AdExtensionTypeId',
+            'Impressions', 'Ctr', 'Clicks'  # Comment this line to reproduce BUG_SRCE-4578
+        }
+
+        age_gender_report = copy.deepcopy(default_report)
+        age_gender_report[self.REQUIRED_KEYS] = {'AccountName', 'AdGroupName', 'AgeGroup', 'Gender'}
+
         return {
             "accounts": accounts_meta,
             "ad_extension_detail_report": extension_report, # DOCS_BUG | https://stitchdata.atlassian.net/browse/DOC-1504
@@ -104,12 +116,12 @@ class BingAdsBaseTest(unittest.TestCase):
             "ad_groups": default,
             "ad_performance_report": default_report,
             "ads": default,
-            "age_gender_audience_report": default_report, # TODO | DOCS_BUG |'_audience_' not '_performance_'
+            "age_gender_audience_report": age_gender_report, # TODO | DOCS_BUG |'_audience_' not '_performance_'
             "audience_performance_report": audience_report, # DOCS_BUG | https://stitchdata.atlassian.net/browse/DOC-1504
             "campaign_performance_report": default_report,
             "campaigns": default,
             "geographic_performance_report": geographic_report,
-            "goals_and_funnels_report": default_report,
+            "goals_and_funnels_report": goals_report,
             "keyword_performance_report": default_report,
             "search_query_performance_report": search_report,
         }
@@ -159,12 +171,6 @@ class BingAdsBaseTest(unittest.TestCase):
                 for table, properties
                 in self.expected_metadata().items()}
 
-    def expected_automatic_fields(self):
-        auto_fields = {}
-        for k, v in self.expected_metadata().items():
-            auto_fields[k] = v.get(self.PRIMARY_KEYS, set()) | v.get(self.REPLICATION_KEYS, set())
-        return auto_fields
-
     def setUp(self):
         """Verify that you have set the prerequisites to run the tap (creds, etc.)"""
         missing_envs = [x for x in ['TAP_BING_ADS_OAUTH_CLIENT_ID', 'TAP_BING_ADS_OAUTH_CLIENT_SECRET', 'TAP_BING_ADS_REFRESH_TOKEN', 'TAP_BING_ADS_DEVELOPER_TOKEN'] if os.getenv(x) is None]
@@ -209,8 +215,7 @@ class BingAdsBaseTest(unittest.TestCase):
         self.assertGreater(len(found_catalogs), 0, msg="unable to locate schemas for connection {}".format(conn_id))
 
         found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
-        diff = self.expected_streams().symmetric_difference(found_catalog_names)
-        self.assertEqual(len(diff), 0, msg="discovered schemas do not match: {}".format(diff))
+        self.assertSetEqual(self.expected_streams(), found_catalog_names, msg="discovered schemas do not match")
         print("discovered schemas are OK")
 
         return found_catalogs
@@ -352,6 +357,9 @@ class BingAdsBaseTest(unittest.TestCase):
         selected_fields = set()
         for field in metadata:
             is_field_metadata = len(field['breadcrumb']) > 1
+            if field['metadata'].get('inclusion') is None and is_field_metadata:  # BUG_SRCE-4313 remove when addressed
+                print("Error {} has no inclusion key in metadata".format(field))  # BUG_SRCE-4313 remove when addressed
+                continue  # BUG_SRCE-4313 remove when addressed
             inclusion_automatic_or_selected = (
                 field['metadata']['selected'] is True or \
                 field['metadata']['inclusion'] == 'automatic'
@@ -403,7 +411,7 @@ class BingAdsBaseTest(unittest.TestCase):
     ### Tap Specific Methods
     ##########################################################################
     @staticmethod
-    def select_specific_fields(conn_id, catalogs, select_all_fields: bool = True, report_measure_fields: dict = {}):
+    def select_specific_fields(conn_id, catalogs, select_all_fields: bool = True, specific_fields: dict = {}):
         """Select all streams and all fields within streams"""
         for catalog in catalogs:
             schema = menagerie.get_annotated_schema(conn_id, catalog['stream_id'])
@@ -413,17 +421,17 @@ class BingAdsBaseTest(unittest.TestCase):
                 # get a list of all properties and remove measuer fields
                 non_selected_properties = set(schema.get('annotated-schema', {}).get(
                     'properties', {}).keys())
-                measure_fields = report_measure_fields.get(catalog['stream_name'], set())
-                non_selected_properties_adjusted = non_selected_properties.difference(measure_fields)
+                spec_fields = specific_fields.get(catalog['stream_name'], set())
+                non_selected_properties_adjusted = non_selected_properties.difference(spec_fields)
 
             connections.select_catalog_and_fields_via_metadata(
                 conn_id, catalog, schema, [], non_selected_properties_adjusted)
 
-    def perform_and_verify_reports_selection(self,
+    def perform_and_verify_adjusted_selection(self,
                                               conn_id,
                                               test_catalogs,
                                               select_all_fields,
-                                              report_measure_fields):
+                                              specific_fields):
         """
         Perform table and field selection based off of the streams to select
         set and field selection parameters.
@@ -432,40 +440,61 @@ class BingAdsBaseTest(unittest.TestCase):
         fields selected for those streams.
         """
 
-        # Select all available fields or select no fields from all testable streams
+        # Select specifc fields from all testable streams
         self.select_specific_fields(conn_id=conn_id, catalogs=test_catalogs,
                                     select_all_fields=select_all_fields,
-                                    report_measure_fields=report_measure_fields)
+                                    specific_fields=specific_fields)
 
         catalogs = menagerie.get_catalogs(conn_id)
 
-        # TODO uncomment when bug (BUG_2) addressed in automatic fields
-        # # Ensure our selection affects the catalog
-        # expected_selected = [tc.get('tap_stream_id') for tc in test_catalogs]
-        # for cat in catalogs:
-        #     catalog_entry = menagerie.get_annotated_schema(conn_id, cat['stream_id'])
+        # Ensure our selection affects the catalog
+        expected_selected = [tc.get('tap_stream_id') for tc in test_catalogs]
+        for cat in catalogs:
+            with self.subTest(cat=cat):
+                catalog_entry = menagerie.get_annotated_schema(conn_id, cat['stream_id'])
 
-        #     # Verify all testable streams are selected
-        #     selected = catalog_entry.get('annotated-schema').get('selected')
-        #     print("Validating selection on {}: {}".format(cat['tap_stream_id'], selected))
-        #     if cat['stream_name'] not in expected_selected:
-        #         self.assertFalse(selected, msg="Stream selected, but not testable.")
-        #         continue # Skip remaining assertions if we aren't selecting this stream
-        #     self.assertTrue(selected, msg="Stream not selected.")
+                # Verify all testable streams are selected
+                selected = catalog_entry.get('annotated-schema').get('selected')
+                print("Validating selection on {}: {}".format(cat['tap_stream_id'], selected))
+                if cat['stream_name'] not in expected_selected:
+                    self.assertFalse(selected, msg="Stream selected, but not testable.")
+                    continue  # Skip remaining assertions if we aren't selecting this stream
+                self.assertTrue(selected, msg="Stream not selected.")
 
-        #     if select_all_fields:
-        #         # Verify all fields within each selected stream are selected
-        #         for field, field_props in catalog_entry.get('annotated-schema').get('properties').items():
-        #             field_selected = field_props.get('selected')
-        #             print("\tValidating selection on {}.{}: {}".format(
-        #                 cat['stream_name'], field, field_selected))
-        #             self.assertTrue(field_selected, msg="Field not selected.")
-        #     else:
-        #         # Verify only automatic fields are selected
-        #         expected_fields = self.expected_automatic_fields().get(cat['tap_stream_id']) | report_measure_fields.get(cat['tap_stream_id'], set())
-        #         selected_fields = self.get_selected_fields_from_metadata(catalog_entry['metadata'])
-        #         self.assertEqual(expected_fields, selected_fields)
+                if select_all_fields:
+                    # Verify all fields within each selected stream are selected
+                    for field, field_props in catalog_entry.get('annotated-schema').get('properties').items():
+                        field_selected = field_props.get('selected')
+                        print("\tValidating selection on {}.{}: {}".format(
+                            cat['stream_name'], field, field_selected))
+                        self.assertTrue(field_selected, msg="Field not selected.")
+                else:
+                    for field, field_props in catalog_entry.get('annotated-schema').get('properties').items():
+                        field_selected = field_props.get('selected')
+                        if field_selected:
+                            print("\tValidating selection on {}.{}: {}".format(
+                                cat['stream_name'], field, field_selected))
 
+                    # Verify only automatic fields are selected
+                    # TODO uncomment lines below to reporduce BUG_SRCE-4313 from automatic fields tests
+                    # expected_fields = self.expected_automatic_fields().get(cat['tap_stream_id']) | \
+                    #     specific_fields.get(cat['tap_stream_id'], set())
+                    # if cat['tap_stream_id'].endswith('_report'):
+                    #     expected_fields.update({'_sdc_report_datetime'})  # tap applies sdc as pk for all reports
+                    # selected_fields = self.get_selected_fields_from_metadata(catalog_entry['metadata'])
+                    # self.assertSetEqual(expected_fields, selected_fields)
+
+    def expected_automatic_fields(self):
+        auto_fields = {}
+        for k, v in self.expected_metadata().items():
+            auto_fields[k] = v.get(self.PRIMARY_KEYS, set()) | v.get(self.REPLICATION_KEYS, set()) \
+                | v.get(self.FOREIGN_KEYS, set()) | v.get(self.REQUIRED_KEYS, set())
+        return auto_fields
+
+    def expected_required_fields(self):
+        return {table: properties.get(self.REQUIRED_KEYS, set())
+                for table, properties
+                in self.expected_metadata().items()}
 
     ##########################################################################
     ### Initialize start date TODO is this needed?

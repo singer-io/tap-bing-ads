@@ -15,49 +15,71 @@ class MinimumSelectionTest(BingAdsBaseTest):
         return "tap_tester_bing_ads_minimum_fields_test"
 
     def expected_sync_streams(self):
+        # BUG_SRCE-4313 To reproduce grep jira id across tests dir and comment/uncomment correpsonding lines.
+        #               You will need to comment out all _report streams prior to running test as well.
+        #               You will probably get an OperationError during the sync, that's because we aren't selecting any fields
+        #               prior to the sync, this means only automatic fields will be replicated. Except we aren't marking the
+        #               necessary fields as automatic. Hence this bug.
         return {
             'accounts',
             'ad_extension_detail_report',
-            # 'ad_group_performance_report',
+            'ad_group_performance_report',
             'ad_groups',
-            # 'ad_performance_report',
+            'ad_performance_report',
             'ads',
-            # 'age_gender_audience_report',
-            # 'audience_performance_report',
-            # 'campaign_performance_report',
+            'age_gender_audience_report',
+            'audience_performance_report',
+            'campaign_performance_report',
             'campaigns',
-            # 'geographic_performance_report',
-            # 'goals_and_funnels_report',  # BUG_1 https://stitchdata.atlassian.net/browse/SRCE-4549
-            # 'keyword_performance_report',
+            'geographic_performance_report',
+            'goals_and_funnels_report',  # Unable to generate data for this stream, workaround in test
+            'keyword_performance_report',
             'search_query_performance_report',
         }
 
     def report_measure_fields(self):
+        minimum_measure_fields = {'Clicks'}
+        stream_to_fields = {
+            stream: minimum_measure_fields
+            for stream in self.expected_sync_streams() if stream.endswith('_report')
+        }
+        stream_to_fields['goals_and_funnels_report'] = {'Assists'}
+
+        return stream_to_fields
+
+    def report_automatic_fields(self):
         """
         Most reports inherit the minimum required fields and they do not need to be specified to run a sync.
         Others have several measures (fields) that MUST be selected to generate a valid report.
+        All reports must have at least 1 performance statistic such as Clicks, Conversions, etc. selected.
 
         These fields can be foound by looking at the Requirements specs withing the value-sets section of docs:
             https://docs.microsoft.com/en-us/advertising/reporting-service/reporting-value-sets?view=bingads-13
 
-        TODO THIS METHOD IS REDUNDANT BUT SOURCE OF TRUTH IS UNCLEAR AND IT IS BEST TO BE EXPLICIT.
-             Move to expected_metatdata in base.py once bugs are addressed. 
+        TODO Replace this method with the above commented method once BUG_SRCE-4313 is addressed
         """
-        minimum_measure_fields = set()
-
+        minimum_measure_fields = {'Clicks'}
+        report_required_fields = self.expected_required_fields()
         stream_to_fields = {
-            stream: minimum_measure_fields
-            for stream in self.expected_sync_streams()
+            stream: minimum_measure_fields | report_required_fields.get(stream)
+            for stream in self.expected_sync_streams() if stream.endswith('_report')
         }
 
-        # stream_to_fields['ad_group_performance_report'] = {'TimePeriod'}
+        stream_to_fields['goals_and_funnels_report'].remove('Clicks')
+        stream_to_fields['goals_and_funnels_report'].update({'Assists'})
 
-        # stream_to_fields['goals_and_funnels_report'] = {'Goal', 'TimePeriod'}  # BUG_1
+        return stream_to_fields
 
-        stream_to_fields['ad_extension_detail_report'] = {'AdExtensionId', 'AdExtensionPropertyValue',
-                                                          'AdExtensionType', 'AdExtensionTypeId', 'TimePeriod'}
-
-        # stream_to_fields['age_gender_audience_report'] = {'AccountName', 'AdGroupName', 'AgeGroup', 'Gender', 'TimePeriod'}
+    def parent_automatic_fields(self):
+        """
+        TODO This is only needed because of BUG_SRCE-4313 once that is addressed and metadata is
+        updated this can be removed.
+        """
+        auto_fields = self.expected_automatic_fields()
+        stream_to_fields = {
+            stream: auto_fields.get(stream)
+            for stream in self.expected_sync_streams() if not stream.endswith('_report')
+        }
 
         return stream_to_fields
 
@@ -78,10 +100,18 @@ class MinimumSelectionTest(BingAdsBaseTest):
         # Select all (testable) report streams and only fields which are automatic and/or required by bing to genereate a report
         found_catalogs = menagerie.get_catalogs(conn_id)
         test_catalogs = [catalog for catalog in found_catalogs
-                        if catalog.get('tap_stream_id') in self.expected_sync_streams()]
-        self.perform_and_verify_reports_selection(
-            conn_id, test_catalogs, select_all_fields=False, report_measure_fields=self.report_measure_fields()
+                       if catalog.get('tap_stream_id') in self.expected_sync_streams()]
+
+        # BUG_SRCE-4313 (https://stitchdata.atlassian.net/browse/SRCE-4313) streams missing automatic fields
+        specific_fields = {**self.report_automatic_fields(), **self.parent_automatic_fields()} # COMMENT to reproduce
+        # specific_fields = {**self.report_measure_fields(), **self.parent_automatic_fields()} #  UNCOMMENT to reproduce
+        # specific_fields = self.report_measure_fields()  # TODO Use this line once bugs addressed.
+
+        self.perform_and_verify_adjusted_selection(
+            conn_id, test_catalogs, select_all_fields=False, specific_fields=specific_fields
         )
+
+        # COMMENT EVERYTHING DOWN FROM HERE TO ADDRESS BUG_SRCE-4313
 
         # Run a sync job using orchestrator
         record_count_by_stream = self.run_and_verify_sync(conn_id)
@@ -91,20 +121,23 @@ class MinimumSelectionTest(BingAdsBaseTest):
         for stream in self.expected_sync_streams():
             with self.subTest(stream=stream):
 
+                if stream == 'goals_and_funnels_report':  # SKIP TESTING FOR THIS STREAM
+                    continue  # There is no data available, since we would need to implement a tracking script on singer's site
+
                 # verify that you get some records for each stream
                 self.assertGreater(
                     record_count_by_stream.get(stream, -1), 0,
                     msg="The number of records is not over the stream max limit")
 
-                # BUG_2 | (TODO write this up)
-                # if stream.endswith('_report'):
-                #     continue  # SKIP REPORT STREAMS B/C BUG_2
-
-                # verify that only the automatic fields are sent to the target
+                # verify that only the automatic fields are sent to the target for parent streams, and that
+                # automatic fields, _sdc_report_datetime, AND specific measure fields are sent to target for report streams
                 actual = actual_fields_by_stream.get(stream) or set()
                 expected = self.expected_automatic_fields().get(stream, set())
-                self.assertEqual(
-                    actual, expected,
-                    msg=("The fields sent to the target are not the automatic fields. Expected: {}, Actual: {}"
-                         .format(actual, expected))
-                )
+                if stream.endswith('_report'):  # update expectations for report streams
+                    expected_measure = 'Assists' if stream.startswith('goals') else 'Clicks'
+                    expected.update({
+                        '_sdc_report_datetime',  # tap applies sdc value as pk for all reports
+                        expected_measure  # reports require a perf measure (which is intentionally not automatic)
+                    })
+
+                self.assertSetEqual(expected, actual)
