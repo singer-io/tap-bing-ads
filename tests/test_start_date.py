@@ -22,7 +22,7 @@ class BingAdsStartDateTest(BingAdsBaseTest):
         return {  # TODO get all these streams covered!!
             'accounts',
             'ad_extension_detail_report',
-            'ad_group_performance_report',  # TODO account for exclusions
+            # 'ad_group_performance_report',  # TODO account for exclusions
             'ad_groups',
             'ad_performance_report',
             'ads',
@@ -34,6 +34,264 @@ class BingAdsStartDateTest(BingAdsBaseTest):
             # 'goals_and_funnels_report',  # cannot test no data available
             'keyword_performance_report',
             'search_query_performance_report',
+        }
+
+    def get_as_many_fields_as_possbible_accounting_for__exclusions(self):
+        """
+        TODO gotta figure out what is best,
+         - should we just do all the stats fields? Don't we need one of those attributes thoguh to generate a report? 
+         - should we do syncs, one with all attributes and one with stats? 
+
+                                YES DO THIS 
+
+                                HERE IS WHY 
+
+              - I feel like this is the best thing to do.
+               TODO need to look at if there are fields that do not fall into attributes or statistics.
+
+               290             # TODO need to look at if there are fields that do not fall into attributes or statistics.
+               291             # # DELETE_ME  #################
+               292             test_streams = {'campaign_performance_report', 'ad_group_performance_report'}
+               293  ->         for test_stream in test_streams:
+               294                 all_fields = self.get_all_fields().get(test_stream)
+               295                 all_stats = self.get_all_statistics().get(test_stream)
+               296                 all_attrs = self.get_all_attributes().get(test_stream)
+               297                 import pdb; pdb.set_trace()
+               298             # ##############################
+               (Pdb) len(all_stats) + len(all_attrs), len(all_fields)
+               (18, 81)
+               (Pdb) len(all_stats)
+               13
+        """
+        return {
+            'campaign_performance_report': {},
+            'ad_group_performance_report': {},
+        }
+
+    def get_all_attributes(self):
+        """A dictionary of reports to Attributes"""
+        return {
+            'campaign_performance_report': {
+                'BidMatchType', 'BudgetAssociationStatus', 'BudgetName', 'BudgetStatus',
+                'DeviceOS', 'Goal', 'GoalType', 'TopVsOther'
+            },
+            'ad_group_performance_report': {
+                'BidMatchType','DeviceOS','Goal','GoalType','TopVsOther'
+            },
+        }
+
+    def get_all_statistics(self):
+        """A dictionary of reports to ImpressionSharePerformanceStatistics"""
+        return {
+            'campaign_performance_report': {
+                'AbsoluteTopImpressionRatePercent',
+                'AbsoluteTopImpressionShareLostToBudgetPercent',
+                'AbsoluteTopImpressionShareLostToRankPercent',
+                'AbsoluteTopImpressionSharePercent',
+                'AudienceImpressionLostToBudgetPercent',
+                'AudienceImpressionLostToRankPercent',
+                'AudienceImpressionSharePercent',
+                'ClickSharePercent',
+                'ExactMatchImpressionSharePercent',
+                'ImpressionLostToBudgetPercent',
+                'ImpressionLostToRankAggPercent',
+                'ImpressionSharePercent',
+                'RelativeCtr',
+                'TopImpressionRatePercent',
+                'TopImpressionShareLostToBudgetPercent',
+                'TopImpressionShareLostToRankPercent',
+                'TopImpressionSharePercent'
+            },
+            'ad_group_performance_report': {
+                'AbsoluteTopImpressionRatePercent',
+                'AbsoluteTopImpressionShareLostToBudgetPercent',
+                'AbsoluteTopImpressionShareLostToRankPercent',
+                'AbsoluteTopImpressionSharePercent',
+                'AudienceImpressionLostToBudgetPercent',
+                'AudienceImpressionLostToRankPercent',
+                'AudienceImpressionSharePercent',
+                'ClickSharePercent',
+                'ExactMatchImpressionSharePercent',
+                'ImpressionLostToBudgetPercent',
+                'ImpressionLostToRankAggPercent',
+                'ImpressionSharePercent',
+                'RelativeCtr'},
+        }
+
+    def get_all_fields(self):
+        return {
+            'campaign_performance_report': {
+                'BudgetName',
+                'TopImpressionRatePercent',
+                'HistoricalQualityScore',
+                'ImpressionLostToBudgetPercent',
+                'LowQualityClicksPercent',
+                'AbsoluteTopImpressionShareLostToBudgetPercent',
+                'AdDistribution',
+                'Assists',
+                'Ctr',
+                'HistoricalAdRelevance',
+                'TopVsOther',
+                'ExactMatchImpressionSharePercent',
+                'CustomerName',
+                'Goal',
+                'QualityScore',
+                'CurrencyCode',
+                'CostPerAssist',
+                'BidMatchType',
+                'RevenuePerConversion',
+                'DeviceType',
+                'BaseCampaignId',
+                'AllRevenuePerConversion',
+                'CampaignStatus',
+                'AccountNumber',
+                'AbsoluteTopImpressionShareLostToRankPercent',
+                'Spend',
+                'PhoneCalls',
+                'ConversionRate',
+                'BudgetStatus',
+                'RelativeCtr',
+                'LowQualityGeneralClicks',
+                'AudienceImpressionLostToBudgetPercent',
+                'ImpressionLostToRankAggPercent',
+                'TopImpressionShareLostToRankPercent',
+                'LowQualityConversionRate',
+                'CustomerId',
+                'AccountId',
+                'AudienceImpressionSharePercent',
+                'AbsoluteTopImpressionRatePercent',
+                'HistoricalLandingPageExperience',
+                'AllReturnOnAdSpend',
+                'ReturnOnAdSpend',
+                'GoalType',
+                'CampaignName',
+                'LowQualityImpressionsPercent',
+                'Ptr',
+                'DeliveredMatchType',
+                'AllConversions',
+                'ClickSharePercent',
+                'TopImpressionShareLostToBudgetPercent',
+                'BudgetAssociationStatus',
+                'LandingPageExperience',
+                'CustomParameters',
+                'Conversions',
+                'ImpressionSharePercent',
+                'PhoneImpressions',
+                'AdRelevance',
+                'AllRevenue',
+                'TrackingTemplate',
+                'Revenue',
+                'CostPerConversion',
+                'AveragePosition',
+                'Clicks',
+                'LowQualitySophisticatedClicks',
+                'TimePeriod',
+                'AllConversionRate',
+                'CampaignLabels',
+                'Impressions',
+                'FinalUrlSuffix',
+                'LowQualityConversions',
+                'LowQualityClicks',
+                'RevenuePerAssist',
+                'HistoricalExpectedCtr',
+                'AccountStatus',
+                'Network',
+                'ExpectedCtr',
+                'DeviceOS',
+                'CampaignType',
+                'LowQualityImpressions',
+                'TopImpressionSharePercent',
+                'AbsoluteTopImpressionSharePercent',
+                'ViewThroughConversions',
+                'AudienceImpressionLostToRankPercent',
+                'AverageCpc',
+                'AccountName',
+                'CampaignId',
+                'AllCostPerConversion'
+            },
+            'ad_group_performance_report': {
+                'HistoricalExpectedCtr',
+                'DeliveredMatchType',
+                'AdGroupId',
+                'AccountId',
+                'AbsoluteTopImpressionShareLostToRankPercent',
+                'CampaignType',
+                'AdGroupType',
+                'Goal',
+                'FinalUrlSuffix',
+                'QualityScore',
+                'AudienceImpressionSharePercent',
+                'CostPerConversion',
+                'AllConversionRate',
+                'ConversionRate',
+                'DeviceType',
+                'Language',
+                'AdRelevance',
+                'DeviceOS',
+                'ClickSharePercent',
+                'CustomerId',
+                'Assists',
+                'AbsoluteTopImpressionShareLostToBudgetPercent',
+                'AdGroupLabels',
+                'Spend',
+                'PhoneImpressions',
+                'AllRevenue',
+                'AdGroupName',
+                'CurrencyCode',
+                'ExpectedCtr',
+                'TimePeriod',
+                'AccountNumber',
+                'Revenue',
+                'AdDistribution',
+                'AudienceImpressionLostToRankPercent',
+                'BidMatchType',
+                'ReturnOnAdSpend',
+                'TopImpressionShareLostToRankPercent',
+                'PhoneCalls',
+                'CustomParameters',
+                'ViewThroughConversions',
+                'CampaignName',
+                'ImpressionLostToRankAggPercent',
+                'CampaignStatus',
+                'Status',
+                'RevenuePerAssist',
+                'BaseCampaignId',
+                'ImpressionLostToBudgetPercent',
+                'Impressions',
+                'RevenuePerConversion',
+                'ExactMatchImpressionSharePercent',
+                'Conversions',
+                'LandingPageExperience',
+                'TopVsOther',
+                'ImpressionSharePercent',
+                'Ctr',
+                'TrackingTemplate',
+                'TopImpressionShareLostToBudgetPercent',
+                'CostPerAssist',
+                'GoalType',
+                'AllReturnOnAdSpend',
+                'HistoricalQualityScore',
+                'Clicks',
+                'AllConversions',
+                'AllCostPerConversion',
+                'Network',
+                'HistoricalLandingPageExperience',
+                'RelativeCtr',
+                'TopImpressionRatePercent',
+                'HistoricalAdRelevance',
+                'AveragePosition',
+                'AccountName',
+                'AccountStatus',
+                'CustomerName',
+                'Ptr',
+                'AudienceImpressionLostToBudgetPercent',
+                'AverageCpc',
+                'TopImpressionSharePercent',
+                'AbsoluteTopImpressionSharePercent',
+                'AllRevenuePerConversion',
+                'CampaignId',
+                'AbsoluteTopImpressionRatePercent'
+            }
         }
 
     def timedelta_formatted(self, dtime, days=0):
