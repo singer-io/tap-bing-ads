@@ -40,7 +40,7 @@ class BingAdsBaseTest(unittest.TestCase):
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
-            'start_date': '2017-07-01T00:00:00Z',
+            'start_date': '2020-10-01T00:00:00Z', #  '2017-07-01T00:00:00Z',
             'customer_id': '163875182',
             'account_ids': '163078754,140168565,71086605',
         }
@@ -173,7 +173,11 @@ class BingAdsBaseTest(unittest.TestCase):
 
     def setUp(self):
         """Verify that you have set the prerequisites to run the tap (creds, etc.)"""
-        missing_envs = [x for x in ['TAP_BING_ADS_OAUTH_CLIENT_ID', 'TAP_BING_ADS_OAUTH_CLIENT_SECRET', 'TAP_BING_ADS_REFRESH_TOKEN', 'TAP_BING_ADS_DEVELOPER_TOKEN'] if os.getenv(x) is None]
+        missing_envs = [x for x in ['TAP_BING_ADS_OAUTH_CLIENT_ID',
+                                    'TAP_BING_ADS_OAUTH_CLIENT_SECRET',
+                                    'TAP_BING_ADS_REFRESH_TOKEN',
+                                    'TAP_BING_ADS_DEVELOPER_TOKEN']
+                        if os.getenv(x) is None]
         if missing_envs:
             raise Exception("set environment variables")
 
@@ -495,10 +499,3 @@ class BingAdsBaseTest(unittest.TestCase):
         return {table: properties.get(self.REQUIRED_KEYS, set())
                 for table, properties
                 in self.expected_metadata().items()}
-
-    ##########################################################################
-    ### Initialize start date TODO is this needed?
-    ##########################################################################
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.start_date = self.get_properties().get("start_date")
