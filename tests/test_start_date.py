@@ -19,7 +19,7 @@ class BingAdsStartDateTest(BingAdsBaseTest):
         return "tap_tester_bing_ads_start_date_test"
 
     def expected_sync_streams(self):
-        return {  # TODO get all these streams covered!!
+        return {
             'accounts',
             'ad_extension_detail_report',
             # 'ad_group_performance_report',  # TODO account for exclusions
@@ -28,7 +28,7 @@ class BingAdsStartDateTest(BingAdsBaseTest):
             'ads',
             'age_gender_audience_report',
             'audience_performance_report',
-            # 'campaign_performance_report',  # TODO account for exclusions
+            'campaign_performance_report',  # TODO account for exclusions
             'campaigns',
             'geographic_performance_report',
             # 'goals_and_funnels_report',  # cannot test no data available
@@ -36,37 +36,20 @@ class BingAdsStartDateTest(BingAdsBaseTest):
             'search_query_performance_report',
         }
 
-    def get_as_many_fields_as_possbible_accounting_for__exclusions(self):
-        """
-        TODO gotta figure out what is best,
-         - should we just do all the stats fields? Don't we need one of those attributes thoguh to generate a report? 
-         - should we do syncs, one with all attributes and one with stats? 
+    def expected_streams_with_exclusions(self):
+        return {'campaign_performance_report', 'ad_group_performance_report'}
 
-                                YES DO THIS 
+    def get_as_many_fields_as_possbible_excluding_statistics(self, stream):
+        stats = self.get_all_statistics().get(stream, set())
+        all_fields = self.get_all_fields().get(stream, set())
 
-                                HERE IS WHY 
+        return all_fields.difference(stats)
 
-              - I feel like this is the best thing to do.
-               TODO need to look at if there are fields that do not fall into attributes or statistics.
+    def get_as_many_fields_as_possbible_excluding_attributes(self, stream):
+        attrs = self.get_all_attributes().get(stream, set())
+        all_fields = self.get_all_fields().get(stream, set())
 
-               290             # TODO need to look at if there are fields that do not fall into attributes or statistics.
-               291             # # DELETE_ME  #################
-               292             test_streams = {'campaign_performance_report', 'ad_group_performance_report'}
-               293  ->         for test_stream in test_streams:
-               294                 all_fields = self.get_all_fields().get(test_stream)
-               295                 all_stats = self.get_all_statistics().get(test_stream)
-               296                 all_attrs = self.get_all_attributes().get(test_stream)
-               297                 import pdb; pdb.set_trace()
-               298             # ##############################
-               (Pdb) len(all_stats) + len(all_attrs), len(all_fields)
-               (18, 81)
-               (Pdb) len(all_stats)
-               13
-        """
-        return {
-            'campaign_performance_report': {},
-            'ad_group_performance_report': {},
-        }
+        return all_fields.difference(attrs)
 
     def get_all_attributes(self):
         """A dictionary of reports to Attributes"""
@@ -302,7 +285,24 @@ class BingAdsStartDateTest(BingAdsBaseTest):
         except ValueError:
             return Exception("Datetime object is not of the format: {}".format(self.START_DATE_FORMAT))
 
+
     def test_run(self):
+        # Test start date selecting all fields for standard streams, and all statistic fields for streams with exclusions
+        streams_to_fields_with_statistics = dict()
+        for stream in self.expected_streams_with_exclusions():
+            streams_to_fields_with_statistics[stream] = self.get_as_many_fields_as_possbible_excluding_attributes(stream)
+
+        # self.start_date_test(streams_to_fields_with_statistics) # TODO This failed becuase of invalid field selection
+
+        # Test start date selecting all fields for standard streams and all attribute fields for streams with exclusions
+        streams_to_fields_with_attributes = dict()
+        for stream in self.expected_streams_with_exclusions():
+            streams_to_fields_with_attributes[stream] = self.get_as_many_fields_as_possbible_excluding_statistics(stream)
+
+        self.start_date_test(streams_to_fields_with_attributes)
+
+
+    def start_date_test(self, streams_to_fields_with_exclusions):
         """Instantiate start date according to the desired data set and run the test"""
 
         self.start_date_1 = self.get_properties().get('start_date')
@@ -320,14 +320,23 @@ class BingAdsStartDateTest(BingAdsBaseTest):
         # run check mode
         found_catalogs_1 = self.run_and_verify_check_mode(conn_id_1)
 
+        # ensure our expectations are consistent for streams with exclusions
+        self.assertSetEqual(self.expected_streams_with_exclusions(), set(self.get_all_attributes().keys()))
+        self.assertSetEqual(self.expected_streams_with_exclusions(), set(self.get_all_statistics().keys()))
+
         # table and field selection
-        test_catalogs_1 = [catalog for catalog in found_catalogs_1
-                           if catalog.get('tap_stream_id') in self.expected_sync_streams()]
-        self.select_all_streams_and_fields(conn_id_1, test_catalogs_1, select_all_fields=True)
+        test_catalogs_1_all_fields = [catalog for catalog in found_catalogs_1
+                                      if catalog.get('tap_stream_id') in self.expected_sync_streams()
+                                      and catalog.get('tap_stream_id') not in self.expected_streams_with_exclusions()]
         # BUG (https://stitchdata.atlassian.net/browse/SRCE-4304)
-        # self.perform_and_verify_table_and_field_selection(
-        #     conn_id_1, test_catalogs_1, select_all_fields=True
-        # )
+        # self.perform_and_verify_and_field_selection(conn_id_1, test_catalogs_1_all_fields, select_all_fields=True)
+        self.select_all_streams_and_fields(conn_id_1, test_catalogs_1_all_fields, select_all_fields=True) # BUG_SRCE-4304
+        found_catalogs_1 = menagerie.get_catalogs(conn_id_1) # TODO is this necessary between selections?
+        test_catalogs_1_specific_fields = [catalog for catalog in found_catalogs_1
+                                           if catalog.get('tap_stream_id') in self.expected_sync_streams()
+                                           and catalog.get('tap_stream_id') in self.expected_streams_with_exclusions()]
+        self.perform_and_verify_adjusted_selection(conn_id_1, test_catalogs_1_specific_fields,
+                                                   select_all_fields=False, specific_fields=streams_to_fields_with_exclusions)
 
         # run initial sync
         record_count_by_stream_1 = self.run_and_verify_sync(conn_id_1)
@@ -355,13 +364,18 @@ class BingAdsStartDateTest(BingAdsBaseTest):
         found_catalogs_2 = self.run_and_verify_check_mode(conn_id_2)
 
         # table and field selection
-        test_catalogs_2 = [catalog for catalog in found_catalogs_2
-                           if catalog.get('tap_stream_id') in self.expected_sync_streams()]
-        self.select_all_streams_and_fields(conn_id_2, test_catalogs_2, select_all_fields=True)
+        test_catalogs_2_all_fields = [catalog for catalog in found_catalogs_2
+                                      if catalog.get('tap_stream_id') in self.expected_sync_streams()
+                                      and catalog.get('tap_stream_id') not in self.expected_streams_with_exclusions()]
         # BUG (https://stitchdata.atlassian.net/browse/SRCE-4304)
-        # self.perform_and_verify_table_and_field_selection(
-        #     conn_id_2, test_catalogs_2, select_all_fields=True
-        # )
+        # self.perform_and_verify_and_field_selection(conn_id_2, test_catalogs_2_all_fields, select_all_fields=True)
+        self.select_all_streams_and_fields(conn_id_2, test_catalogs_2_all_fields, select_all_fields=True) # BUG_SRCE-4304
+        found_catalogs_2 = menagerie.get_catalogs(conn_id_2) # TODO is this necessary between selections?
+        test_catalogs_2_specific_fields = [catalog for catalog in found_catalogs_2
+                                           if catalog.get('tap_stream_id') in self.expected_sync_streams()
+                                           and catalog.get('tap_stream_id') in self.expected_streams_with_exclusions()]
+        self.perform_and_verify_adjusted_selection(conn_id_2, test_catalogs_2_specific_fields,
+                                                   select_all_fields=False, specific_fields=streams_to_fields_with_exclusions)
 
         # run sync
         record_count_by_stream_2 = self.run_and_verify_sync(conn_id_2)
