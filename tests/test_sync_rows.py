@@ -22,11 +22,27 @@ class BingAdsSyncRows(BingAdsBaseTest):
     def expected_sync_streams(self):
         return {
             'accounts',
+            # 'ad_extension_detail_report',
+            # 'ad_extension_detail_report',
+            # 'ad_group_performance_report',
+            'ad_groups',
+            # 'ad_performance_report',
+            'ads',
+            # 'age_gender_demographic_report',
+            # 'audience_performance_report',
+            # 'campaign_performance_report',
+            'campaigns',
+            # 'geographic_performance_report',
+            # 'goals_and_funnels_report',
+            # 'keyword_performance_report',
+            # 'search_query_performance_report',
         }
 
     def expected_pks(self):
+        primary_keys = self.expected_primary_keys()
         return {
-            'accounts': {'Id'},
+            stream: primary_keys.get(stream)
+            for stream in self.expected_sync_streams()
         }
 
     def test_run(self):
@@ -71,5 +87,18 @@ class BingAdsSyncRows(BingAdsBaseTest):
 
         bookmarks = menagerie.get_state(conn_id)['bookmarks']
 
+        replication_methods = self.expected_replication_method()
+
         for stream in self.expected_sync_streams():
-            self.assertTrue(stream in bookmarks)
+            with self.subTest(stream=stream):
+                replication_method = replication_methods.get(stream)
+                if replication_method is self.INCREMENTAL:
+                    self.assertTrue(stream in bookmarks)
+
+                elif replication_method is self.FULL_TABLE:
+                    self.assertTrue(stream not in bookmarks)
+
+                else:
+                    raise NotImplementedError(
+                        "stream {} has an invalid replication method {}".format(stream, replication_method)
+                    )
