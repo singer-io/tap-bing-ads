@@ -462,8 +462,7 @@ class BingAdsBaseTest(unittest.TestCase):
                 selected = catalog_entry.get('annotated-schema').get('selected')
                 print("Validating selection on {}: {}".format(cat['tap_stream_id'], selected))
                 if cat['stream_name'] not in expected_selected:
-                    # TODO we are doing field selection in two steps so this assertion doesn't work...
-                    # self.assertFalse(selected, msg="Stream selected, but not testable.")
+                    self.assertFalse(selected, msg="Stream selected, but not testable.")
                     continue  # Skip remaining assertions if we aren't selecting this stream
                 self.assertTrue(selected, msg="Stream not selected.")
 
@@ -482,7 +481,7 @@ class BingAdsBaseTest(unittest.TestCase):
                                 cat['stream_name'], field, field_selected))
 
                     # Verify only automatic fields are selected
-                    # TODO uncomment lines below to reporduce BUG_SRCE-4313 from automatic fields tests
+                    # Uncomment lines below to reporduce BUG_SRCE-4313 from automatic fields tests
                     # expected_fields = self.expected_automatic_fields().get(cat['tap_stream_id']) | \
                     #     specific_fields.get(cat['tap_stream_id'], set())
                     # if cat['tap_stream_id'].endswith('_report'):
