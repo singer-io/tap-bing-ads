@@ -22,13 +22,13 @@ class BingAdsStartDateTest(BingAdsBaseTest):
         return {
             'accounts',
             'ad_extension_detail_report',
-            # 'ad_group_performance_report',  # TODO account for exclusions
+            'ad_group_performance_report',
             'ad_groups',
             'ad_performance_report',
             'ads',
             'age_gender_audience_report',
             'audience_performance_report',
-            'campaign_performance_report',  # TODO account for exclusions
+            'campaign_performance_report',
             'campaigns',
             'geographic_performance_report',
             # 'goals_and_funnels_report',  # cannot test no data available
@@ -42,240 +42,16 @@ class BingAdsStartDateTest(BingAdsBaseTest):
     def get_as_many_fields_as_possbible_excluding_statistics(self, stream):
         stats = self.get_all_statistics().get(stream, set())
         all_fields = self.get_all_fields().get(stream, set())
+        uncategorized = self.get_uncategorized_exclusions().get(stream, set())
 
-        return all_fields.difference(stats)
+        return all_fields.difference(stats).difference(uncategorized)
 
     def get_as_many_fields_as_possbible_excluding_attributes(self, stream):
-        attrs = self.get_all_attributes().get(stream, set())
+        attributes = self.get_all_attributes().get(stream, set())
         all_fields = self.get_all_fields().get(stream, set())
+        uncategorized = self.get_uncategorized_exclusions().get(stream, set())
 
-        return all_fields.difference(attrs)
-
-    def get_all_attributes(self):
-        """A dictionary of reports to Attributes"""
-        return {
-            'campaign_performance_report': {
-                'BidMatchType', 'BudgetAssociationStatus', 'BudgetName', 'BudgetStatus',
-                'DeviceOS', 'Goal', 'GoalType', 'TopVsOther'
-            },
-            'ad_group_performance_report': {
-                'BidMatchType','DeviceOS','Goal','GoalType','TopVsOther'
-            },
-        }
-
-    def get_all_statistics(self):
-        """A dictionary of reports to ImpressionSharePerformanceStatistics"""
-        return {
-            'campaign_performance_report': {
-                'AbsoluteTopImpressionRatePercent',
-                'AbsoluteTopImpressionShareLostToBudgetPercent',
-                'AbsoluteTopImpressionShareLostToRankPercent',
-                'AbsoluteTopImpressionSharePercent',
-                'AudienceImpressionLostToBudgetPercent',
-                'AudienceImpressionLostToRankPercent',
-                'AudienceImpressionSharePercent',
-                'ClickSharePercent',
-                'ExactMatchImpressionSharePercent',
-                'ImpressionLostToBudgetPercent',
-                'ImpressionLostToRankAggPercent',
-                'ImpressionSharePercent',
-                'RelativeCtr',
-                'TopImpressionRatePercent',
-                'TopImpressionShareLostToBudgetPercent',
-                'TopImpressionShareLostToRankPercent',
-                'TopImpressionSharePercent'
-            },
-            'ad_group_performance_report': {
-                'AbsoluteTopImpressionRatePercent',
-                'AbsoluteTopImpressionShareLostToBudgetPercent',
-                'AbsoluteTopImpressionShareLostToRankPercent',
-                'AbsoluteTopImpressionSharePercent',
-                'AudienceImpressionLostToBudgetPercent',
-                'AudienceImpressionLostToRankPercent',
-                'AudienceImpressionSharePercent',
-                'ClickSharePercent',
-                'ExactMatchImpressionSharePercent',
-                'ImpressionLostToBudgetPercent',
-                'ImpressionLostToRankAggPercent',
-                'ImpressionSharePercent',
-                'RelativeCtr'},
-        }
-
-    def get_all_fields(self):
-        return {
-            'campaign_performance_report': {
-                'BudgetName',
-                'TopImpressionRatePercent',
-                'HistoricalQualityScore',
-                'ImpressionLostToBudgetPercent',
-                'LowQualityClicksPercent',
-                'AbsoluteTopImpressionShareLostToBudgetPercent',
-                'AdDistribution',
-                'Assists',
-                'Ctr',
-                'HistoricalAdRelevance',
-                'TopVsOther',
-                'ExactMatchImpressionSharePercent',
-                'CustomerName',
-                'Goal',
-                'QualityScore',
-                'CurrencyCode',
-                'CostPerAssist',
-                'BidMatchType',
-                'RevenuePerConversion',
-                'DeviceType',
-                'BaseCampaignId',
-                'AllRevenuePerConversion',
-                'CampaignStatus',
-                'AccountNumber',
-                'AbsoluteTopImpressionShareLostToRankPercent',
-                'Spend',
-                'PhoneCalls',
-                'ConversionRate',
-                'BudgetStatus',
-                'RelativeCtr',
-                'LowQualityGeneralClicks',
-                'AudienceImpressionLostToBudgetPercent',
-                'ImpressionLostToRankAggPercent',
-                'TopImpressionShareLostToRankPercent',
-                'LowQualityConversionRate',
-                'CustomerId',
-                'AccountId',
-                'AudienceImpressionSharePercent',
-                'AbsoluteTopImpressionRatePercent',
-                'HistoricalLandingPageExperience',
-                'AllReturnOnAdSpend',
-                'ReturnOnAdSpend',
-                'GoalType',
-                'CampaignName',
-                'LowQualityImpressionsPercent',
-                'Ptr',
-                'DeliveredMatchType',
-                'AllConversions',
-                'ClickSharePercent',
-                'TopImpressionShareLostToBudgetPercent',
-                'BudgetAssociationStatus',
-                'LandingPageExperience',
-                'CustomParameters',
-                'Conversions',
-                'ImpressionSharePercent',
-                'PhoneImpressions',
-                'AdRelevance',
-                'AllRevenue',
-                'TrackingTemplate',
-                'Revenue',
-                'CostPerConversion',
-                'AveragePosition',
-                'Clicks',
-                'LowQualitySophisticatedClicks',
-                'TimePeriod',
-                'AllConversionRate',
-                'CampaignLabels',
-                'Impressions',
-                'FinalUrlSuffix',
-                'LowQualityConversions',
-                'LowQualityClicks',
-                'RevenuePerAssist',
-                'HistoricalExpectedCtr',
-                'AccountStatus',
-                'Network',
-                'ExpectedCtr',
-                'DeviceOS',
-                'CampaignType',
-                'LowQualityImpressions',
-                'TopImpressionSharePercent',
-                'AbsoluteTopImpressionSharePercent',
-                'ViewThroughConversions',
-                'AudienceImpressionLostToRankPercent',
-                'AverageCpc',
-                'AccountName',
-                'CampaignId',
-                'AllCostPerConversion'
-            },
-            'ad_group_performance_report': {
-                'HistoricalExpectedCtr',
-                'DeliveredMatchType',
-                'AdGroupId',
-                'AccountId',
-                'AbsoluteTopImpressionShareLostToRankPercent',
-                'CampaignType',
-                'AdGroupType',
-                'Goal',
-                'FinalUrlSuffix',
-                'QualityScore',
-                'AudienceImpressionSharePercent',
-                'CostPerConversion',
-                'AllConversionRate',
-                'ConversionRate',
-                'DeviceType',
-                'Language',
-                'AdRelevance',
-                'DeviceOS',
-                'ClickSharePercent',
-                'CustomerId',
-                'Assists',
-                'AbsoluteTopImpressionShareLostToBudgetPercent',
-                'AdGroupLabels',
-                'Spend',
-                'PhoneImpressions',
-                'AllRevenue',
-                'AdGroupName',
-                'CurrencyCode',
-                'ExpectedCtr',
-                'TimePeriod',
-                'AccountNumber',
-                'Revenue',
-                'AdDistribution',
-                'AudienceImpressionLostToRankPercent',
-                'BidMatchType',
-                'ReturnOnAdSpend',
-                'TopImpressionShareLostToRankPercent',
-                'PhoneCalls',
-                'CustomParameters',
-                'ViewThroughConversions',
-                'CampaignName',
-                'ImpressionLostToRankAggPercent',
-                'CampaignStatus',
-                'Status',
-                'RevenuePerAssist',
-                'BaseCampaignId',
-                'ImpressionLostToBudgetPercent',
-                'Impressions',
-                'RevenuePerConversion',
-                'ExactMatchImpressionSharePercent',
-                'Conversions',
-                'LandingPageExperience',
-                'TopVsOther',
-                'ImpressionSharePercent',
-                'Ctr',
-                'TrackingTemplate',
-                'TopImpressionShareLostToBudgetPercent',
-                'CostPerAssist',
-                'GoalType',
-                'AllReturnOnAdSpend',
-                'HistoricalQualityScore',
-                'Clicks',
-                'AllConversions',
-                'AllCostPerConversion',
-                'Network',
-                'HistoricalLandingPageExperience',
-                'RelativeCtr',
-                'TopImpressionRatePercent',
-                'HistoricalAdRelevance',
-                'AveragePosition',
-                'AccountName',
-                'AccountStatus',
-                'CustomerName',
-                'Ptr',
-                'AudienceImpressionLostToBudgetPercent',
-                'AverageCpc',
-                'TopImpressionSharePercent',
-                'AbsoluteTopImpressionSharePercent',
-                'AllRevenuePerConversion',
-                'CampaignId',
-                'AbsoluteTopImpressionRatePercent'
-            }
-        }
+        return all_fields.difference(attributes).difference(uncategorized)
 
     def timedelta_formatted(self, dtime, days=0):
         try:
@@ -287,12 +63,27 @@ class BingAdsStartDateTest(BingAdsBaseTest):
 
 
     def test_run(self):
+        """
+        Test is parametrized to account for the exclusions in some report streams.
+        By default we select all fields for a given stream for this test, however due to the
+        exclusions (see base.py for groups)  we will be running the test multiple times.
+
+        The first test run selects all fields for standard streams, and as many fields as allowed
+        including the Impression Share Performance Statistics for streams with exclusions.
+
+        The second test run selects all fields for standard streams, and as many fields as allowed
+        including Attributes for streams with exclusions.
+
+        Both runs account for uncategorized exclusion fields. See method for explanation.
+        """
+
         # Test start date selecting all fields for standard streams, and all statistic fields for streams with exclusions
         streams_to_fields_with_statistics = dict()
         for stream in self.expected_streams_with_exclusions():
             streams_to_fields_with_statistics[stream] = self.get_as_many_fields_as_possbible_excluding_attributes(stream)
 
-        # self.start_date_test(streams_to_fields_with_statistics) # TODO This failed becuase of invalid field selection
+        self.start_date_test(streams_to_fields_with_statistics)
+
 
         # Test start date selecting all fields for standard streams and all attribute fields for streams with exclusions
         streams_to_fields_with_attributes = dict()
@@ -331,7 +122,7 @@ class BingAdsStartDateTest(BingAdsBaseTest):
         # BUG (https://stitchdata.atlassian.net/browse/SRCE-4304)
         # self.perform_and_verify_and_field_selection(conn_id_1, test_catalogs_1_all_fields, select_all_fields=True)
         self.select_all_streams_and_fields(conn_id_1, test_catalogs_1_all_fields, select_all_fields=True) # BUG_SRCE-4304
-        found_catalogs_1 = menagerie.get_catalogs(conn_id_1) # TODO is this necessary between selections?
+        found_catalogs_1 = menagerie.get_catalogs(conn_id_1)
         test_catalogs_1_specific_fields = [catalog for catalog in found_catalogs_1
                                            if catalog.get('tap_stream_id') in self.expected_sync_streams()
                                            and catalog.get('tap_stream_id') in self.expected_streams_with_exclusions()]
@@ -370,7 +161,7 @@ class BingAdsStartDateTest(BingAdsBaseTest):
         # BUG (https://stitchdata.atlassian.net/browse/SRCE-4304)
         # self.perform_and_verify_and_field_selection(conn_id_2, test_catalogs_2_all_fields, select_all_fields=True)
         self.select_all_streams_and_fields(conn_id_2, test_catalogs_2_all_fields, select_all_fields=True) # BUG_SRCE-4304
-        found_catalogs_2 = menagerie.get_catalogs(conn_id_2) # TODO is this necessary between selections?
+        found_catalogs_2 = menagerie.get_catalogs(conn_id_2)
         test_catalogs_2_specific_fields = [catalog for catalog in found_catalogs_2
                                            if catalog.get('tap_stream_id') in self.expected_sync_streams()
                                            and catalog.get('tap_stream_id') in self.expected_streams_with_exclusions()]
