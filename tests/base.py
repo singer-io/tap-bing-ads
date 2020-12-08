@@ -462,7 +462,8 @@ class BingAdsBaseTest(unittest.TestCase):
                 selected = catalog_entry.get('annotated-schema').get('selected')
                 print("Validating selection on {}: {}".format(cat['tap_stream_id'], selected))
                 if cat['stream_name'] not in expected_selected:
-                    self.assertFalse(selected, msg="Stream selected, but not testable.")
+                    # TODO this assumes we don't break up table and field selection, but we do
+                    # self.assertFalse(selected, msg="Stream selected, but not testable.")
                     continue  # Skip remaining assertions if we aren't selecting this stream
                 self.assertTrue(selected, msg="Stream not selected.")
 
