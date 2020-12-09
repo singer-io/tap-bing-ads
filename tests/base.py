@@ -40,7 +40,7 @@ class BingAdsBaseTest(unittest.TestCase):
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
-            'start_date': '2017-07-01T00:00:00Z',
+            'start_date': '2020-10-01T00:00:00Z', #  '2017-07-01T00:00:00Z',
             'customer_id': '163875182',
             'account_ids': '163078754,140168565,71086605',
         }
@@ -173,7 +173,11 @@ class BingAdsBaseTest(unittest.TestCase):
 
     def setUp(self):
         """Verify that you have set the prerequisites to run the tap (creds, etc.)"""
-        missing_envs = [x for x in ['TAP_BING_ADS_OAUTH_CLIENT_ID', 'TAP_BING_ADS_OAUTH_CLIENT_SECRET', 'TAP_BING_ADS_REFRESH_TOKEN', 'TAP_BING_ADS_DEVELOPER_TOKEN'] if os.getenv(x) is None]
+        missing_envs = [x for x in ['TAP_BING_ADS_OAUTH_CLIENT_ID',
+                                    'TAP_BING_ADS_OAUTH_CLIENT_SECRET',
+                                    'TAP_BING_ADS_REFRESH_TOKEN',
+                                    'TAP_BING_ADS_DEVELOPER_TOKEN']
+                        if os.getenv(x) is None]
         if missing_envs:
             raise Exception("set environment variables")
 
@@ -410,6 +414,7 @@ class BingAdsBaseTest(unittest.TestCase):
     ##########################################################################
     ### Tap Specific Methods
     ##########################################################################
+
     @staticmethod
     def select_specific_fields(conn_id, catalogs, select_all_fields: bool = True, specific_fields: dict = {}):
         """Select all streams and all fields within streams"""
@@ -457,7 +462,8 @@ class BingAdsBaseTest(unittest.TestCase):
                 selected = catalog_entry.get('annotated-schema').get('selected')
                 print("Validating selection on {}: {}".format(cat['tap_stream_id'], selected))
                 if cat['stream_name'] not in expected_selected:
-                    self.assertFalse(selected, msg="Stream selected, but not testable.")
+                    # TODO this assumes we don't break up table and field selection, but we do
+                    # self.assertFalse(selected, msg="Stream selected, but not testable.")
                     continue  # Skip remaining assertions if we aren't selecting this stream
                 self.assertTrue(selected, msg="Stream not selected.")
 
@@ -476,7 +482,7 @@ class BingAdsBaseTest(unittest.TestCase):
                                 cat['stream_name'], field, field_selected))
 
                     # Verify only automatic fields are selected
-                    # TODO uncomment lines below to reporduce BUG_SRCE-4313 from automatic fields tests
+                    # Uncomment lines below to reporduce BUG_SRCE-4313 from automatic fields tests
                     # expected_fields = self.expected_automatic_fields().get(cat['tap_stream_id']) | \
                     #     specific_fields.get(cat['tap_stream_id'], set())
                     # if cat['tap_stream_id'].endswith('_report'):
@@ -497,8 +503,263 @@ class BingAdsBaseTest(unittest.TestCase):
                 in self.expected_metadata().items()}
 
     ##########################################################################
-    ### Initialize start date TODO is this needed?
+    ### Exclusions Handling
     ##########################################################################
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.start_date = self.get_properties().get("start_date")
+
+    def get_all_attributes(self):
+        """A dictionary of reports to Attributes"""
+        return {
+            'campaign_performance_report': {
+                'BidMatchType', 'BudgetAssociationStatus', 'BudgetName', 'BudgetStatus',
+                'DeviceOS', 'Goal', 'GoalType', 'TopVsOther'
+            },
+            'ad_group_performance_report': {
+                'BidMatchType','DeviceOS','Goal','GoalType','TopVsOther'
+            },
+        }
+
+    def get_all_statistics(self):
+        """A dictionary of reports to ImpressionSharePerformanceStatistics"""
+        return {
+            'campaign_performance_report': {
+                'AbsoluteTopImpressionRatePercent',
+                'AbsoluteTopImpressionShareLostToBudgetPercent',
+                'AbsoluteTopImpressionShareLostToRankPercent',
+                'AbsoluteTopImpressionSharePercent',
+                'AudienceImpressionLostToBudgetPercent',
+                'AudienceImpressionLostToRankPercent',
+                'AudienceImpressionSharePercent',
+                'ClickSharePercent',
+                'ExactMatchImpressionSharePercent',
+                'ImpressionLostToBudgetPercent',
+                'ImpressionLostToRankAggPercent',
+                'ImpressionSharePercent',
+                'RelativeCtr',
+                'TopImpressionRatePercent',
+                'TopImpressionShareLostToBudgetPercent',
+                'TopImpressionShareLostToRankPercent',
+                'TopImpressionSharePercent'
+            },
+            # NOTE: The fields marked below as Undocumented are not documented in this exclusion
+            #       group by bing, but have been confirmed manually to belong to this group.
+            #       Selecting one results in an InternalError with the Restricted Columns message.
+            'ad_group_performance_report': {
+                'AbsoluteTopImpressionRatePercent',
+                'AbsoluteTopImpressionShareLostToBudgetPercent',
+                'AbsoluteTopImpressionShareLostToRankPercent',
+                'AbsoluteTopImpressionSharePercent',
+                'AudienceImpressionLostToBudgetPercent',
+                'AudienceImpressionLostToRankPercent',
+                'AudienceImpressionSharePercent',
+                'ClickSharePercent',
+                'ExactMatchImpressionSharePercent',
+                'ImpressionLostToBudgetPercent',
+                'ImpressionLostToRankAggPercent',
+                'ImpressionSharePercent',
+                'RelativeCtr',
+                'TopImpressionRatePercent',  # Undocumented
+                'TopImpressionShareLostToBudgetPercent',  # Undocumented
+                'TopImpressionShareLostToRankPercent',  # Undocumented
+                'TopImpressionSharePercent',  # Undocumented
+            },
+        }
+
+    def get_uncategorized_exclusions(self):
+        """
+        Some exclusions are uncategorized and exlcude specific streams.
+
+        From bing docs:
+          In addition, if you include any of the AudienceImpressionLostToBudgetPercent,
+          AudienceImpressionLostToRankPercent, AudienceImpressionSharePercent, or RelativeCtr
+          columns, then you must exclude the CustomerId, CustomerName, and DeliveredMatchType
+          attribute columns, and vice versa.
+
+        We will not select these fields in our test.
+        """
+        uncategorized_exclusion_set = {
+            'AudienceImpressionLostToBudgetPercent',
+            'AudienceImpressionLostToRankPercent',
+            'AudienceImpressionSharePercent',
+            'RelativeCtr'
+        }
+
+        return {
+            'campaign_performance_report': uncategorized_exclusion_set,
+            'ad_group_performance_report': uncategorized_exclusion_set,
+        }
+
+    def get_all_fields(self):
+        return {
+            'campaign_performance_report': {
+                'BudgetName',
+                'TopImpressionRatePercent',
+                'HistoricalQualityScore',
+                'ImpressionLostToBudgetPercent',
+                'LowQualityClicksPercent',
+                'AbsoluteTopImpressionShareLostToBudgetPercent',
+                'AdDistribution',
+                'Assists',
+                'Ctr',
+                'HistoricalAdRelevance',
+                'TopVsOther',
+                'ExactMatchImpressionSharePercent',
+                'CustomerName',
+                'Goal',
+                'QualityScore',
+                'CurrencyCode',
+                'CostPerAssist',
+                'BidMatchType',
+                'RevenuePerConversion',
+                'DeviceType',
+                'BaseCampaignId',
+                'AllRevenuePerConversion',
+                'CampaignStatus',
+                'AccountNumber',
+                'AbsoluteTopImpressionShareLostToRankPercent',
+                'Spend',
+                'PhoneCalls',
+                'ConversionRate',
+                'BudgetStatus',
+                'RelativeCtr',
+                'LowQualityGeneralClicks',
+                'AudienceImpressionLostToBudgetPercent',
+                'ImpressionLostToRankAggPercent',
+                'TopImpressionShareLostToRankPercent',
+                'LowQualityConversionRate',
+                'CustomerId',
+                'AccountId',
+                'AudienceImpressionSharePercent',
+                'AbsoluteTopImpressionRatePercent',
+                'HistoricalLandingPageExperience',
+                'AllReturnOnAdSpend',
+                'ReturnOnAdSpend',
+                'GoalType',
+                'CampaignName',
+                'LowQualityImpressionsPercent',
+                'Ptr',
+                'DeliveredMatchType',
+                'AllConversions',
+                'ClickSharePercent',
+                'TopImpressionShareLostToBudgetPercent',
+                'BudgetAssociationStatus',
+                'LandingPageExperience',
+                'CustomParameters',
+                'Conversions',
+                'ImpressionSharePercent',
+                'PhoneImpressions',
+                'AdRelevance',
+                'AllRevenue',
+                'TrackingTemplate',
+                'Revenue',
+                'CostPerConversion',
+                'AveragePosition',
+                'Clicks',
+                'LowQualitySophisticatedClicks',
+                'TimePeriod',
+                'AllConversionRate',
+                'CampaignLabels',
+                'Impressions',
+                'FinalUrlSuffix',
+                'LowQualityConversions',
+                'LowQualityClicks',
+                'RevenuePerAssist',
+                'HistoricalExpectedCtr',
+                'AccountStatus',
+                'Network',
+                'ExpectedCtr',
+                'DeviceOS',
+                'CampaignType',
+                'LowQualityImpressions',
+                'TopImpressionSharePercent',
+                'AbsoluteTopImpressionSharePercent',
+                'ViewThroughConversions',
+                'AudienceImpressionLostToRankPercent',
+                'AverageCpc',
+                'AccountName',
+                'CampaignId',
+                'AllCostPerConversion'
+            },
+            'ad_group_performance_report': {
+                'HistoricalExpectedCtr',
+                'DeliveredMatchType',
+                'AdGroupId',
+                'AccountId',
+                'AbsoluteTopImpressionShareLostToRankPercent',
+                'CampaignType',
+                'AdGroupType',
+                'Goal',
+                'FinalUrlSuffix',
+                'QualityScore',
+                'AudienceImpressionSharePercent',
+                'CostPerConversion',
+                'AllConversionRate',
+                'ConversionRate',
+                'DeviceType',
+                'Language',
+                'AdRelevance',
+                'DeviceOS',
+                'ClickSharePercent',
+                'CustomerId',
+                'Assists',
+                'AbsoluteTopImpressionShareLostToBudgetPercent',
+                'AdGroupLabels',
+                'Spend',
+                'PhoneImpressions',
+                'AllRevenue',
+                'AdGroupName',
+                'CurrencyCode',
+                'ExpectedCtr',
+                'TimePeriod',
+                'AccountNumber',
+                'Revenue',
+                'AdDistribution',
+                'AudienceImpressionLostToRankPercent',
+                'BidMatchType',
+                'ReturnOnAdSpend',
+                'TopImpressionShareLostToRankPercent',
+                'PhoneCalls',
+                'CustomParameters',
+                'ViewThroughConversions',
+                'CampaignName',
+                'ImpressionLostToRankAggPercent',
+                'CampaignStatus',
+                'Status',
+                'RevenuePerAssist',
+                'BaseCampaignId',
+                'ImpressionLostToBudgetPercent',
+                'Impressions',
+                'RevenuePerConversion',
+                'ExactMatchImpressionSharePercent',
+                'Conversions',
+                'LandingPageExperience',
+                'TopVsOther',
+                'ImpressionSharePercent',
+                'Ctr',
+                'TrackingTemplate',
+                'TopImpressionShareLostToBudgetPercent',
+                'CostPerAssist',
+                'GoalType',
+                'AllReturnOnAdSpend',
+                'HistoricalQualityScore',
+                'Clicks',
+                'AllConversions',
+                'AllCostPerConversion',
+                'Network',
+                'HistoricalLandingPageExperience',
+                'RelativeCtr',
+                'TopImpressionRatePercent',
+                'HistoricalAdRelevance',
+                'AveragePosition',
+                'AccountName',
+                'AccountStatus',
+                'CustomerName',
+                'Ptr',
+                'AudienceImpressionLostToBudgetPercent',
+                'AverageCpc',
+                'TopImpressionSharePercent',
+                'AbsoluteTopImpressionSharePercent',
+                'AllRevenuePerConversion',
+                'CampaignId',
+                'AbsoluteTopImpressionRatePercent'
+            }
+        }
