@@ -19,21 +19,12 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
         return "tap_tester_bing_ads_incremental_replication"
 
     def expected_sync_streams(self):
-        return {  # TODO get all these streams covered!!
+        """All non-report streams are covered."""
+        return {
             'accounts',
-            # 'ad_extension_detail_report',
-            # 'ad_group_performance_report',
             'ad_groups',
-            # 'ad_performance_report',
             'ads',
-            # 'age_gender_demographic_report',
-            # 'audience_performance_report',
-            # 'campaign_performance_report',
             'campaigns',
-            # 'geographic_performance_report',
-            # 'goals_and_funnels_report',
-            # 'keyword_performance_report',
-            # 'search_query_performance_report',
         }
 
     def convert_state_to_utc(self, date_str):
@@ -46,18 +37,27 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
         date_object_utc = date_object.astimezone(tz=pytz.UTC)
         return datetime.datetime.strftime(date_object_utc, "%Y-%m-%dT%H:%M:%SZ")
 
+    def get_bookmark_key(self, stream):
+        stream_to_keys ={
+            'accounts': 'last_record',  # TODO why is this the rep keys??? BUG?
+        }
+
+        return stream_to_keys.get(stream)
+
     def calculated_states_by_stream(self, current_state):
         """
         Look at the bookmarks from a previous sync and set a new bookmark
         value that is 1 day prior. This ensures the subsequent sync will replicate
         at least 1 record but, fewer records than the previous sync.
-        """
 
-        # {'bookmarks': {'accounts': {'last_record': '2020-03-04T16:13:49.893000+00:00'}}}
-        key = 'last_record' # TODO why is this not the rep key??? BUG?
-        stream_to_current_state = {stream : bookmark.get(key)
-                           for stream, bookmark in current_state['bookmarks'].items()}
-        stream_to_calculated_state = {stream: "" for stream in current_state['bookmarks'].keys()}
+        Formatting of state
+           {'bookmarks': {'accounts': {'last_record': '2020-11-23T03:58:39.610000+00:00'}}}
+        """
+        stream_to_current_state = dict()
+        for stream, bookmark in current_state['bookmarks'].items():
+            stream_to_current_state[stream] = bookmark.get(self.get_bookmark_key(stream))
+
+        stream_to_calculated_state = {stream: "" for stream in current_state.keys()}
 
         for stream, state in stream_to_current_state.items():
             # convert state from string to datetime object
@@ -82,7 +82,10 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
         PREREQUISITE
         For EACH stream that is incrementally replicated there are multiple rows of data with
             different values for the replication key
+
+        TODO ensure this ^ is all accurate still
         """
+
         self.START_DATE = self.get_properties().get('start_date')
 
         # Instantiate connection with default start
@@ -106,12 +109,11 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
         first_sync_bookmarks = menagerie.get_state(conn_id)
 
         # UPDATE STATE BETWEEN SYNCS
-        new_state = dict()
-        new_state['bookmarks'] = {
-            stream: {'last_record': bookmark}
-            for stream, bookmark in
-            self.calculated_states_by_stream(first_sync_bookmarks).items()
-        }
+        new_state = {'bookmarks': dict()}
+        # TODO should we be asserting this is equal to the max replication key value or that covered below?
+        # max_replication_key_values = self.max_replication_key_values_by_stream(first_sync_records)
+        for stream, bookmark in self.calculated_states_by_stream(first_sync_bookmarks).items():
+            new_state['bookmarks'][stream] = {self.get_bookmark_key(stream): bookmark}
         menagerie.set_state(conn_id, new_state)
 
         # Run a second sync job using orchestrator
@@ -119,10 +121,10 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
         second_sync_records = runner.get_records_from_target_output()
         second_sync_bookmarks = menagerie.get_state(conn_id)
 
-
         # Test by stream
         for stream in self.expected_sync_streams():
             with self.subTest(stream=stream):
+
                 replication_method = self.expected_replication_method().get(stream)
 
                 # record counts
@@ -139,7 +141,7 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
 
                 if replication_method == self.INCREMENTAL:
                     replication_key = self.expected_replication_keys().get(stream).pop()
-                    bookmark_key = 'last_record' # TODO | will have to adjust for reports
+                    bookmark_key = self.get_bookmark_key(stream) # TODO This should really be the same as rep_key write BUG
 
                     # Verify the first sync sets a bookmark of the expected form
                     self.assertIsNotNone(first_bookmark_key_value)
