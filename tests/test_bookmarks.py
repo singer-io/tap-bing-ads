@@ -12,11 +12,11 @@ from base import BingAdsBaseTest
 LOGGER = singer.get_logger()
 
 
-class TestBingAdsIncrementalReplication(BingAdsBaseTest):
+class TestBingAdsBookmarks(BingAdsBaseTest):
 
     @staticmethod
     def name():
-        return "tap_tester_bing_ads_incremental_replication"
+        return "tap_tester_bing_ads_bookmarking"
 
     def expected_sync_streams(self):
         """All non-report streams are covered."""
@@ -39,7 +39,7 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
 
     def get_bookmark_key(self, stream):
         stream_to_keys ={
-            'accounts': 'last_record',  # TODO why is this the rep keys??? BUG?
+            'accounts': 'last_record',  # BUG (https://stitchdata.atlassian.net/browse/SRCE-4609)
         }
 
         return stream_to_keys.get(stream)
@@ -53,11 +53,12 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
         Formatting of state
            {'bookmarks': {'accounts': {'last_record': '2020-11-23T03:58:39.610000+00:00'}}}
         """
+
         stream_to_current_state = dict()
         for stream, bookmark in current_state['bookmarks'].items():
             stream_to_current_state[stream] = bookmark.get(self.get_bookmark_key(stream))
 
-        stream_to_calculated_state = {stream: "" for stream in current_state.keys()}
+        stream_to_calculated_state = {stream: "" for stream in current_state['bookmarks'].keys()}
 
         for stream, state in stream_to_current_state.items():
             # convert state from string to datetime object
@@ -72,18 +73,17 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
 
     def test_run(self):
         """
+        Testing standard full table and incremental streams that are not report based.
+
         Verify for each stream that you can do a sync which records bookmarks.
         Verify that the bookmark is the max value sent to the target for the `date` PK field
         Verify that the 2nd sync respects the bookmark
         Verify that all data of the 2nd sync is >= the bookmark from the first sync
         Verify that the number of records in the 2nd sync is less then the first
-        Verify inclusivivity of bookmarks
 
         PREREQUISITE
         For EACH stream that is incrementally replicated there are multiple rows of data with
-            different values for the replication key
-
-        TODO ensure this ^ is all accurate still
+        different values for the replication key.
         """
 
         self.START_DATE = self.get_properties().get('start_date')
@@ -110,10 +110,9 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
 
         # UPDATE STATE BETWEEN SYNCS
         new_state = {'bookmarks': dict()}
-        # TODO should we be asserting this is equal to the max replication key value or that covered below?
-        # max_replication_key_values = self.max_replication_key_values_by_stream(first_sync_records)
         for stream, bookmark in self.calculated_states_by_stream(first_sync_bookmarks).items():
-            new_state['bookmarks'][stream] = {self.get_bookmark_key(stream): bookmark}
+            new_state['bookmarks'][stream] = {self.get_bookmark_key(stream): bookmark}  # BUG_SRCE-4609
+            # new_state['bookmarks'][stream] = {self.expected_replication_key(stream): bookmark}
         menagerie.set_state(conn_id, new_state)
 
         # Run a second sync job using orchestrator
@@ -141,7 +140,7 @@ class TestBingAdsIncrementalReplication(BingAdsBaseTest):
 
                 if replication_method == self.INCREMENTAL:
                     replication_key = self.expected_replication_keys().get(stream).pop()
-                    bookmark_key = self.get_bookmark_key(stream) # TODO This should really be the same as rep_key write BUG
+                    bookmark_key = self.get_bookmark_key(stream)  # BUG_SRCE-4609
 
                     # Verify the first sync sets a bookmark of the expected form
                     self.assertIsNotNone(first_bookmark_key_value)

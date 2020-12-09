@@ -819,4 +819,5 @@ class BingAdsBaseTest(unittest.TestCase):
 
                 if bk_value > max_bookmarks[prefixed_stream][stream_bookmark_key]:
                     max_bookmarks[prefixed_stream][stream_bookmark_key] = bk_value
+
         return max_bookmarks
