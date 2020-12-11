@@ -40,7 +40,7 @@ class BingAdsBaseTest(unittest.TestCase):
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
-            'start_date': '2020-10-01T00:00:00Z', #  '2017-07-01T00:00:00Z',
+            'start_date': '2020-10-01T00:00:00Z',
             'customer_id': '163875182',
             'account_ids': '163078754,140168565,71086605',
         }
@@ -415,6 +415,14 @@ class BingAdsBaseTest(unittest.TestCase):
     ### Tap Specific Methods
     ##########################################################################
 
+    def get_account_id_with_report_data(self):
+        """
+        Of the 3 bing accounts only the Stitch account has data for report streams.
+
+        return the id of the Stitch account.
+        """
+        return '163078754'
+
     @staticmethod
     def select_specific_fields(conn_id, catalogs, select_all_fields: bool = True, specific_fields: dict = {}):
         """Select all streams and all fields within streams"""
@@ -763,3 +771,54 @@ class BingAdsBaseTest(unittest.TestCase):
                 'AbsoluteTopImpressionRatePercent'
             }
         }
+
+    def max_replication_key_values_by_stream(self, sync_records):  # TODO simplify this method
+        """
+        Return the maximum value for the replication key for each stream
+        which is normally the expected value for a bookmark. But in the case of reports,
+        the bookmark will be the day the sync runs.
+
+        Comparisons are based on the class of the bookmark value. Dates will be
+        string compared which works for ISO date-time strings
+        """
+        max_bookmarks = dict()
+        account_to_test = self.get_account_id_with_report_data()
+
+        for stream, batch in sync_records.items():
+
+            if self.expected_replication_method().get(stream) != self.INCREMENTAL:
+                continue
+
+            stream_replication_key = self.expected_replication_keys().get(stream, set()).pop()
+
+            if self.is_report(stream):
+                stream_bookmark_key = 'date'
+                prefix = account_to_test + '_'
+            elif stream == 'accounts':
+                stream_bookmark_key = 'last_record'
+                prefix = ''
+
+            else:
+                stream_bookmark_key = stream_replication_key
+                prefix = ''
+
+            prefixed_stream = prefix + stream
+
+            upsert_messages = [m for m in batch.get('messages') if m['action'] == 'upsert']
+
+            # TODO give this a default value which can help simplify comparisons in loop below
+            bk_values = [message["data"].get(stream_replication_key)
+                         for message in upsert_messages]
+            max_bookmarks[prefixed_stream] = {stream_bookmark_key: None}
+
+            for bk_value in bk_values:
+                if bk_value is None:
+                    continue
+
+                if max_bookmarks[prefixed_stream][stream_bookmark_key] is None:
+                    max_bookmarks[prefixed_stream][stream_bookmark_key] = bk_value
+
+                if bk_value > max_bookmarks[prefixed_stream][stream_bookmark_key]:
+                    max_bookmarks[prefixed_stream][stream_bookmark_key] = bk_value
+
+        return max_bookmarks
