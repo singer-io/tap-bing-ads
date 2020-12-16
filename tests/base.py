@@ -5,6 +5,7 @@ Run discovery for as a prerequisite for most tests
 import unittest
 import copy
 import os
+from datetime import timedelta
 from datetime import datetime as dt
 from datetime import timezone as tz
 
@@ -20,12 +21,15 @@ class BingAdsBaseTest(unittest.TestCase):
     REPLICATION_KEYS = "valid-replication-keys"
     PRIMARY_KEYS = "table-key-properties"
     FOREIGN_KEYS = "table-foreign-key-properties"
-    REQUIRED_KEYS = "required_keys"
     REPLICATION_METHOD = "forced-replication-method"
     API_LIMIT = "max-row-limit"
     INCREMENTAL = "INCREMENTAL"
     FULL_TABLE = "FULL_TABLE"
     START_DATE_FORMAT = "%Y-%m-%dT00:00:00Z"
+
+    BOOKMARK_COMPARISON_FORMAT = "%Y-%m-%dT00:00:00+00:00"
+    DEFAULT_CONVERSION_WINDOW = -30 # days
+    REQUIRED_KEYS = "required_keys"
 
     @staticmethod
     def tap_name():
@@ -43,6 +47,7 @@ class BingAdsBaseTest(unittest.TestCase):
             'start_date': '2020-10-01T00:00:00Z',
             'customer_id': '163875182',
             'account_ids': '163078754,140168565,71086605',
+            # 'conversion_window': '-15',  # advanced option
         }
         # cid=42183085 aid=71086605  uid=71069166 (RJMetrics)
         # cid=42183085 aid=163078754 uid=71069166 (Stitch)
@@ -821,3 +826,20 @@ class BingAdsBaseTest(unittest.TestCase):
                     max_bookmarks[prefixed_stream][stream_bookmark_key] = bk_value
 
         return max_bookmarks
+
+    def timedelta_formatted(self, dtime, days=0):
+        try:
+            date_stripped = dt.strptime(dtime, self.START_DATE_FORMAT)
+            return_date = date_stripped + timedelta(days=days)
+
+            return dt.strftime(return_date, self.START_DATE_FORMAT)
+
+        except ValueError:
+            try:
+                date_stripped = dt.strptime(dtime, self.BOOKMARK_COMPARISON_FORMAT)
+                return_date = date_stripped + timedelta(days=days)
+
+                return dt.strftime(return_date, self.BOOKMARK_COMPARISON_FORMAT)
+
+            except ValueError:
+                return Exception("Datetime object is not of the format: {}".format(self.START_DATE_FORMAT))
