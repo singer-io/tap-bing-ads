@@ -107,7 +107,7 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
 
     def get_bookmark_key(self, stream):
         if self.is_report(stream):
-            key = 'date'  # TODO why are these the rep keys??? BUG?
+            key = 'date'
         elif stream == 'accounts':  # BUG (https://stitchdata.atlassian.net/browse/SRCE-4609)
             key = 'last_record'
         else:
@@ -210,11 +210,9 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
 
         # UPDATE STATE BETWEEN SYNCS
         new_state = {'bookmarks': dict()}
-        # max_replication_key_values = self.max_replication_key_values_by_stream(first_sync_records)
         simulated_states = self.calculated_states_by_stream(first_sync_bookmarks)
         for stream, bookmark in simulated_states.items():
             new_state['bookmarks'][stream] = {self.get_bookmark_key(stream): bookmark}
-            # new_state['bookmarks'][stream] = {self.expected_replication_key(stream): bookmark} # TODO BUG?
         menagerie.set_state(conn_id, new_state)
 
         # Run a second sync job using orchestrator
@@ -246,38 +244,36 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
                 second_sync_messages = second_sync_records.get(stream, {'messages': []}).get('messages')
 
                 # bookmarked states (top level objects)
-                first_bookmark_key_value = first_sync_bookmarks.get('bookmarks').get(prefixed_stream)
-                second_bookmark_key_value = second_sync_bookmarks.get('bookmarks').get(prefixed_stream)
+                first_sync_bookmark_key_value = first_sync_bookmarks.get('bookmarks').get(prefixed_stream)
+                second_sync_bookmark_key_value = second_sync_bookmarks.get('bookmarks').get(prefixed_stream)
 
                 if replication_method == self.INCREMENTAL:
                     replication_key = self.expected_replication_keys().get(stream).pop()
-                    bookmark_key = self.get_bookmark_key(stream) # TODO BUG? depends on validity of bookmarking strategy
+                    bookmark_key = self.get_bookmark_key(stream)
 
                     # Verify the first sync sets a bookmark of the expected form
-                    self.assertIsNotNone(first_bookmark_key_value)
-                    # TODO assertion for format?
+                    self.assertIsNotNone(first_sync_bookmark_key_value)
 
                     # Verify the second sync sets a bookmark of the expected form
-                    self.assertIsNotNone(second_bookmark_key_value)
-                    # TODO assertion for format?
+                    self.assertIsNotNone(second_sync_bookmark_key_value)
 
                     # bookmarked states (actual values)
-                    first_bookmark_value = first_bookmark_key_value.get(bookmark_key)
-                    second_bookmark_value = second_bookmark_key_value.get(bookmark_key)
+                    first_sync_bookmark_value = first_sync_bookmark_key_value.get(bookmark_key)
+                    second_sync_bookmark_value = second_sync_bookmark_key_value.get(bookmark_key)
                     # bookmarked values as utc for comparing against records
-                    first_bookmark_value_utc = self.convert_state_to_utc(first_bookmark_value)
-                    second_bookmark_value_utc = self.convert_state_to_utc(second_bookmark_value)
+                    first_sync_bookmark_value_utc = self.convert_state_to_utc(first_sync_bookmark_value)
+                    second_sync_bookmark_value_utc = self.convert_state_to_utc(second_sync_bookmark_value)
 
                     today_utc = datetime.datetime.strftime(datetime.datetime.utcnow(), self.START_DATE_FORMAT)
 
                     # Verify that the first sync bookmark is set to the day on which the sync is ran
-                    self.assertEqual(first_bookmark_value_utc, today_utc)
+                    self.assertEqual(first_sync_bookmark_value_utc, today_utc)
 
                     # Verify that the second sync bookmark is set to the day on which the sync is ran
-                    self.assertEqual(second_bookmark_value_utc, today_utc)
+                    self.assertEqual(second_sync_bookmark_value_utc, today_utc)
 
                     # Verify the second sync bookmark is Equal to the first sync bookmark
-                    self.assertEqual(second_bookmark_value, first_bookmark_value) # assumes no changes to data during test
+                    self.assertEqual(second_sync_bookmark_value, first_sync_bookmark_value) # assumes no changes to data during test
 
                     # TODO the following assertions won't work until TODAY is 30 days (the default conversion_window)
                     # after target date used for calculating the simulated bookmark. So this should work next week (12/19 or 12/20)
