@@ -213,8 +213,11 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
         simulated_states = self.calculated_states_by_stream(first_sync_bookmarks)
         for stream, bookmark in simulated_states.items():
             new_state['bookmarks'][stream] = {self.get_bookmark_key(stream): bookmark}
+        og_version = menagerie.get_state_version(conn_id)
         print("Natural Bookmark: {}".format(first_sync_bookmarks))
+        print("Original Version {}".format(og_version))
         print("Simulated Bookmark: {}".format(new_state))
+
         menagerie.set_state(conn_id, new_state)
 
         # Run a second sync job using orchestrator
