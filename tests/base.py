@@ -777,7 +777,7 @@ class BingAdsBaseTest(unittest.TestCase):
             }
         }
 
-    def max_replication_key_values_by_stream(self, sync_records):
+    def max_replication_key_values_by_stream(self, sync_records):  # TODO simplify this method
         """
         Return the maximum value for the replication key for each stream
         which is normally the expected value for a bookmark. But in the case of reports,
@@ -811,6 +811,8 @@ class BingAdsBaseTest(unittest.TestCase):
 
             upsert_messages = [m for m in batch.get('messages') if m['action'] == 'upsert']
 
+
+            # TODO give this a default value which can help simplify comparisons in loop below
             bk_values = [message["data"].get(stream_replication_key)
                          for message in upsert_messages]
             max_bookmarks[prefixed_stream] = {stream_bookmark_key: None}

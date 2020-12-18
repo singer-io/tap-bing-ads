@@ -54,15 +54,26 @@ class TestBingAdsBookmarks(BingAdsBaseTest):
            {'bookmarks': {'accounts': {'last_record': '2020-11-23T03:58:39.610000+00:00'}}}
         """
 
-        stream_to_current_state = dict()
+        # stream_to_current_state = dict()
+        # for stream, bookmark in current_state['bookmarks'].items():
+        #     stream_to_current_state[stream] = bookmark.get(self.get_bookmark_key(stream))
+
+        # stream_to_calculated_state = dict()
+
+        # for stream, state in stream_to_current_state.items():
+        #     # convert state from string to datetime object
+        #     state_as_datetime = dateutil.parser.parse(state)
+        #     # subtract 1 day from the state
+        #     calculated_state_as_datetime = state_as_datetime - datetime.timedelta(days=1)
+        #     # convert back to string and format
+        #     calculated_state = str(calculated_state_as_datetime).replace(' ', 'T')
+        #     stream_to_calculated_state[stream] = calculated_state
+
+        stream_to_calculated_state = dict()
         for stream, bookmark in current_state['bookmarks'].items():
-            stream_to_current_state[stream] = bookmark.get(self.get_bookmark_key(stream))
-
-        stream_to_calculated_state = {stream: "" for stream in current_state['bookmarks'].keys()}
-
-        for stream, state in stream_to_current_state.items():
+            current_state = bookmark.get(self.get_bookmark_key(stream))
             # convert state from string to datetime object
-            state_as_datetime = dateutil.parser.parse(state)
+            state_as_datetime = dateutil.parser.parse(current_state)
             # subtract 1 day from the state
             calculated_state_as_datetime = state_as_datetime - datetime.timedelta(days=1)
             # convert back to string and format
@@ -155,15 +166,10 @@ class TestBingAdsBookmarks(BingAdsBaseTest):
                     first_bookmark_value_utc = self.convert_state_to_utc(first_bookmark_value)
                     second_bookmark_value_utc = self.convert_state_to_utc(second_bookmark_value)
 
+                    simulated_bookmark_value = new_state['bookmarks'][stream][bookmark_key]
+
                     # Verify the second sync bookmark is Equal to the first sync bookmark
                     self.assertEqual(second_bookmark_value, first_bookmark_value) # assumes no changes to data during test
-
-                    # Verify the second sync records respect the previous (simulated) bookmark value
-                    simulated_bookmark_value = new_state['bookmarks'][stream][bookmark_key]
-                    for message in second_sync_messages:
-                        replication_key_value = message.get('data').get(replication_key)
-                        self.assertGreaterEqual(replication_key_value, simulated_bookmark_value,
-                                                msg="Second sync records do not repect the previous bookmark.")
 
                     # Verify the first sync bookmark value is the max replication key value for a given stream
                     for message in first_sync_messages:
@@ -171,9 +177,14 @@ class TestBingAdsBookmarks(BingAdsBaseTest):
                         self.assertLessEqual(replication_key_value, first_bookmark_value_utc,
                                              msg="First sync bookmark was set incorrectly, a record with a greater rep key value was synced")
 
-                    # Verify the second sync bookmark value is the max replication key value for a given stream
                     for message in second_sync_messages:
                         replication_key_value = message.get('data').get(replication_key)
+
+                        # Verify the second sync records respect the previous (simulated) bookmark value
+                        self.assertGreaterEqual(replication_key_value, simulated_bookmark_value,
+                                                msg="Second sync records do not repect the previous bookmark.")
+
+                        # Verify the second sync bookmark value is the max replication key value for a given stream
                         self.assertLessEqual(replication_key_value, second_bookmark_value_utc,
                                              msg="Second sync bookmark was set incorrectly, a record with a greater rep key value was synced")
 
