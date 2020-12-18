@@ -843,3 +843,20 @@ class BingAdsBaseTest(unittest.TestCase):
 
             except ValueError:
                 return Exception("Datetime object is not of the format: {}".format(self.START_DATE_FORMAT))
+
+    def expected_streams_with_exclusions(self):
+        return {'campaign_performance_report', 'ad_group_performance_report'}
+
+    def get_as_many_fields_as_possbible_excluding_statistics(self, stream):
+        stats = self.get_all_statistics().get(stream, set())
+        all_fields = self.get_all_fields().get(stream, set())
+        uncategorized = self.get_uncategorized_exclusions().get(stream, set())
+
+        return all_fields.difference(stats).difference(uncategorized)
+
+    def get_as_many_fields_as_possbible_excluding_attributes(self, stream):
+        attributes = self.get_all_attributes().get(stream, set())
+        all_fields = self.get_all_fields().get(stream, set())
+        uncategorized = self.get_uncategorized_exclusions().get(stream, set())
+
+        return all_fields.difference(attributes).difference(uncategorized)

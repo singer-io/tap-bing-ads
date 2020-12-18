@@ -19,16 +19,16 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
         return "tap_tester_bing_ads_bookmarking_reports"
 
     def expected_sync_streams(self):
-        return {  # TODO get all these streams covered!!
+        return {
             'accounts',
             'ad_extension_detail_report',
-            # 'ad_group_performance_report', # TODO need to implement modified field selection
+            'ad_group_performance_report',
             'ad_groups',
             'ad_performance_report',
             'ads',
             'age_gender_audience_report',
             'audience_performance_report',
-            # 'campaign_performance_report', # TODO need to implement modified field selection
+            'campaign_performance_report',
             'campaigns',
             'geographic_performance_report',
             # 'goals_and_funnels_report',  # Unable to generate data for this stream
@@ -38,11 +38,11 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
     def get_delta_from_target_date(self, stream):
         stream_to_target_dates =  {
             'ad_extension_detail_report': "2020-11-18T00:00:00+00:00",
-            'ad_group_performance_report': "2020-11-18T00:00:00+00:00",
+            'ad_group_performance_report': "2020-11-20T00:00:00+00:00",
             'ad_performance_report': "2020-11-20T00:00:00+00:00",
             'age_gender_audience_report': "2020-11-20T00:00:00+00:00",
             'audience_performance_report': "2020-11-18T00:00:00+00:00",
-            'campaign_performance_report': "2020-11-18T00:00:00+00:00",
+            'campaign_performance_report': "2020-11-20T00:00:00+00:00",
             'geographic_performance_report': "2020-11-20T00:00:00+00:00",
             'keyword_performance_report': "2020-11-18T00:00:00+00:00",
             'search_query_performance_report': "2020-11-18T00:00:00+00:00",
@@ -60,12 +60,17 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
         return delta
 
     def stream_to_days_with_data(self):
-        return {  # TODO account for streams with only 1 day of data
+        return {
             'ad_extension_detail_report': {
                 "2020-11-18T00:00:00+00:00"
             },
             'ad_group_performance_report': {
+                "2020-11-17T00:00:00+00:00"
                 "2020-11-18T00:00:00+00:00"
+                "2020-11-19T00:00:00+00:00"
+                "2020-11-20T00:00:00+00:00"
+                "2020-11-21T00:00:00+00:00"
+                "2020-11-22T00:00:00+00:00"
             },
             'ad_performance_report': {
                 "2020-11-17T00:00:00+00:00"
@@ -87,7 +92,12 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
                 "2020-11-18T00:00:00+00:00"
             },
             'campaign_performance_report': {
+                "2020-11-17T00:00:00+00:00"
                 "2020-11-18T00:00:00+00:00"
+                "2020-11-19T00:00:00+00:00"
+                "2020-11-20T00:00:00+00:00"
+                "2020-11-21T00:00:00+00:00"
+                "2020-11-22T00:00:00+00:00"
             },
             'geographic_performance_report': {
                 "2020-11-17T00:00:00+00:00"
@@ -176,8 +186,37 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
 
     def test_run(self):
         """
+        Test is parametrized to account for the exclusions in some report streams.
+        By default we select all fields for a given stream for this test, however due to the
+        exclusions (see base.py for groups)  we will be running the test multiple times.
+
+        The first test run selects all fields for standard streams, and as many fields as allowed
+        including the Impression Share Performance Statistics for streams with exclusions.
+
+        The second test run selects all fields for standard streams, and as many fields as allowed
+        including Attributes for streams with exclusions.
+
+        Both runs account for uncategorized exclusion fields. See method in base.py.
+        """
+
+        # Test report bookmarks selecting all statistics fields for streams with exclusions
+        streams_to_fields_with_statistics = dict()
+        for stream in self.expected_streams_with_exclusions():
+            streams_to_fields_with_statistics[stream] = self.get_as_many_fields_as_possbible_excluding_attributes(stream)
+
+        self.bookmark_reports_test(streams_to_fields_with_statistics)
+
+
+        # Test report bookmarks selecting all attribute fields for streams with exclusions
+        streams_to_fields_with_attributes = dict()
+        for stream in self.expected_streams_with_exclusions():
+            streams_to_fields_with_attributes[stream] = self.get_as_many_fields_as_possbible_excluding_statistics(stream)
+
+        self.bookmark_reports_test(streams_to_fields_with_attributes)
+
+    def bookmark_reports_test(self, streams_to_fields_with_exclusions):
+        """
         Verify for each stream that you can do a sync which records bookmarks.
-        Verify inclusivivity of bookmarks TODO how?
         Verify that the bookmark is set to the day on which the sync is ran
         Verify that all data of the 2nd sync is >= the bookmark from the first sync - conversion_window
         Verify that the number of records in the 2nd sync is less then the first
@@ -194,14 +233,23 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
         # run in check mode
         found_catalogs = self.run_and_verify_check_mode(conn_id)
 
-        # Select all testable streams and no fields within streams
-        test_catalogs = [catalog for catalog in found_catalogs
-                         if catalog.get('tap_stream_id') in self.expected_sync_streams()]
-        self.select_all_streams_and_fields(conn_id, test_catalogs, select_all_fields=True)
+        # ensure our expectations are consistent for streams with exclusions
+        self.assertSetEqual(self.expected_streams_with_exclusions(), set(self.get_all_attributes().keys()))
+        self.assertSetEqual(self.expected_streams_with_exclusions(), set(self.get_all_statistics().keys()))
+
+        # table and field selection
+        test_catalogs_all_fields = [catalog for catalog in found_catalogs
+                                    if catalog.get('tap_stream_id') in self.expected_sync_streams()
+                                    and catalog.get('tap_stream_id') not in self.expected_streams_with_exclusions()]
         # BUG (https://stitchdata.atlassian.net/browse/SRCE-4304)
-        # self.perform_and_verify_table_and_field_selection(
-        #     conn_id, test_catalogs, select_all_fields=True
-        # )
+        # self.perform_and_verify_table_and_field_selection(conn_id, test_catalogs, select_all_fields=True)
+        self.select_all_streams_and_fields(conn_id, test_catalogs_all_fields, select_all_fields=True)
+        found_catalogs = menagerie.get_catalogs(conn_id)
+        test_catalogs_specific_fields = [catalog for catalog in found_catalogs
+                                         if catalog.get('tap_stream_id') in self.expected_sync_streams()
+                                         and catalog.get('tap_stream_id') in self.expected_streams_with_exclusions()]
+        self.perform_and_verify_adjusted_selection(conn_id, test_catalogs_specific_fields,
+                                                   select_all_fields=False, specific_fields=streams_to_fields_with_exclusions)
 
         # Run a sync job using orchestrator
         first_sync_record_count = self.run_and_verify_sync(conn_id)
@@ -213,11 +261,6 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
         simulated_states = self.calculated_states_by_stream(first_sync_bookmarks)
         for stream, bookmark in simulated_states.items():
             new_state['bookmarks'][stream] = {self.get_bookmark_key(stream): bookmark}
-        og_version = menagerie.get_state_version(conn_id)
-        print("Natural Bookmark: {}".format(first_sync_bookmarks))
-        print("Original Version {}".format(og_version))
-        print("Simulated Bookmark: {}".format(new_state))
-
         menagerie.set_state(conn_id, new_state)
 
         # Run a second sync job using orchestrator
@@ -279,6 +322,8 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
 
                     # Verify the second sync bookmark is Equal to the first sync bookmark
                     self.assertEqual(second_sync_bookmark_value, first_sync_bookmark_value) # assumes no changes to data during test
+
+                    # TODO account for report streams with only 1 day of data
 
                     # TODO the following assertions won't work until TODAY is 30 days (the default conversion_window)
                     # after target date used for calculating the simulated bookmark. So this should work next week (12/19 or 12/20)
