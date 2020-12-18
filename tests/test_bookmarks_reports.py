@@ -159,25 +159,22 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
                }
             }
         """
-
-        stream_to_current_bookmark_value = dict()
         stream_to_calculated_bookmark_value = {stream: "" for stream in current_state['bookmarks'].keys()}
 
         for stream, bookmark in current_state['bookmarks'].items():
-            stream_to_current_bookmark_value[stream] = bookmark.get(self.get_bookmark_key(stream))
+            bookmark_value = bookmark.get(self.get_bookmark_key(stream))
 
-
-        for stream, bookmark_value in stream_to_current_bookmark_value.items():
             if not self.is_report(stream):  # non-report streams do not change
                 stream_to_calculated_bookmark_value[stream] = bookmark_value
                 continue  # skipping concersion
 
-            delta = self.get_delta_from_target_date(stream)
-
             # convert state value from string to datetime object
             value_as_datetime = dateutil.parser.parse(bookmark_value)
+
             # subtract the timedelta to get to the target date
+            delta = self.get_delta_from_target_date(stream)
             calculated_value_as_datetime = value_as_datetime - delta
+
             # convert back to string and format
             calculated_bookmark_value = str(calculated_value_as_datetime).replace(' ', 'T')
             stream_to_calculated_bookmark_value[stream] = calculated_bookmark_value

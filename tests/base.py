@@ -116,13 +116,13 @@ class BingAdsBaseTest(unittest.TestCase):
 
         return {
             "accounts": accounts_meta,
-            "ad_extension_detail_report": extension_report, # DOCS_BUG | https://stitchdata.atlassian.net/browse/DOC-1504
-            "ad_group_performance_report": default_report, # TODO | DOCS_BUG | 'ad_group' not 'adgroup'
+            "ad_extension_detail_report": extension_report, # BUG_DOC-1504 | https://stitchdata.atlassian.net/browse/DOC-1504
+            "ad_group_performance_report": default_report, # BUG_DOC-1567 https://stitchdata.atlassian.net/browse/DOC-1567
             "ad_groups": default,
             "ad_performance_report": default_report,
             "ads": default,
-            "age_gender_audience_report": age_gender_report, # TODO | DOCS_BUG |'_audience_' not '_performance_'
-            "audience_performance_report": audience_report, # DOCS_BUG | https://stitchdata.atlassian.net/browse/DOC-1504
+            "age_gender_audience_report": age_gender_report, # BUG_DOC-1567
+            "audience_performance_report": audience_report, # BUG_DOC-1504
             "campaign_performance_report": default_report,
             "campaigns": default,
             "geographic_performance_report": geographic_report,
@@ -475,9 +475,13 @@ class BingAdsBaseTest(unittest.TestCase):
                 selected = catalog_entry.get('annotated-schema').get('selected')
                 print("Validating selection on {}: {}".format(cat['tap_stream_id'], selected))
                 if cat['stream_name'] not in expected_selected:
-                    # TODO this assumes we don't break up table and field selection, but we do
+                    # TODO | This assumes we don't break up table and field selection, but we do
+                    #        confirmed manually what we expect in selection here happens, this method
+                    #        needs to be reworked if we want to include this assertion.
                     # self.assertFalse(selected, msg="Stream selected, but not testable.")
+
                     continue  # Skip remaining assertions if we aren't selecting this stream
+
                 self.assertTrue(selected, msg="Stream not selected.")
 
                 if select_all_fields:
