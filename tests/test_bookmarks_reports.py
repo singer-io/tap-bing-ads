@@ -203,13 +203,13 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
 
         self.bookmark_reports_test(streams_to_fields_with_statistics)
 
+        # TODO UNCOMMENT
+        # # Test report bookmarks selecting all attribute fields for streams with exclusions
+        # streams_to_fields_with_attributes = dict()
+        # for stream in self.expected_streams_with_exclusions():
+        #     streams_to_fields_with_attributes[stream] = self.get_as_many_fields_as_possbible_excluding_statistics(stream)
 
-        # Test report bookmarks selecting all attribute fields for streams with exclusions
-        streams_to_fields_with_attributes = dict()
-        for stream in self.expected_streams_with_exclusions():
-            streams_to_fields_with_attributes[stream] = self.get_as_many_fields_as_possbible_excluding_statistics(stream)
-
-        self.bookmark_reports_test(streams_to_fields_with_attributes)
+        # self.bookmark_reports_test(streams_to_fields_with_attributes)
 
     def bookmark_reports_test(self, streams_to_fields_with_exclusions):
         """
@@ -265,12 +265,16 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
         second_sync_records = runner.get_records_from_target_output()
         second_sync_bookmarks = menagerie.get_state(conn_id)
 
+        stream_to_days = self.stream_to_days_with_data()
+
         # Test by stream
         for stream in self.expected_sync_streams():
             with self.subTest(stream=stream):
 
                 if not self.is_report(stream):
                     continue  # SKIPPING NON-REPORT STREAMS AS THEY ARE COVERED BY test_bookmarks.py
+
+                days_with_data = len(stream_to_days.get(stream, []))
 
                 # reports use an account_id prefix for bookmarking, use only the id
                 # associated with the Stitch Account
@@ -318,27 +322,26 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
                     self.assertEqual(second_sync_bookmark_value_utc, today_utc)
 
                     # Verify the second sync bookmark is Equal to the first sync bookmark
-                    self.assertEqual(second_sync_bookmark_value, first_sync_bookmark_value) # assumes no changes to data during test
+                    self.assertEqual(second_sync_bookmark_value, first_sync_bookmark_value) # assumes no data changes during test
 
-                    # TODO account for report streams with only 1 day of data
+                    # Verify the second sync records respect the previous (simulated) bookmark value and conversion window
+                    simulated_bookmark_value = new_state['bookmarks'][prefixed_stream][bookmark_key]
+                    conversion_window = self.DEFAULT_CONVERSION_WINDOW  # days ago
+                    bookmark_minus_lookback = self.timedelta_formatted(simulated_bookmark_value, days=conversion_window)
+                    for message in second_sync_messages:
+                        replication_key_value = message.get('data').get(replication_key)
+                        self.assertGreaterEqual(replication_key_value, bookmark_minus_lookback,
+                                                msg="Second sync records do not repect the previous bookmark.")
 
-                    # TODO the following assertions won't work until TODAY is 30 days (the default conversion_window)
-                    # after target date used for calculating the simulated bookmark. So this should work next week (12/19 or 12/20)
+                    # Verify the number of records in the 2nd sync is less then the first
+                    self.assertLess(second_sync_count, first_sync_count)
 
-                    # # Verify the second sync records respect the previous (simulated) bookmark value and conversion window
-                    # simulated_bookmark_value = new_state['bookmarks'][prefixed_stream][bookmark_key]
-                    # conversion_window = self.DEFAULT_CONVERSION_WINDOW  # days ago
-                    # bookmark_minus_lookback = self.timedelta_formatted(simulated_bookmark_value, days=conversion_window)
-                    # for message in second_sync_messages:
-                    #     replication_key_value = message.get('data').get(replication_key)
-                    #     self.assertGreaterEqual(replication_key_value, bookmark_minus_lookback,
-                    #                             msg="Second sync records do not repect the previous bookmark.")
 
-                    # # Verify the number of records in the 2nd sync is less then the first
-                    # self.assertLess(second_sync_count, first_sync_count)
+                    if days_with_data > 1:  # Reports with multiple days of data can be fully tested
 
-                    # # Verify at least 1 record was replicated in the second sync
-                    # self.assertGreater(second_sync_count, 0, msg="We are not fully testing bookmarking for {}".format(stream))
+                        # Verify at least 1 record was replicated in the second sync
+                        self.assertGreater(second_sync_count, 0, msg="We are not fully testing bookmarking for {}".format(stream))
+
 
                 else:
                     raise NotImplementedError("invalid replication method: {}".format(replication_method))

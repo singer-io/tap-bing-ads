@@ -471,15 +471,10 @@ class BingAdsBaseTest(unittest.TestCase):
             with self.subTest(cat=cat):
                 catalog_entry = menagerie.get_annotated_schema(conn_id, cat['stream_id'])
 
-                # Verify all testable streams are selected
+                # Verify intended streams are selected
                 selected = catalog_entry.get('annotated-schema').get('selected')
                 print("Validating selection on {}: {}".format(cat['tap_stream_id'], selected))
                 if cat['stream_name'] not in expected_selected:
-                    # TODO | This assumes we don't break up table and field selection, but we do
-                    #        confirmed manually what we expect in selection here happens, this method
-                    #        needs to be reworked if we want to include this assertion.
-                    # self.assertFalse(selected, msg="Stream selected, but not testable.")
-
                     continue  # Skip remaining assertions if we aren't selecting this stream
 
                 self.assertTrue(selected, msg="Stream not selected.")
@@ -781,7 +776,7 @@ class BingAdsBaseTest(unittest.TestCase):
             }
         }
 
-    def max_replication_key_values_by_stream(self, sync_records):  # TODO simplify this method
+    def max_replication_key_values_by_stream(self, sync_records):
         """
         Return the maximum value for the replication key for each stream
         which is normally the expected value for a bookmark. But in the case of reports,
@@ -791,18 +786,21 @@ class BingAdsBaseTest(unittest.TestCase):
         string compared which works for ISO date-time strings
         """
         max_bookmarks = dict()
+        datetime_minimum_formatted = dt.strftime(dt.min, self.BOOKMARK_COMPARISON_FORMAT)
         account_to_test = self.get_account_id_with_report_data()
 
         for stream, batch in sync_records.items():
 
             if self.expected_replication_method().get(stream) != self.INCREMENTAL:
-                continue
+                continue  # skip full table streams
 
             stream_replication_key = self.expected_replication_keys().get(stream, set()).pop()
 
+            # use bookmark key instead of replication key and drop the prefixed account id if necessary
             if self.is_report(stream):
                 stream_bookmark_key = 'date'
                 prefix = account_to_test + '_'
+
             elif stream == 'accounts':
                 stream_bookmark_key = 'last_record'
                 prefix = ''
@@ -813,23 +811,18 @@ class BingAdsBaseTest(unittest.TestCase):
 
             prefixed_stream = prefix + stream
 
+            # we don't care about activate version meessages
             upsert_messages = [m for m in batch.get('messages') if m['action'] == 'upsert']
-
-
-            # TODO give this a default value which can help simplify comparisons in loop below
-            bk_values = [message["data"].get(stream_replication_key)
-                         for message in upsert_messages]
+            bookmark_values = [message["data"].get(stream_replication_key)
+                               for message in upsert_messages]
             max_bookmarks[prefixed_stream] = {stream_bookmark_key: None}
 
-            for bk_value in bk_values:
-                if bk_value is None:
+            for bookmark_value in bookmark_values:
+                if bookmark_value is None:
                     continue
 
-                if max_bookmarks[prefixed_stream][stream_bookmark_key] is None:
-                    max_bookmarks[prefixed_stream][stream_bookmark_key] = bk_value
-
-                if bk_value > max_bookmarks[prefixed_stream][stream_bookmark_key]:
-                    max_bookmarks[prefixed_stream][stream_bookmark_key] = bk_value
+                if bookmark_value > max_bookmarks[prefixed_stream].get(stream_bookmark_key, datetime_minimum_formatted):
+                    max_bookmarks[prefixed_stream][stream_bookmark_key] = bookkmark_value
 
         return max_bookmarks
 
