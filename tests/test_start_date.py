@@ -36,31 +36,6 @@ class BingAdsStartDateTest(BingAdsBaseTest):
             'search_query_performance_report',
         }
 
-    def expected_streams_with_exclusions(self):
-        return {'campaign_performance_report', 'ad_group_performance_report'}
-
-    def get_as_many_fields_as_possbible_excluding_statistics(self, stream):
-        stats = self.get_all_statistics().get(stream, set())
-        all_fields = self.get_all_fields().get(stream, set())
-        uncategorized = self.get_uncategorized_exclusions().get(stream, set())
-
-        return all_fields.difference(stats).difference(uncategorized)
-
-    def get_as_many_fields_as_possbible_excluding_attributes(self, stream):
-        attributes = self.get_all_attributes().get(stream, set())
-        all_fields = self.get_all_fields().get(stream, set())
-        uncategorized = self.get_uncategorized_exclusions().get(stream, set())
-
-        return all_fields.difference(attributes).difference(uncategorized)
-
-    def timedelta_formatted(self, dtime, days=0):
-        try:
-            date_stripped = dt.strptime(dtime, self.START_DATE_FORMAT)
-            return_date = date_stripped + timedelta(days=days)
-            return dt.strftime(return_date, self.START_DATE_FORMAT)
-        except ValueError:
-            return Exception("Datetime object is not of the format: {}".format(self.START_DATE_FORMAT))
-
 
     def test_run(self):
         """
@@ -74,7 +49,7 @@ class BingAdsStartDateTest(BingAdsBaseTest):
         The second test run selects all fields for standard streams, and as many fields as allowed
         including Attributes for streams with exclusions.
 
-        Both runs account for uncategorized exclusion fields. See method for explanation.
+        Both runs account for uncategorized exclusion fields. See method in base.py.
         """
 
         # Test start date selecting all fields for standard streams, and all statistic fields for streams with exclusions

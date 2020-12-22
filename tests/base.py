@@ -5,6 +5,7 @@ Run discovery for as a prerequisite for most tests
 import unittest
 import copy
 import os
+from datetime import timedelta
 from datetime import datetime as dt
 from datetime import timezone as tz
 
@@ -20,12 +21,15 @@ class BingAdsBaseTest(unittest.TestCase):
     REPLICATION_KEYS = "valid-replication-keys"
     PRIMARY_KEYS = "table-key-properties"
     FOREIGN_KEYS = "table-foreign-key-properties"
-    REQUIRED_KEYS = "required_keys"
     REPLICATION_METHOD = "forced-replication-method"
     API_LIMIT = "max-row-limit"
     INCREMENTAL = "INCREMENTAL"
     FULL_TABLE = "FULL_TABLE"
     START_DATE_FORMAT = "%Y-%m-%dT00:00:00Z"
+
+    BOOKMARK_COMPARISON_FORMAT = "%Y-%m-%dT00:00:00+00:00"
+    DEFAULT_CONVERSION_WINDOW = -30 # days
+    REQUIRED_KEYS = "required_keys"
 
     @staticmethod
     def tap_name():
@@ -43,6 +47,7 @@ class BingAdsBaseTest(unittest.TestCase):
             'start_date': '2020-10-01T00:00:00Z',
             'customer_id': '163875182',
             'account_ids': '163078754,140168565,71086605',
+            # 'conversion_window': '-15',  # advanced option
         }
         # cid=42183085 aid=71086605  uid=71069166 (RJMetrics)
         # cid=42183085 aid=163078754 uid=71069166 (Stitch)
@@ -111,13 +116,13 @@ class BingAdsBaseTest(unittest.TestCase):
 
         return {
             "accounts": accounts_meta,
-            "ad_extension_detail_report": extension_report, # DOCS_BUG | https://stitchdata.atlassian.net/browse/DOC-1504
-            "ad_group_performance_report": default_report, # TODO | DOCS_BUG | 'ad_group' not 'adgroup'
+            "ad_extension_detail_report": extension_report, # BUG_DOC-1504 | https://stitchdata.atlassian.net/browse/DOC-1504
+            "ad_group_performance_report": default_report, # BUG_DOC-1567 https://stitchdata.atlassian.net/browse/DOC-1567
             "ad_groups": default,
             "ad_performance_report": default_report,
             "ads": default,
-            "age_gender_audience_report": age_gender_report, # TODO | DOCS_BUG |'_audience_' not '_performance_'
-            "audience_performance_report": audience_report, # DOCS_BUG | https://stitchdata.atlassian.net/browse/DOC-1504
+            "age_gender_audience_report": age_gender_report, # BUG_DOC-1567
+            "audience_performance_report": audience_report, # BUG_DOC-1504
             "campaign_performance_report": default_report,
             "campaigns": default,
             "geographic_performance_report": geographic_report,
@@ -466,13 +471,12 @@ class BingAdsBaseTest(unittest.TestCase):
             with self.subTest(cat=cat):
                 catalog_entry = menagerie.get_annotated_schema(conn_id, cat['stream_id'])
 
-                # Verify all testable streams are selected
+                # Verify intended streams are selected
                 selected = catalog_entry.get('annotated-schema').get('selected')
                 print("Validating selection on {}: {}".format(cat['tap_stream_id'], selected))
                 if cat['stream_name'] not in expected_selected:
-                    # TODO this assumes we don't break up table and field selection, but we do
-                    # self.assertFalse(selected, msg="Stream selected, but not testable.")
                     continue  # Skip remaining assertions if we aren't selecting this stream
+
                 self.assertTrue(selected, msg="Stream not selected.")
 
                 if select_all_fields:
@@ -772,7 +776,7 @@ class BingAdsBaseTest(unittest.TestCase):
             }
         }
 
-    def max_replication_key_values_by_stream(self, sync_records):  # TODO simplify this method
+    def max_replication_key_values_by_stream(self, sync_records):
         """
         Return the maximum value for the replication key for each stream
         which is normally the expected value for a bookmark. But in the case of reports,
@@ -782,18 +786,21 @@ class BingAdsBaseTest(unittest.TestCase):
         string compared which works for ISO date-time strings
         """
         max_bookmarks = dict()
+        datetime_minimum_formatted = dt.strftime(dt.min, self.BOOKMARK_COMPARISON_FORMAT)
         account_to_test = self.get_account_id_with_report_data()
 
         for stream, batch in sync_records.items():
 
             if self.expected_replication_method().get(stream) != self.INCREMENTAL:
-                continue
+                continue  # skip full table streams
 
             stream_replication_key = self.expected_replication_keys().get(stream, set()).pop()
 
+            # use bookmark key instead of replication key and drop the prefixed account id if necessary
             if self.is_report(stream):
                 stream_bookmark_key = 'date'
                 prefix = account_to_test + '_'
+
             elif stream == 'accounts':
                 stream_bookmark_key = 'last_record'
                 prefix = ''
@@ -804,21 +811,51 @@ class BingAdsBaseTest(unittest.TestCase):
 
             prefixed_stream = prefix + stream
 
+            # we don't care about activate version meessages
             upsert_messages = [m for m in batch.get('messages') if m['action'] == 'upsert']
-
-            # TODO give this a default value which can help simplify comparisons in loop below
-            bk_values = [message["data"].get(stream_replication_key)
-                         for message in upsert_messages]
+            bookmark_values = [message["data"].get(stream_replication_key)
+                               for message in upsert_messages]
             max_bookmarks[prefixed_stream] = {stream_bookmark_key: None}
 
-            for bk_value in bk_values:
-                if bk_value is None:
+            for bookmark_value in bookmark_values:
+                if bookmark_value is None:
                     continue
 
-                if max_bookmarks[prefixed_stream][stream_bookmark_key] is None:
-                    max_bookmarks[prefixed_stream][stream_bookmark_key] = bk_value
-
-                if bk_value > max_bookmarks[prefixed_stream][stream_bookmark_key]:
-                    max_bookmarks[prefixed_stream][stream_bookmark_key] = bk_value
+                if bookmark_value > max_bookmarks[prefixed_stream].get(stream_bookmark_key, datetime_minimum_formatted):
+                    max_bookmarks[prefixed_stream][stream_bookmark_key] = bookkmark_value
 
         return max_bookmarks
+
+    def timedelta_formatted(self, dtime, days=0):
+        try:
+            date_stripped = dt.strptime(dtime, self.START_DATE_FORMAT)
+            return_date = date_stripped + timedelta(days=days)
+
+            return dt.strftime(return_date, self.START_DATE_FORMAT)
+
+        except ValueError:
+            try:
+                date_stripped = dt.strptime(dtime, self.BOOKMARK_COMPARISON_FORMAT)
+                return_date = date_stripped + timedelta(days=days)
+
+                return dt.strftime(return_date, self.BOOKMARK_COMPARISON_FORMAT)
+
+            except ValueError:
+                return Exception("Datetime object is not of the format: {}".format(self.START_DATE_FORMAT))
+
+    def expected_streams_with_exclusions(self):
+        return {'campaign_performance_report', 'ad_group_performance_report'}
+
+    def get_as_many_fields_as_possbible_excluding_statistics(self, stream):
+        stats = self.get_all_statistics().get(stream, set())
+        all_fields = self.get_all_fields().get(stream, set())
+        uncategorized = self.get_uncategorized_exclusions().get(stream, set())
+
+        return all_fields.difference(stats).difference(uncategorized)
+
+    def get_as_many_fields_as_possbible_excluding_attributes(self, stream):
+        attributes = self.get_all_attributes().get(stream, set())
+        all_fields = self.get_all_fields().get(stream, set())
+        uncategorized = self.get_uncategorized_exclusions().get(stream, set())
+
+        return all_fields.difference(attributes).difference(uncategorized)

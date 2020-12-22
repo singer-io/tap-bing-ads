@@ -126,7 +126,7 @@ class DiscoveryTest(BingAdsBaseTest):
                 # END OF BUG SRCE-4315
 
                 expected_primary_keys = self.expected_primary_keys()[stream]
-                expected_foreign_keys = self.expected_foreign_keys()[stream] # TODO add foreign keys to expectations
+                expected_foreign_keys = self.expected_foreign_keys()[stream]
                 expected_replication_keys = self.expected_replication_keys()[stream]
                 expected_required_keys = self.expected_required_fields()[stream]
                 expected_automatic_fields = expected_primary_keys | expected_replication_keys \

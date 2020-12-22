@@ -53,22 +53,6 @@ class TestBingAdsBookmarks(BingAdsBaseTest):
         Formatting of state
            {'bookmarks': {'accounts': {'last_record': '2020-11-23T03:58:39.610000+00:00'}}}
         """
-
-        # stream_to_current_state = dict()
-        # for stream, bookmark in current_state['bookmarks'].items():
-        #     stream_to_current_state[stream] = bookmark.get(self.get_bookmark_key(stream))
-
-        # stream_to_calculated_state = dict()
-
-        # for stream, state in stream_to_current_state.items():
-        #     # convert state from string to datetime object
-        #     state_as_datetime = dateutil.parser.parse(state)
-        #     # subtract 1 day from the state
-        #     calculated_state_as_datetime = state_as_datetime - datetime.timedelta(days=1)
-        #     # convert back to string and format
-        #     calculated_state = str(calculated_state_as_datetime).replace(' ', 'T')
-        #     stream_to_calculated_state[stream] = calculated_state
-
         stream_to_calculated_state = dict()
         for stream, bookmark in current_state['bookmarks'].items():
             current_state = bookmark.get(self.get_bookmark_key(stream))
@@ -146,35 +130,35 @@ class TestBingAdsBookmarks(BingAdsBaseTest):
                 second_sync_messages = second_sync_records.get(stream, {'messages': []}).get('messages')
 
                 # bookmarked states (top level objects)
-                first_bookmark_key_value = first_sync_bookmarks.get('bookmarks').get(stream)
-                second_bookmark_key_value = second_sync_bookmarks.get('bookmarks').get(stream)
+                first_sync_bookmark_key_value = first_sync_bookmarks.get('bookmarks').get(stream)
+                second_sync_bookmark_key_value = second_sync_bookmarks.get('bookmarks').get(stream)
 
                 if replication_method == self.INCREMENTAL:
                     replication_key = self.expected_replication_keys().get(stream).pop()
                     bookmark_key = self.get_bookmark_key(stream)  # BUG_SRCE-4609
 
                     # Verify the first sync sets a bookmark of the expected form
-                    self.assertIsNotNone(first_bookmark_key_value)
+                    self.assertIsNotNone(first_sync_bookmark_key_value)
 
                     # Verify the second sync sets a bookmark of the expected form
-                    self.assertIsNotNone(second_bookmark_key_value)
+                    self.assertIsNotNone(second_sync_bookmark_key_value)
 
                     # bookmarked states (actual values)
-                    first_bookmark_value = first_bookmark_key_value.get(bookmark_key)
-                    second_bookmark_value = second_bookmark_key_value.get(bookmark_key)
+                    first_sync_bookmark_value = first_sync_bookmark_key_value.get(bookmark_key)
+                    second_sync_bookmark_value = second_sync_bookmark_key_value.get(bookmark_key)
                     # bookmarked values as utc for comparing against records
-                    first_bookmark_value_utc = self.convert_state_to_utc(first_bookmark_value)
-                    second_bookmark_value_utc = self.convert_state_to_utc(second_bookmark_value)
+                    first_sync_bookmark_value_utc = self.convert_state_to_utc(first_sync_bookmark_value)
+                    second_sync_bookmark_value_utc = self.convert_state_to_utc(second_sync_bookmark_value)
 
                     simulated_bookmark_value = new_state['bookmarks'][stream][bookmark_key]
 
                     # Verify the second sync bookmark is Equal to the first sync bookmark
-                    self.assertEqual(second_bookmark_value, first_bookmark_value) # assumes no changes to data during test
+                    self.assertEqual(second_sync_bookmark_value, first_sync_bookmark_value) # assumes no changes to data during test
 
                     # Verify the first sync bookmark value is the max replication key value for a given stream
                     for message in first_sync_messages:
                         replication_key_value = message.get('data').get(replication_key)
-                        self.assertLessEqual(replication_key_value, first_bookmark_value_utc,
+                        self.assertLessEqual(replication_key_value, first_sync_bookmark_value_utc,
                                              msg="First sync bookmark was set incorrectly, a record with a greater rep key value was synced")
 
                     for message in second_sync_messages:
@@ -185,7 +169,7 @@ class TestBingAdsBookmarks(BingAdsBaseTest):
                                                 msg="Second sync records do not repect the previous bookmark.")
 
                         # Verify the second sync bookmark value is the max replication key value for a given stream
-                        self.assertLessEqual(replication_key_value, second_bookmark_value_utc,
+                        self.assertLessEqual(replication_key_value, second_sync_bookmark_value_utc,
                                              msg="Second sync bookmark was set incorrectly, a record with a greater rep key value was synced")
 
                     # Verify the number of records in the 2nd sync is less then the first
@@ -196,10 +180,10 @@ class TestBingAdsBookmarks(BingAdsBaseTest):
 
                 elif replication_method == self.FULL_TABLE:
                     # Verify the first sync sets a bookmark of the expected form
-                    self.assertIsNone(first_bookmark_key_value)
+                    self.assertIsNone(first_sync_bookmark_key_value)
 
                     # Verify the second sync sets a bookmark of the expected form
-                    self.assertIsNone(second_bookmark_key_value)
+                    self.assertIsNone(second_sync_bookmark_key_value)
 
                 else:
                     raise NotImplementedError("invalid replication method: {}".format(replication_method))
