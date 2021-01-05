@@ -11,7 +11,7 @@ REPORT_WHITELIST = [
     'AdExtensionDetailReport'
 ]
 
-REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'TimePeriod']
+REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'TimePeriod', 'Id']
 
 REPORT_SPECIFIC_REQUIRED_FIELDS = {
     'GeographicPerformanceReport': ['AccountName'],
