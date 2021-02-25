@@ -497,7 +497,7 @@ def get_selected_fields(catalog_item, exclude=None):
             selected_fields.append(prop)
 
     if any(invalid_selections):
-        logger.warn("Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{}".format(json.dumps(invalid_selections, indent=4)))
+        LOGGER.warn("Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{}".format(json.dumps(invalid_selections, indent=4)))
     return selected_fields
 
 def filter_selected_fields(selected_fields, obj):
