@@ -695,7 +695,7 @@ def stream_report(stream_name, report_name, url, report_time):
                 header_line = next(csv_file)[1:-1]
                 headers = header_line.replace('"', '').split(',')
 
-                reader = csv.DictReader(csv_file, fieldnames=headers)
+                reader = csv.DictReader((line.replace('\0', '') for line in csv_file), fieldnames=headers)
 
                 with metrics.record_counter(stream_name) as counter:
                     for row in reader:
