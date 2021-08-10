@@ -84,7 +84,8 @@ class BingAdsStartDateTest(BingAdsBaseTest):
         conn_id_1 = self.create_connection()
 
         # run check mode
-        found_catalogs_1 = self.run_and_verify_check_mode(conn_id_1)
+        found_catalogs = menagerie.get_catalogs(conn_id_1)
+        found_catalogs_1 = set(map(lambda c: c['tap_stream_id'], found_catalogs))
 
         # ensure our expectations are consistent for streams with exclusions
         self.assertSetEqual(self.expected_streams_with_exclusions(), set(self.get_all_attributes().keys()))
@@ -97,7 +98,7 @@ class BingAdsStartDateTest(BingAdsBaseTest):
         # BUG (https://stitchdata.atlassian.net/browse/SRCE-4304)
         # self.perform_and_verify_and_field_selection(conn_id_1, test_catalogs_1_all_fields, select_all_fields=True)
         self.select_all_streams_and_fields(conn_id_1, test_catalogs_1_all_fields, select_all_fields=True) # BUG_SRCE-4304
-        found_catalogs_1 = menagerie.get_catalogs(conn_id_1)
+        found_catalogs_1 = found_catalogs
         test_catalogs_1_specific_fields = [catalog for catalog in found_catalogs_1
                                            if catalog.get('tap_stream_id') in self.expected_sync_streams()
                                            and catalog.get('tap_stream_id') in self.expected_streams_with_exclusions()]
@@ -127,7 +128,8 @@ class BingAdsStartDateTest(BingAdsBaseTest):
         conn_id_2 = self.create_connection(original_properties=False)
 
         # run check mode
-        found_catalogs_2 = self.run_and_verify_check_mode(conn_id_2)
+        found_catalogs = menagerie.get_catalogs(conn_id_2)
+        found_catalogs_2 = set(map(lambda c: c['tap_stream_id'], found_catalogs))
 
         # table and field selection
         test_catalogs_2_all_fields = [catalog for catalog in found_catalogs_2
@@ -136,7 +138,7 @@ class BingAdsStartDateTest(BingAdsBaseTest):
         # BUG (https://stitchdata.atlassian.net/browse/SRCE-4304)
         # self.perform_and_verify_and_field_selection(conn_id_2, test_catalogs_2_all_fields, select_all_fields=True)
         self.select_all_streams_and_fields(conn_id_2, test_catalogs_2_all_fields, select_all_fields=True) # BUG_SRCE-4304
-        found_catalogs_2 = menagerie.get_catalogs(conn_id_2)
+        found_catalogs_2 = found_catalogs
         test_catalogs_2_specific_fields = [catalog for catalog in found_catalogs_2
                                            if catalog.get('tap_stream_id') in self.expected_sync_streams()
                                            and catalog.get('tap_stream_id') in self.expected_streams_with_exclusions()]

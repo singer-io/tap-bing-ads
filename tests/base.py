@@ -17,6 +17,11 @@ def backoff_wait_times():
     return backoff.expo(factor=30)
 
 
+class RetryableTapError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
 class BingAdsBaseTest(unittest.TestCase):
     """
     Setup expectations for test sub classes
@@ -202,18 +207,26 @@ class BingAdsBaseTest(unittest.TestCase):
         """Create a new connection with the test name"""
         # Create the connection
         conn_id = connections.ensure_connection(self, original_properties)
+        self.run_check_mode(conn_id)
+        return conn_id
 
+    def run_check_mode(self, conn_id):
         # Run a check job using orchestrator (discovery)
         check_job_name = runner.run_check_mode(self, conn_id)
 
         # Assert that the check job succeeded
         exit_status = menagerie.get_exit_status(conn_id, check_job_name)
         menagerie.verify_check_exit_status(self, exit_status, check_job_name)
-        return conn_id
 
-    @backoff.on_exception(backoff_wait_times,
-                          AssertionError,
-                          max_tries=3)
+    def verify_check_mode(self, conn_id):
+        found_catalogs = menagerie.get_catalogs(conn_id)
+        self.assertGreater(len(found_catalogs), 0, msg="unable to locate schemas for connection {}".format(conn_id))
+
+        found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
+        self.assertSetEqual(self.expected_streams(), found_catalog_names, msg="discovered schemas do not match")
+        print("discovered schemas are OK")
+        return found_catalogs
+
     def run_and_verify_check_mode(self, conn_id):
         """
         Run the tap in check mode and verify it succeeds.
@@ -221,24 +234,11 @@ class BingAdsBaseTest(unittest.TestCase):
 
         Return the connection id and found catalogs from menagerie.
         """
-        # run in check mode
-        check_job_name = runner.run_check_mode(self, conn_id)
-
-        # verify check exit codes
-        exit_status = menagerie.get_exit_status(conn_id, check_job_name)
-        menagerie.verify_check_exit_status(self, exit_status, check_job_name)
-
-        found_catalogs = menagerie.get_catalogs(conn_id)
-        self.assertGreater(len(found_catalogs), 0, msg="unable to locate schemas for connection {}".format(conn_id))
-
-        found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
-        self.assertSetEqual(self.expected_streams(), found_catalog_names, msg="discovered schemas do not match")
-        print("discovered schemas are OK")
-
-        return found_catalogs
+        self.run_check_mode(conn_id)
+        return self.verify_check_mode(conn_id)
 
     @backoff.on_exception(backoff_wait_times,
-                          AssertionError,
+                          RetryableTapError,
                           max_tries=3)
     def run_and_verify_sync(self, conn_id):
         """
@@ -251,7 +251,13 @@ class BingAdsBaseTest(unittest.TestCase):
 
         # Verify tap and target exit codes
         exit_status = menagerie.get_exit_status(conn_id, sync_job_name)
-        menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
+        try:
+            menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
+        except AssertionError as e:
+            if "tap_exit_status for job" in e.message:
+                raise RetryableTapError(e.message)
+
+            raise
 
         # Verify actual rows were synced
         sync_record_count = runner.examine_target_output_file(
