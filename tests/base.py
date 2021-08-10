@@ -3,6 +3,7 @@ Setup expectations for test sub classes
 Run discovery for as a prerequisite for most tests
 """
 import unittest
+import backoff
 import copy
 import os
 from datetime import timedelta
@@ -10,6 +11,10 @@ from datetime import datetime as dt
 from datetime import timezone as tz
 
 from tap_tester import connections, menagerie, runner
+
+def backoff_wait_times():
+    """Create a generator of wait times as [30, 60, 120, 240, 480, ...]"""
+    return backoff.expo(factor=30)
 
 
 class BingAdsBaseTest(unittest.TestCase):
@@ -206,6 +211,9 @@ class BingAdsBaseTest(unittest.TestCase):
         menagerie.verify_check_exit_status(self, exit_status, check_job_name)
         return conn_id
 
+    @backoff.on_exception(backoff_wait_times,
+                          AssertionError,
+                          max_tries=3)
     def run_and_verify_check_mode(self, conn_id):
         """
         Run the tap in check mode and verify it succeeds.
@@ -229,6 +237,9 @@ class BingAdsBaseTest(unittest.TestCase):
 
         return found_catalogs
 
+    @backoff.on_exception(backoff_wait_times,
+                          AssertionError,
+                          max_tries=3)
     def run_and_verify_sync(self, conn_id):
         """
         Run a sync job and make sure it exited properly.
