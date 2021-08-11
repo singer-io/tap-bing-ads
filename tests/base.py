@@ -210,13 +210,23 @@ class BingAdsBaseTest(unittest.TestCase):
         self.run_check_mode(conn_id)
         return conn_id
 
+    @backoff.on_exception(backoff_wait_times,
+                          RetryableTapError,
+                          max_tries=3)
     def run_check_mode(self, conn_id):
         # Run a check job using orchestrator (discovery)
         check_job_name = runner.run_check_mode(self, conn_id)
 
         # Assert that the check job succeeded
         exit_status = menagerie.get_exit_status(conn_id, check_job_name)
-        menagerie.verify_check_exit_status(self, exit_status, check_job_name)
+        try:
+            menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
+        except AssertionError as e:
+            if exit_status['discovery_error_message']:
+                print("*******************RETRYING CHECK FOR DISCOVERY FAILURE*******************")
+                raise RetryableTapError(e)
+
+            raise
 
     def verify_check_mode(self, conn_id):
         found_catalogs = menagerie.get_catalogs(conn_id)
