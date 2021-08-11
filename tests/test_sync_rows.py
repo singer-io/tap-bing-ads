@@ -64,7 +64,8 @@ class BingAdsSyncRows(BingAdsBaseTest):
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=False)
 
         # Run a sync job using orchestrator
-        record_count_by_stream = self.run_and_verify_sync(conn_id)
+        state = menagerie.get_state(conn_id)
+        record_count_by_stream = self.run_and_verify_sync(conn_id, state)
 
         # Ensure all records have a value for PK(s)
         records = runner.get_records_from_target_output()

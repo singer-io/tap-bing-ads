@@ -104,7 +104,8 @@ class BingAdsStartDateTest(BingAdsBaseTest):
                                                    select_all_fields=False, specific_fields=streams_to_fields_with_exclusions)
 
         # run initial sync
-        record_count_by_stream_1 = self.run_and_verify_sync(conn_id_1)
+        state = menagerie.get_state(conn_id)
+        record_count_by_stream_1 = self.run_and_verify_sync(conn_id, state)
 
         replicated_row_count_1 = sum(record_count_by_stream_1.values())
         self.assertGreater(replicated_row_count_1, 0, msg="failed to replicate any data: {}".format(record_count_by_stream_1))
@@ -142,7 +143,8 @@ class BingAdsStartDateTest(BingAdsBaseTest):
                                                    select_all_fields=False, specific_fields=streams_to_fields_with_exclusions)
 
         # run sync
-        record_count_by_stream_2 = self.run_and_verify_sync(conn_id_2)
+        state = menagerie.get_state(conn_id)
+        record_count_by_stream_2 = self.run_and_verify_sync(conn_id, state)
 
         replicated_row_count_2 = sum(record_count_by_stream_2.values())
         self.assertGreater(replicated_row_count_2, 0, msg="failed to replicate any data")

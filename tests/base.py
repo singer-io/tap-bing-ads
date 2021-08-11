@@ -240,12 +240,15 @@ class BingAdsBaseTest(unittest.TestCase):
     @backoff.on_exception(backoff_wait_times,
                           RetryableTapError,
                           max_tries=3)
-    def run_and_verify_sync(self, conn_id):
+    def run_and_verify_sync(self, conn_id, state):
         """
         Run a sync job and make sure it exited properly.
         Return a dictionary with keys of streams synced
         and values of records synced for each stream
         """
+        # reset state to the state at the start of the sync in case we got interrupted
+        menagerie.set_state(conn_id, state)
+
         # Run a sync job using orchestrator
         sync_job_name = runner.run_sync_mode(self, conn_id)
 
