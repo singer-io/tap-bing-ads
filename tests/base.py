@@ -254,8 +254,9 @@ class BingAdsBaseTest(unittest.TestCase):
         try:
             menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
         except AssertionError as e:
-            if "tap_exit_status for job" in e.message:
-                raise RetryableTapError(e.message)
+            if exit_status['discovery_error_message'] or exit_status['tap_error_message']:
+                print("*******************RETRYING SYNC FOR TAP/DISCOVERY FAILURE*******************"
+                raise RetryableTapError(e)
 
             raise
 
