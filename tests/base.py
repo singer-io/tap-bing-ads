@@ -220,7 +220,7 @@ class BingAdsBaseTest(unittest.TestCase):
         # Assert that the check job succeeded
         exit_status = menagerie.get_exit_status(conn_id, check_job_name)
         try:
-            menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
+            menagerie.verify_sync_exit_status(self, exit_status, check_job_name)
         except AssertionError as e:
             if exit_status['discovery_error_message']:
                 print("*******************RETRYING CHECK FOR DISCOVERY FAILURE*******************")
