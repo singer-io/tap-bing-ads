@@ -114,7 +114,8 @@ class MinimumSelectionTest(BingAdsBaseTest):
         # COMMENT EVERYTHING DOWN FROM HERE TO ADDRESS BUG_SRCE-4313
 
         # Run a sync job using orchestrator
-        record_count_by_stream = self.run_and_verify_sync(conn_id)
+        state = menagerie.get_state(conn_id)
+        record_count_by_stream = self.run_and_verify_sync(conn_id, state)
 
         actual_fields_by_stream = runner.examine_target_output_for_fields()
 
