@@ -323,7 +323,12 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
         stream_def['metadata'] = list(map(
           lambda field: {"metadata": {"inclusion": "available"}, "breadcrumb": ["properties", field]},
           (schema['properties'].keys() - excluded_inclusion_fields)))
-
+    stream_def['metadata'].append({
+        'breadcrumb': [],
+        'metadata': {
+            'table-key-properties': pks
+        }
+    })
     return stream_def
 
 def get_core_schema(client, obj):
