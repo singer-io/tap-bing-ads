@@ -11,7 +11,7 @@ from zipfile import ZipFile
 
 import singer
 from singer import utils, metadata, metrics
-from bingads import AuthorizationData, OAuthWebAuthCodeGrant, ServiceClient, BINGADS_MANAGE, MSADS_MANAGE
+from bingads import AuthorizationData, OAuthWebAuthCodeGrant, ServiceClient
 import suds
 from suds.sudsobject import asdict
 import stringcase
@@ -105,9 +105,9 @@ def create_sdk_client(service, account_id):
                 service, account_id)
 
     if CONFIG.get('require_live_connect', 'True') == 'True':
-        oauth_scope = BINGADS_MANAGE
+        oauth_scope = 'bingads.manage'
     else:
-        oauth_scope = MSADS_MANAGE
+        oauth_scope = 'msads.manage'
 
     authentication = OAuthWebAuthCodeGrant(
         CONFIG['oauth_client_id'],
