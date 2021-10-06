@@ -104,11 +104,16 @@ def create_sdk_client(service, account_id):
     LOGGER.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
                 service, account_id)
 
+    if config.get('require_live_connect', 'True') == 'True':
+        oauth_scope = 'bingads.manage'
+    else:
+        oauth_scope = 'msads.manage'
+
     authentication = OAuthWebAuthCodeGrant(
         CONFIG['oauth_client_id'],
         CONFIG['oauth_client_secret'],
         '',
-        oauth_scope='bingads.manage') ## redirect URL not needed for refresh token
+        oauth_scope=oauth_scope) ## redirect URL not needed for refresh token
 
     authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
 
