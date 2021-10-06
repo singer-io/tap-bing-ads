@@ -104,7 +104,7 @@ def create_sdk_client(service, account_id):
     LOGGER.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
                 service, account_id)
 
-    if config.get('require_live_connect', 'True') == 'True':
+    if CONFIG.get('require_live_connect', 'True') == 'True':
         oauth_scope = 'bingads.manage'
     else:
         oauth_scope = 'msads.manage'
