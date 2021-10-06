@@ -117,8 +117,7 @@ class BingAdsBaseTest(unittest.TestCase):
         #               'Impressions', 'Ctr', 'Clicks' shouldn't be automatic
         extension_report = copy.deepcopy(default_report)
         extension_report[self.REQUIRED_KEYS] = {
-            'AdExtensionId', 'AdExtensionPropertyValue', 'AdExtensionType', 'AdExtensionTypeId',
-            'Impressions', 'Ctr', 'Clicks'  # Comment this line to reproduce BUG_SRCE-4578
+            'AdExtensionId', 'AdExtensionPropertyValue', 'AdExtensionType', 'AdExtensionTypeId'
         }
 
         age_gender_report = copy.deepcopy(default_report)

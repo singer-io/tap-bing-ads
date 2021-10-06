@@ -27,10 +27,7 @@ REPORT_SPECIFIC_REQUIRED_FIELDS = {
         'AdExtensionId',
         'AdExtensionPropertyValue',
         'AdExtensionType',
-        'AdExtensionTypeId',
-        'Clicks',
-        'Ctr',
-        'Impressions'
+        'AdExtensionTypeId'
     ],
     'GoalsAndFunnelsReport': ['Goal']
 }
