@@ -32,7 +32,13 @@ REPORT_SPECIFIC_REQUIRED_FIELDS = {
         'Ctr',
         'Impressions'
     ],
-    'GoalsAndFunnelsReport': ['Goal']
+    'GoalsAndFunnelsReport': ['Goal'],
+    'AgeGenderAudienceReport': [
+        'AccountName',
+        'AdGroupName',
+        'AgeGroup',
+        'Gender'
+    ],
 }
 
 ## Any not listed here are strings

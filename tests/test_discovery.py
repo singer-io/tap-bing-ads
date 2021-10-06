@@ -129,8 +129,12 @@ class DiscoveryTest(BingAdsBaseTest):
                 expected_foreign_keys = self.expected_foreign_keys()[stream]
                 expected_replication_keys = self.expected_replication_keys()[stream]
                 expected_required_keys = self.expected_required_fields()[stream]
+                # adding '_sdc_report_datetime in the expected automatic fields list as there was 
+                # a failure experienced for all the streams that the particular field was missing
+                # in the expected fields.
                 expected_automatic_fields = expected_primary_keys | expected_replication_keys \
-                    | expected_foreign_keys | expected_required_keys
+                    | expected_foreign_keys | expected_required_keys | {'_sdc_report_datetime'}
+                
 
                 # BUG | https://stitchdata.atlassian.net/browse/SRCE-4313
                 #       Uncomment from this point forward to see test failure and address bug
