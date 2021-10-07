@@ -19,6 +19,9 @@ setup(
         'backoff==1.8.0',
     ],
     extras_require={
+        'test': [
+            'pylint'
+        ],
         'dev': [
             'ipdb'
         ]
