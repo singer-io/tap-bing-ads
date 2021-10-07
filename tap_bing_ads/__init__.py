@@ -496,7 +496,7 @@ def get_selected_fields(catalog_item, exclude=None):
             selected_fields.append(prop)
 
     if any(invalid_selections):
-        raise Exception("Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{}".format(json.dumps(invalid_selections, indent=4))) # pylint: disable=consider-using-f-string
+        raise Exception(f"Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{json.dumps(invalid_selections, indent=4)}")
     return selected_fields
 
 def filter_selected_fields(selected_fields, obj):
@@ -636,7 +636,7 @@ def type_report_row(row):
 
         row[field_name] = value
 
-async def poll_report(client, account_id, report_name, start_date, end_date, request_id): # pylint: disable=too-many-arguments
+async def poll_report(client, account_id, report_name, start_date, end_date, request_id):
     download_url = None
     with metrics.job_timer('generate_report'):
         for i in range(1, MAX_NUM_REPORT_POLLS + 1):
@@ -648,7 +648,7 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
                 str(end_date))
             response = client.PollGenerateReport(request_id)
             if response.Status == 'Error':
-                LOGGER.warn('Error polling %s for account %s with request id %s', # pylint: disable=deprecated-method
+                LOGGER.warn('Error polling %s for account %s with request id %s',
                             report_name, str(account_id), str(request_id))
                 return False, None
             if response.Status == 'Success':
@@ -683,7 +683,7 @@ def stream_report(stream_name, report_name, url, report_time):
         response = SESSION.get(url, headers={'User-Agent': get_user_agent()})
 
     if response.status_code != 200:
-        raise Exception('Non-200 ({}) response downloading report: {}'.format(response.status_code, report_name))  # pylint: disable=consider-using-f-string
+        raise Exception(f'Non-200 ({response.status_code}) response downloading report: {report_name}')
 
     with ZipFile(io.BytesIO(response.content)) as zip_file:
         with zip_file.open(zip_file.namelist()[0]) as binary_file:
@@ -727,7 +727,7 @@ def get_report_interval(state_key):
 async def sync_report(client, account_id, report_stream):
     report_max_days = int(CONFIG.get('report_max_days', 30))
 
-    state_key = f'{account_id}_{report_stream}'
+    state_key = f'{account_id}_{report_stream.stream}'
 
     start_date, end_date = get_report_interval(state_key)
 
@@ -747,7 +747,7 @@ async def sync_report(client, account_id, report_stream):
                                                  current_start_date,
                                                  current_end_date)
         except InvalidDateRangeEnd as ex: # pylint: disable=unused-variable
-            LOGGER.warn("Bing reported that the requested report date range ended outside of " # pylint: disable=deprecated-method
+            LOGGER.warn("Bing reported that the requested report date range ended outside of "
                         "their data retention period. Skipping to next range...")
             success = True
 
@@ -756,7 +756,7 @@ async def sync_report(client, account_id, report_stream):
 
 async def sync_report_interval(client, account_id, report_stream,
                                start_date, end_date):
-    state_key = f'{account_id}_{report_stream}'
+    state_key = f'{account_id}_{report_stream.stream}'
     report_name = stringcase.pascalcase(report_stream.stream)
 
     report_schema = get_report_schema(client, report_name)
@@ -816,7 +816,7 @@ async def sync_report_interval(client, account_id, report_stream,
         return False
 
 
-def get_report_request_id(client, account_id, report_stream, report_name,    # pylint: disable=too-many-arguments
+def get_report_request_id(client, account_id, report_stream, report_name,
                           start_date, end_date, state_key, force_refresh=False):
     saved_request_id = singer.get_bookmark(STATE, state_key, 'request_id')
     if not force_refresh and saved_request_id is not None:
@@ -830,12 +830,12 @@ def get_report_request_id(client, account_id, report_stream, report_name,    # p
     return client.SubmitGenerateReport(report_request)
 
 
-def build_report_request(client, account_id, report_stream, report_name,    # pylint: disable=too-many-arguments
+def build_report_request(client, account_id, report_stream, report_name,
                          start_date, end_date):
     LOGGER.info('Syncing report for account %s: %s - from %s to %s',
                 account_id, report_name, str(start_date), str(end_date))
 
-    report_request = client.factory.create(f'{report_name}Request'.format(report_name)) # pylint: disable=consider-using-f-string
+    report_request = client.factory.create(f'{report_name}Request')
     report_request.Format = 'Csv'
     report_request.Aggregation = 'Daily'
     report_request.ExcludeReportHeader = True
