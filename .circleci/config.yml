@@ -19,7 +19,7 @@ jobs:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
-            python3 -m pylint --disable 'missing-docstring,line-too-long,invalid-name,super-with-arguments,return-in-init'
+            pylint --disable 'missing-docstring,line-too-long,invalid-name,super-with-arguments,return-in-init'
       - add_ssh_keys
       - run:
           name: 'Integration Tests'
