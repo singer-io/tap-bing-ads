@@ -73,12 +73,11 @@ class DiscoveryTest(BingAdsBaseTest):
                 schema = schema_and_metadata["annotated-schema"]
 
                 # verify the stream level properties are as expected
-                # BUG | https://stitchdata.atlassian.net/browse/SRCE-4315
-                # # verify there is only 1 top level breadcrumb
-                # stream_properties = [item for item in metadata if item.get("breadcrumb") == []]
-                # self.assertTrue(len(stream_properties) == 1,
-                #                 msg="There is NOT only one top level breadcrumb for {}".format(stream) + \
-                #                 "\nstream_properties | {}".format(stream_properties))
+                # verify there is only 1 top level breadcrumb
+                stream_properties = [item for item in metadata if item.get("breadcrumb") == []]
+                self.assertTrue(len(stream_properties) == 1,
+                                msg="There is NOT only one top level breadcrumb for {}".format(stream) + \
+                                "\nstream_properties | {}".format(stream_properties))
 
                 # # verify replication key(s)
                 # self.assertEqual(

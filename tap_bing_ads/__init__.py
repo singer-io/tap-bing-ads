@@ -306,23 +306,29 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
     }
 
     excluded_inclusion_fields = []
+    rep_key = None
+    rep_method = 'FULL_TABLE'
+
     if pks:
         stream_def['key_properties'] = pks
         excluded_inclusion_fields = pks
 
     if replication_key:
-        stream_def['replication_key'] = replication_key
-        stream_def['replication_method'] = 'INCREMENTAL'
+        rep_key = replication_key
+        rep_method = 'INCREMENTAL'
         excluded_inclusion_fields += [replication_key]
-    else:
-        stream_def['replication_method'] = 'FULL_TABLE'
 
-    if stream_metadata:
-        stream_def['metadata'] = stream_metadata
-    else:
-        stream_def['metadata'] = list(map(
-          lambda field: {"metadata": {"inclusion": "available"}, "breadcrumb": ["properties", field]},
-          (schema['properties'].keys() - excluded_inclusion_fields)))
+
+    mdata = metadata.to_map(
+            metadata.get_standard_metadata(
+                schema = schema,
+                key_properties = pks,
+                valid_replication_keys = rep_key,
+                replication_method = rep_method
+            )
+        )
+
+    stream_def['metadata'] = metadata.to_list(mdata)
 
     return stream_def
 
