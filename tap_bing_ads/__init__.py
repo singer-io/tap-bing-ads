@@ -61,6 +61,7 @@ class InvalidDateRangeEnd(Exception):
     pass
 
 def log_service_call(service_method, account_id):
+    # Log the call of service
     def wrapper(*args, **kwargs):
         log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + \
                    list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
@@ -87,17 +88,22 @@ def log_service_call(service_method, account_id):
     return wrapper
 
 class CustomServiceClient(ServiceClient):
+    # Provides an class for calling the methods of the specified Bing Ads service.
     def __init__(self, name, **kwargs):
+        # Initializes a new instance of this ServiceClient class.
         return super().__init__(name, 'v13', **kwargs)
 
     def __getattr__(self, name):
+        # Set authorization data and options before every service call.
         service_method = super(CustomServiceClient, self).__getattr__(name)
         return log_service_call(service_method, self._authorization_data.account_id)
 
     def set_options(self, **kwargs):
         self._options = kwargs
+        # Ensemble the request header send to API services.
         kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
         kwargs['headers']['User-Agent'] = get_user_agent()
+        # Set suds options, these options will be passed to suds.
         self._soap_client.set_options(**kwargs)
 
 def create_sdk_client(service, account_id):
@@ -106,14 +112,17 @@ def create_sdk_client(service, account_id):
 
     require_live_connect = CONFIG.get('require_live_connect', 'True') == 'True'
 
+    # Represents an OAuth authorization object implementing the authorization code grant flow for use in a web application.
     authentication = OAuthWebAuthCodeGrant(
         CONFIG['oauth_client_id'],
         CONFIG['oauth_client_secret'],
         '',
         require_live_connect=require_live_connect) ## redirect URL not needed for refresh token
 
+    # Retrieves OAuth access and refresh tokens from the Microsoft Account authorization service.
     authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
 
+    # Instance require to authenticate with Bing Ads
     authorization_data = AuthorizationData(
         account_id=account_id,
         customer_id=CONFIG['customer_id'],
@@ -123,6 +132,7 @@ def create_sdk_client(service, account_id):
     return CustomServiceClient(service, authorization_data=authorization_data)
 
 def sobject_to_dict(obj):
+    # Convert response of soap to dictionary
     if not hasattr(obj, '__keylist__'):
         return obj
 
@@ -141,6 +151,7 @@ def sobject_to_dict(obj):
     return out
 
 def xml_to_json_type(xml_type):
+    # Convert xml type to json type
     if xml_type == 'boolean':
         return 'boolean'
     if xml_type in ['decimal', 'float', 'double']:
@@ -151,6 +162,7 @@ def xml_to_json_type(xml_type):
     return 'string'
 
 def get_json_schema(element):
+    # Prepare json schema
     types = []
     _format = None
 
@@ -178,7 +190,7 @@ def get_json_schema(element):
 
 def get_array_type(array_type):
     xml_type = re.match(ARRAY_TYPE_REGEX, array_type).groups()[0]
-    json_type = xml_to_json_type(xml_type)
+    json_type = xml_to_json_type(xml_type) # Convert xml to json type
     if json_type == 'string' and xml_type != 'string':
         # complex type
         items = xml_type # will be filled in fill_in_nested_types
@@ -217,9 +229,9 @@ def get_complex_type_elements(inherited_types, wsdl_type):
 
 def wsdl_type_to_schema(inherited_types, wsdl_type):
     if wsdl_type.root.name == 'simpleType':
-        return get_json_schema(wsdl_type)
+        return get_json_schema(wsdl_type) # Return json schema for simpleType wsdl
 
-    elements = get_complex_type_elements(inherited_types, wsdl_type)
+    elements = get_complex_type_elements(inherited_types, wsdl_type) # Return json schema for complexType wsdl
 
     properties = {}
     for element in elements:
@@ -267,6 +279,7 @@ def normalize_abstract_types(inherited_types, type_map):
                 type_map[base_type] = {'anyOf': schemas}
 
 def fill_in_nested_types(type_map, schema):
+    # Prepare nested schema for catalog
     if 'properties' in schema:
         for prop, descriptor in schema['properties'].items():
             schema['properties'][prop] = fill_in_nested_types(type_map, descriptor)
@@ -320,6 +333,7 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
     if stream_metadata:
         stream_def['metadata'] = stream_metadata
     else:
+        # Set available inclusion for all keys except replication and primary keys
         stream_def['metadata'] = list(map(
           lambda field: {"metadata": {"inclusion": "available"}, "breadcrumb": ["properties", field]},
           (schema['properties'].keys() - excluded_inclusion_fields)))
@@ -327,15 +341,18 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
     return stream_def
 
 def get_core_schema(client, obj):
+    # Get core object's schema
     type_map = get_type_map(client)
     return type_map[obj]
 
 def discover_core_objects():
+    # Load core object's schemas
     core_object_streams = []
 
     LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
     client = CustomServiceClient('CustomerManagementService')
 
+    # Load Account's schemas
     account_schema = get_core_schema(client, 'AdvertiserAccount')
     core_object_streams.append(
         get_stream_def('accounts', account_schema, pks=['Id'], replication_key='LastModifiedTime'))
@@ -343,18 +360,22 @@ def discover_core_objects():
     LOGGER.info('Initializing CampaignManagementService client - Loading WSDL')
     client = CustomServiceClient('CampaignManagementService')
 
+    # Load Campaign's schemas
     campaign_schema = get_core_schema(client, 'Campaign')
     core_object_streams.append(get_stream_def('campaigns', campaign_schema, pks=['Id']))
 
+    # Load AdGroup's schemas
     ad_group_schema = get_core_schema(client, 'AdGroup')
     core_object_streams.append(get_stream_def('ad_groups', ad_group_schema, pks=['Id']))
 
+    # Load Ad's schemas
     ad_schema = get_core_schema(client, 'Ad')
     core_object_streams.append(get_stream_def('ads', ad_schema, pks=['Id']))
 
     return core_object_streams
 
 def get_report_schema(client, report_name):
+    # Load report's schemas
     column_obj_name = '{}Column'.format(report_name)
 
     report_columns_type = None
@@ -392,11 +413,13 @@ def get_report_schema(client, report_name):
 
 def metadata_fn(report_name, field, required_fields):
     if field in required_fields:
+        # Set automatic inclusion for all required fields.
         mdata = {"metadata": {"inclusion": "automatic"}, "breadcrumb": ["properties", field]}
     else:
         mdata = {"metadata": {"inclusion": "available"}, "breadcrumb": ["properties", field]}
 
     if EXCLUSIONS.get(report_name):
+        #'fieldExclusions' property that contain fields that cannot be selected with the associated group.
         for group_set in EXCLUSIONS[report_name]:
             if field in group_set['Attributes']:
                 mdata['metadata']['fieldExclusions'] = [
@@ -412,6 +435,7 @@ def metadata_fn(report_name, field, required_fields):
     return mdata
 
 def get_report_metadata(report_name, report_schema):
+    # Load metadata for report
     if report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
         required_fields = (
             reports.REPORT_REQUIRED_FIELDS +
@@ -424,6 +448,7 @@ def get_report_metadata(report_name, report_schema):
         report_schema['properties']))
 
 def discover_reports():
+    # Discover schemas for reports
     report_streams = []
     LOGGER.info('Initializing ReportingService client - Loading WSDL')
     client = CustomServiceClient('ReportingService')
@@ -449,11 +474,12 @@ def test_credentials(account_ids):
     if not account_ids:
         raise Exception('At least one id in account_ids is required to test authentication')
 
-    create_sdk_client('CustomerManagementService', account_ids[0])
+    create_sdk_client('CustomerManagementService', account_ids[0]) # Create bingads sdk client
 
 def do_discover(account_ids):
+    # Discover schemas and dump in STDOUT
     LOGGER.info('Testing authentication')
-    test_credentials(account_ids)
+    test_credentials(account_ids)# Test provided credentails
 
     LOGGER.info('Discovering core objects')
     core_object_streams = discover_core_objects()
@@ -465,6 +491,7 @@ def do_discover(account_ids):
 
 
 def check_for_invalid_selections(prop, mdata, invalid_selections):
+    # Check whether fields under 'fieldExclusions' selected or not  
     field_exclusions = metadata.get(mdata, ('properties', prop), 'fieldExclusions')
     is_prop_selected = metadata.get(mdata, ('properties', prop), 'selected')
     if field_exclusions and is_prop_selected:
@@ -479,6 +506,7 @@ def check_for_invalid_selections(prop, mdata, invalid_selections):
 
 
 def get_selected_fields(catalog_item, exclude=None):
+    # Get selected fields
     if not catalog_item.metadata:
         return None
 
@@ -496,11 +524,13 @@ def get_selected_fields(catalog_item, exclude=None):
             metadata.get(mdata, ('properties', prop), 'selected') is True):
             selected_fields.append(prop)
 
+    # Raise Exception if incompatible fields are selected
     if any(invalid_selections):
         raise Exception("Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{}".format(json.dumps(invalid_selections, indent=4)))
     return selected_fields
 
 def filter_selected_fields(selected_fields, obj):
+    # Return only selected fields 
     if selected_fields:
         return {key:value for key, value in obj.items() if key in selected_fields}
     return obj
@@ -520,7 +550,9 @@ def sync_accounts_stream(account_ids, catalog_item):
     singer.write_schema('accounts', account_schema, ['Id'])
 
     for account_id in account_ids:
+        # Loop over the multiple account_ids
         client = create_sdk_client('CustomerManagementService', account_id)
+        # Get account data
         response = client.GetAccount(AccountId=account_id)
         accounts.append(sobject_to_dict(response))
 
@@ -533,6 +565,7 @@ def sync_accounts_stream(account_ids, catalog_item):
     max_accounts_last_modified = max([x['LastModifiedTime'] for x in accounts])
 
     with metrics.record_counter('accounts') as counter:
+        # Write only selected fields
         singer.write_records('accounts', filter_selected_fields_many(selected_fields, accounts))
         counter.increment(len(accounts))
 
@@ -615,6 +648,7 @@ def sync_core_objects(account_id, selected_streams):
             sync_ads(client, selected_streams, ad_group_ids)
 
 def type_report_row(row):
+    # Check and convert to valid type of report's field
     for field_name, value in row.items():
         value = value.strip()
         if value == '':
@@ -638,6 +672,7 @@ def type_report_row(row):
         row[field_name] = value
 
 async def poll_report(client, account_id, report_name, start_date, end_date, request_id):
+    # Get download url for generated report
     download_url = None
     with metrics.job_timer('generate_report'):
         for i in range(1, MAX_NUM_REPORT_POLLS + 1):
@@ -681,6 +716,7 @@ def log_retry_attempt(details):
                       max_tries=5,
                       on_backoff=log_retry_attempt)
 def stream_report(stream_name, report_name, url, report_time):
+    # Write stream report with backoff for ConnectionError
     with metrics.http_request_timer('download_report'):
         response = SESSION.get(url, headers={'User-Agent': get_user_agent()})
 
@@ -705,6 +741,7 @@ def stream_report(stream_name, report_name, url, report_time):
                         counter.increment()
 
 def get_report_interval(state_key):
+    # Return start_date and end_date for report interval
     report_max_days = int(CONFIG.get('report_max_days', 30))
     conversion_window = int(CONFIG.get('conversion_window', -30))
 
@@ -712,7 +749,7 @@ def get_report_interval(state_key):
     config_end_date = arrow.get(CONFIG.get('end_date')).floor('day')
 
     bookmark_end_date = singer.get_bookmark(STATE, state_key, 'date')
-    conversion_min_date = arrow.get().floor('day').shift(days=conversion_window)
+    conversion_min_date = arrow.get().floor('day').shift(days=conversion_window) # 30 days before the current date
 
     start_date = None
     if bookmark_end_date:
@@ -721,14 +758,14 @@ def get_report_interval(state_key):
         # Will default to today
         start_date = config_start_date.floor('day')
 
-    start_date = min(start_date, conversion_min_date)
+    start_date = min(start_date, conversion_min_date) # minimum of start_date or conversion_min_date
 
-    end_date = min(config_end_date, arrow.get().floor('day'))
+    end_date = min(config_end_date, arrow.get().floor('day')) # minimum of end_date or current date
 
     return start_date, end_date
 
 async def sync_report(client, account_id, report_stream):
-    report_max_days = int(CONFIG.get('report_max_days', 30))
+    report_max_days = int(CONFIG.get('report_max_days', 30)) # Date window size
 
     state_key = '{}_{}'.format(account_id, report_stream.stream)
 
@@ -767,6 +804,7 @@ async def sync_report_interval(client, account_id, report_stream,
 
     report_time = arrow.get().isoformat()
 
+    # Get request id to retrieve report stream
     request_id = get_report_request_id(client, account_id, report_stream,
                                        report_name, start_date, end_date,
                                        state_key)
@@ -775,6 +813,7 @@ async def sync_report_interval(client, account_id, report_stream,
     singer.write_state(STATE)
 
     try:
+        # Get success status and download url
         success, download_url = await poll_report(client, account_id, report_name,
                                                   start_date, end_date, request_id)
 
@@ -838,6 +877,7 @@ def get_report_request_id(client, account_id, report_stream, report_name,
 
 def build_report_request(client, account_id, report_stream, report_name,
                          start_date, end_date):
+    # Build request for report
     LOGGER.info(
         'Syncing report for account {}: {} - from {} to {}'
         .format(account_id, report_name, start_date, end_date)
@@ -888,6 +928,7 @@ def build_report_request(client, account_id, report_stream, report_name,
     return report_request
 
 async def sync_reports(account_id, catalog):
+    # Sync report stream
     client = create_sdk_client('ReportingService', account_id)
 
     reports_to_sync = filter(lambda x: x.is_selected() and x.stream[-6:] == 'report',
@@ -908,13 +949,16 @@ async def sync_account_data(account_id, catalog, selected_streams):
     }
 
     if len(all_core_streams & set(selected_streams)):
+        # Sync all core objects streams
         LOGGER.info('Syncing core objects')
         sync_core_objects(account_id, selected_streams)
 
     if len(all_report_streams & set(selected_streams)):
+        # Sync all report streams
         LOGGER.info('Syncing reports')
         await sync_reports(account_id, catalog)
 
+# run sync mode
 async def do_sync_all_accounts(account_ids, catalog):
     selected_streams = {}
     for stream in filter(lambda x: x.is_selected(), catalog.streams):
@@ -937,10 +981,10 @@ async def main_impl():
     STATE.update(args.state)
     account_ids = CONFIG['account_ids'].split(",")
 
-    if args.discover:
+    if args.discover: # Discover mode
         do_discover(account_ids)
         LOGGER.info("Discovery complete")
-    elif args.catalog:
+    elif args.catalog: # Sync mode
         await do_sync_all_accounts(account_ids, args.catalog)
         LOGGER.info("Sync Completed")
     else:
