@@ -90,15 +90,15 @@ class DiscoveryTest(BingAdsBaseTest):
                 #             "metadata", {self.REPLICATION_KEYS: None}).get(
                 #                 self.REPLICATION_KEYS, []))))
 
-                # # verify primary key(s)
-                # self.assertEqual(
-                #     set(stream_properties[0].get(
-                #         "metadata", {self.PRIMARY_KEYS: []}).get(self.PRIMARY_KEYS, [])),
-                #     self.expected_primary_keys()[stream],
-                #     msg="expected primary key {} but actual is {}".format(
-                #         self.expected_primary_keys()[stream],
-                #         set(stream_properties[0].get(
-                #             "metadata", {self.PRIMARY_KEYS: None}).get(self.PRIMARY_KEYS, []))))
+                # verify primary key(s)
+                self.assertEqual(
+                    set(stream_properties[0].get(
+                        "metadata", {self.PRIMARY_KEYS: []}).get(self.PRIMARY_KEYS, [])),
+                    self.expected_primary_keys()[stream],
+                    msg="expected primary key {} but actual is {}".format(
+                        self.expected_primary_keys()[stream],
+                        set(stream_properties[0].get(
+                            "metadata", {self.PRIMARY_KEYS: None}).get(self.PRIMARY_KEYS, []))))
 
                 # # verify that if there is a replication key we are doing INCREMENTAL otherwise FULL
                 # actual_replication_method = stream_properties[0].get(
@@ -110,7 +110,7 @@ class DiscoveryTest(BingAdsBaseTest):
                 #                     msg="Expected INCREMENTAL replication "
                 #                         "since there is a replication key")
                 # else:
-                #     self.assertTrue(actual_replication_method == self.FULL,
+                #     self.assertTrue(actual_replication_method == self.FULL_TABLE,
                 #                     msg="Expected FULL replication "
                 #                         "since there is no replication key")
 
@@ -134,11 +134,11 @@ class DiscoveryTest(BingAdsBaseTest):
                 # BUG | https://stitchdata.atlassian.net/browse/SRCE-4313
                 #       Uncomment from this point forward to see test failure and address bug
 
-                # # verify that primary, replication and foreign keys
-                # # are given the inclusion of automatic in annotated schema.
-                # actual_automatic_fields = {key for key, value in schema["properties"].items()
-                #                            if value.get("inclusion") == "automatic"}
-                # self.assertEqual(expected_automatic_fields, actual_automatic_fields)
+                # verify that primary, replication and foreign keys
+                # are given the inclusion of automatic in annotated schema.
+                actual_automatic_fields = {key for key, value in schema["properties"].items()
+                                           if value.get("inclusion") == "automatic"}
+                self.assertEqual(expected_automatic_fields, actual_automatic_fields)
 
 
                 # # verify that all other fields have inclusion of available

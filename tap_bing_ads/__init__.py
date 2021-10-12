@@ -298,35 +298,32 @@ def get_type_map(client):
 
     return type_map
 
-def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replication_key=None):
+def get_stream_def(stream_name, schema, pks=None, replication_key=None):
+    '''Generate schema with metadata for the given stream.'''
+
     stream_def = {
         'tap_stream_id': stream_name,
         'stream': stream_name,
         'schema': schema
     }
 
-    excluded_inclusion_fields = []
-    rep_key = None
-    rep_method = 'FULL_TABLE'
-
     if pks:
         stream_def['key_properties'] = pks
-        excluded_inclusion_fields = pks
 
-    if replication_key:
-        rep_key = replication_key
-        rep_method = 'INCREMENTAL'
-        excluded_inclusion_fields += [replication_key]
-
-
+    # Defining standered matadata
     mdata = metadata.to_map(
             metadata.get_standard_metadata(
                 schema = schema,
                 key_properties = pks,
-                valid_replication_keys = rep_key,
-                replication_method = rep_method
+                valid_replication_keys = replication_key,
+                replication_method = 'INCREMENTAL' if replication_key else 'FULL_TABLE'
             )
         )
+
+    # Marking replication key as automatic
+    for field_name in schema['properties'].keys():
+        if field_name == replication_key:
+            mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'automatic')
 
     stream_def['metadata'] = metadata.to_list(mdata)
 
@@ -442,11 +439,9 @@ def discover_reports():
             report_name = match.groups()[0]
             stream_name = stringcase.snakecase(report_name)
             report_schema = get_report_schema(client, report_name)
-            report_metadata = get_report_metadata(report_name, report_schema)
             report_stream_def = get_stream_def(
                 stream_name,
-                report_schema,
-                stream_metadata=report_metadata)
+                report_schema)
             report_streams.append(report_stream_def)
 
     return report_streams
