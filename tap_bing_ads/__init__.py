@@ -18,6 +18,10 @@ import stringcase
 import requests
 import arrow
 import backoff
+import socket
+import ssl
+import functools
+from urllib.error import HTTPError
 
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
@@ -54,6 +58,28 @@ DEFAULT_USER_AGENT = 'Singer.io Bing Ads Tap'
 
 ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z0-9]+)'
 
+def should_retry_httperror(exception):
+    """ Retry 500-range and 408 errors. """
+    try:
+        if exception.code == 408:
+            return True
+        
+        return 500 <= exception.code < 600
+    except AttributeError:
+        return True
+
+def bing_ads_error_handling(fnc):
+    @backoff.on_exception(backoff.expo,
+                          (socket.timeout, ConnectionError,
+                           ssl.SSLError, HTTPError, suds.transport.TransportError),
+                          max_tries=5,
+                          giveup=lambda e: not should_retry_httperror(e),
+                          factor=2)
+    @functools.wraps(fnc)
+    def wrapper(*args, **kwargs):
+        return fnc(*args, **kwargs)
+    return wrapper
+
 def get_user_agent():
     return CONFIG.get('user_agent', DEFAULT_USER_AGENT)
 
@@ -87,6 +113,7 @@ def log_service_call(service_method, account_id):
     return wrapper
 
 class CustomServiceClient(ServiceClient):
+    @bing_ads_error_handling
     def __init__(self, name, **kwargs):
         return super().__init__(name, 'v13', **kwargs)
 
@@ -100,6 +127,7 @@ class CustomServiceClient(ServiceClient):
         kwargs['headers']['User-Agent'] = get_user_agent()
         self._soap_client.set_options(**kwargs)
 
+@bing_ads_error_handling
 def create_sdk_client(service, account_id):
     LOGGER.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
                 service, account_id)
@@ -277,6 +305,7 @@ def fill_in_nested_types(type_map, schema):
             return type_map[schema]
     return schema
 
+@bing_ads_error_handling
 def get_type_map(client):
     inherited_types = {}
     type_map = {}
@@ -354,6 +383,7 @@ def discover_core_objects():
 
     return core_object_streams
 
+@bing_ads_error_handling
 def get_report_schema(client, report_name):
     column_obj_name = '{}Column'.format(report_name)
 
@@ -510,6 +540,7 @@ def filter_selected_fields_many(selected_fields, objs):
         return [filter_selected_fields(selected_fields, obj) for obj in objs]
     return objs
 
+@bing_ads_error_handling
 def sync_accounts_stream(account_ids, catalog_item):
     selected_fields = get_selected_fields(catalog_item)
     accounts = []
@@ -539,6 +570,7 @@ def sync_accounts_stream(account_ids, catalog_item):
     singer.write_bookmark(STATE, 'accounts', 'last_record', max_accounts_last_modified)
     singer.write_state(STATE)
 
+@bing_ads_error_handling
 def sync_campaigns(client, account_id, selected_streams):
     # CampaignType defaults to 'Search', but there are other types of campaigns
     response = client.GetCampaignsByAccountId(AccountId=account_id, CampaignType='Search Shopping DynamicSearchAds')
@@ -556,6 +588,7 @@ def sync_campaigns(client, account_id, selected_streams):
 
         return map(lambda x: x['Id'], campaigns)
 
+@bing_ads_error_handling
 def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
     ad_group_ids = []
     for campaign_id in campaign_ids:
@@ -578,6 +611,7 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
             ad_group_ids += list(map(lambda x: x['Id'], ad_groups))
     return ad_group_ids
 
+@bing_ads_error_handling
 def sync_ads(client, selected_streams, ad_group_ids):
     for ad_group_id in ad_group_ids:
         response = client.GetAdsByAdGroupId(
@@ -637,6 +671,7 @@ def type_report_row(row):
 
         row[field_name] = value
 
+@bing_ads_error_handling
 async def poll_report(client, account_id, report_name, start_date, end_date, request_id):
     download_url = None
     with metrics.job_timer('generate_report'):
@@ -819,6 +854,7 @@ async def sync_report_interval(client, account_id, report_stream,
         return False
 
 
+@bing_ads_error_handling
 def get_report_request_id(client, account_id, report_stream, report_name,
                           start_date, end_date, state_key, force_refresh=False):
 
@@ -836,6 +872,7 @@ def get_report_request_id(client, account_id, report_stream, report_name,
     return client.SubmitGenerateReport(report_request)
 
 
+@bing_ads_error_handling
 def build_report_request(client, account_id, report_stream, report_name,
                          start_date, end_date):
     LOGGER.info(
