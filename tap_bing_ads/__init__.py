@@ -61,10 +61,10 @@ ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z0-9]+)'
 def should_retry_httperror(exception):
     """ Retry 500-range and 408 errors. """
     try:
-        if exception.response.status_code == 408:
+        if exception.code == 408:
             return True
         
-        return 500 <= exception.response.status_code < 600
+        return 500 <= exception.code < 600
     except AttributeError:
         return True
 
