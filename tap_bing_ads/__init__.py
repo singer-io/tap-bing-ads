@@ -298,7 +298,7 @@ def get_type_map(client):
 
     return type_map
 
-def get_stream_def(stream_name, schema, pks=None, replication_key=None):
+def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replication_key=None):
     '''Generate schema with metadata for the given stream.'''
 
     stream_def = {
@@ -324,6 +324,11 @@ def get_stream_def(stream_name, schema, pks=None, replication_key=None):
     for field_name in schema['properties'].keys():
         if field_name == replication_key:
             mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'automatic')
+
+    if stream_metadata:
+        for field in stream_metadata:
+            if field.get('metadata').get('inclusion') == 'automatic':
+                mdata = metadata.write(mdata, tuple(field.get('breadcrumb')), 'inclusion', 'automatic')
 
     stream_def['metadata'] = metadata.to_list(mdata)
 
@@ -439,9 +444,11 @@ def discover_reports():
             report_name = match.groups()[0]
             stream_name = stringcase.snakecase(report_name)
             report_schema = get_report_schema(client, report_name)
+            report_metadata = get_report_metadata(report_name, report_schema)
             report_stream_def = get_stream_def(
                 stream_name,
-                report_schema)
+                report_schema,
+                stream_metadata=report_metadata)
             report_streams.append(report_stream_def)
 
     return report_streams
