@@ -321,9 +321,8 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
         )
 
     # Marking replication key as automatic
-    for field_name in schema['properties'].keys():
-        if field_name == replication_key:
-            mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'automatic')
+    if replication_key:
+        mdata = metadata.write(mdata, ('properties', replication_key), 'inclusion', 'automatic')
 
     if stream_metadata:
         for field in stream_metadata:
