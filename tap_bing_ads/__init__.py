@@ -61,10 +61,11 @@ class InvalidDateRangeEnd(Exception):
     pass
 
 def log_service_call(service_method, account_id):
-    # Log the call of service
+    
     def wrapper(*args, **kwargs):
         log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + \
                    list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
+        # Log the service_method name with it's account ids and in case of any error raise the exception
         LOGGER.info('Calling: {}({}) for account: {}'.format(
             service_method.name,
             ','.join(log_args),
@@ -73,6 +74,7 @@ def log_service_call(service_method, account_id):
             try:
                 return service_method(*args, **kwargs)
             except suds.WebFault as e:
+                #Raise SOAP exception
                 if hasattr(e.fault.detail, 'ApiFaultDetail'):
                     # The Web fault structure is heavily nested. This is to be sure we catch the error we want.
                     operation_errors = e.fault.detail.ApiFaultDetail.OperationErrors
@@ -88,25 +90,27 @@ def log_service_call(service_method, account_id):
     return wrapper
 
 class CustomServiceClient(ServiceClient):
-    # Provides an class for calling the methods of the specified Bing Ads service.
+    # This class calling the methods of the specified Bing Ads service.
     def __init__(self, name, **kwargs):
         # Initializes a new instance of this ServiceClient class.
         return super().__init__(name, 'v13', **kwargs)
 
     def __getattr__(self, name):
-        # Set authorization data and options before every service call.
+        # Log and return serivcecall(suds client call) object
         service_method = super(CustomServiceClient, self).__getattr__(name)
         return log_service_call(service_method, self._authorization_data.account_id)
 
     def set_options(self, **kwargs):
+        # Set suds options, these options will be passed to suds.
         self._options = kwargs
-        # Ensemble the request header send to API services.
+        
         kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
         kwargs['headers']['User-Agent'] = get_user_agent()
-        # Set suds options, these options will be passed to suds.
+
         self._soap_client.set_options(**kwargs)
 
 def create_sdk_client(service, account_id):
+    # Creates SOAP client with OAuth refresh credentials for services
     LOGGER.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
                 service, account_id)
 
@@ -162,7 +166,7 @@ def xml_to_json_type(xml_type):
     return 'string'
 
 def get_json_schema(element):
-    # Prepare json schema
+    # Prepare json `type` for schema of streams e.g. "type": ["null","integer"]
     types = []
     _format = None
 
@@ -189,6 +193,8 @@ def get_json_schema(element):
     return schema
 
 def get_array_type(array_type):
+    #Return array type to prepare schema file for streams
+    # e.g "res":{"type": ["null","integer"], "properties": {"id": "type": ["null","integer"]}}
     xml_type = re.match(ARRAY_TYPE_REGEX, array_type).groups()[0]
     json_type = xml_to_json_type(xml_type) # Convert xml to json type
     if json_type == 'string' and xml_type != 'string':
@@ -228,10 +234,11 @@ def get_complex_type_elements(inherited_types, wsdl_type):
         return wsdl_type.rawchildren[0].rawchildren
 
 def wsdl_type_to_schema(inherited_types, wsdl_type):
+    #Prepare schema from wsdl file
     if wsdl_type.root.name == 'simpleType':
         return get_json_schema(wsdl_type) # Return json schema for simpleType wsdl
 
-    elements = get_complex_type_elements(inherited_types, wsdl_type) # Return json schema for complexType wsdl
+    elements = get_complex_type_elements(inherited_types, wsdl_type) # Return json schema for complexType(recursive) wsdl
 
     properties = {}
     for element in elements:
@@ -341,12 +348,11 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
     return stream_def
 
 def get_core_schema(client, obj):
-    # Get core object's schema
+    # Get object's schema
     type_map = get_type_map(client)
     return type_map[obj]
 
 def discover_core_objects():
-    # Load core object's schemas
     core_object_streams = []
 
     LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
@@ -388,6 +394,7 @@ def get_report_schema(client, report_name):
 
     properties = {}
     for column in report_columns:
+        # Prepare json `type` for schema of streams e.g. "type": ["null","integer"]
         if column in reports.REPORTING_FIELD_TYPES:
             _type = reports.REPORTING_FIELD_TYPES[column]
         else:
@@ -435,7 +442,7 @@ def metadata_fn(report_name, field, required_fields):
     return mdata
 
 def get_report_metadata(report_name, report_schema):
-    # Load metadata for report
+    # Load metadata for report streams
     if report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
         required_fields = (
             reports.REPORT_REQUIRED_FIELDS +
@@ -448,7 +455,7 @@ def get_report_metadata(report_name, report_schema):
         report_schema['properties']))
 
 def discover_reports():
-    # Discover schemas for reports
+    # Discover mode for report streams
     report_streams = []
     LOGGER.info('Initializing ReportingService client - Loading WSDL')
     client = CustomServiceClient('ReportingService')
@@ -491,7 +498,7 @@ def do_discover(account_ids):
 
 
 def check_for_invalid_selections(prop, mdata, invalid_selections):
-    # Check whether fields under 'fieldExclusions' selected or not  
+    # Check whether fields 'fieldExclusions' selected or not 
     field_exclusions = metadata.get(mdata, ('properties', prop), 'fieldExclusions')
     is_prop_selected = metadata.get(mdata, ('properties', prop), 'selected')
     if field_exclusions and is_prop_selected:
@@ -506,7 +513,7 @@ def check_for_invalid_selections(prop, mdata, invalid_selections):
 
 
 def get_selected_fields(catalog_item, exclude=None):
-    # Get selected fields
+    # Get selected fields only
     if not catalog_item.metadata:
         return None
 
@@ -648,7 +655,7 @@ def sync_core_objects(account_id, selected_streams):
             sync_ads(client, selected_streams, ad_group_ids)
 
 def type_report_row(row):
-    # Check and convert to valid type of report's field
+    # Check and convert report's field to valid type
     for field_name, value in row.items():
         value = value.strip()
         if value == '':
@@ -672,7 +679,7 @@ def type_report_row(row):
         row[field_name] = value
 
 async def poll_report(client, account_id, report_name, start_date, end_date, request_id):
-    # Get download url for generated report
+    # Get download_url of generated report
     download_url = None
     with metrics.job_timer('generate_report'):
         for i in range(1, MAX_NUM_REPORT_POLLS + 1):
@@ -716,7 +723,7 @@ def log_retry_attempt(details):
                       max_tries=5,
                       on_backoff=log_retry_attempt)
 def stream_report(stream_name, report_name, url, report_time):
-    # Write stream report with backoff for ConnectionError
+    # Write stream report with backoff of ConnectionError
     with metrics.http_request_timer('download_report'):
         response = SESSION.get(url, headers={'User-Agent': get_user_agent()})
 
