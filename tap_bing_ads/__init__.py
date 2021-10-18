@@ -69,6 +69,11 @@ def should_retry_httperror(exception):
         return True
 
 def bing_ads_error_handling(fnc):
+    """ 
+        Retry following errors for maximum 5 times,
+        socket.timeout, ConnectionError, internal server error(500-range), SSLError, HTTPError(408), Transport error.
+        Raise the error direclty for all errors except mentioned above errors.
+    """
     @backoff.on_exception(backoff.expo,
                           (socket.timeout, ConnectionError,
                            ssl.SSLError, HTTPError, suds.transport.TransportError),

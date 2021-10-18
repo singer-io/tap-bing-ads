@@ -162,7 +162,7 @@ class TestConnectionResetError(unittest.TestCase):
             tap_bing_ads.sync_accounts_stream(['i1'], {})
         except HTTPError:
             pass
-        # verify the code backed off and requested for 5 times
+        # verify the code raise error without backoff
         self.assertEqual(mock_get_account.call_count, 1)
         
        
@@ -262,7 +262,7 @@ class TestConnectionResetError(unittest.TestCase):
             tap_bing_ads.sync_campaigns(mock_client, '', [])
         except HTTPError:
             pass
-        # verify the code backed off and requested for 5 times
+        # verify the code raise error without backoff
         self.assertEqual(mock_client.call_count, 1)
         
     def test_ssl_eof_error_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -357,7 +357,7 @@ class TestConnectionResetError(unittest.TestCase):
             tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
         except HTTPError:
             pass
-        # verify the code backed off and requested for 5 times
+        # verify the code raise error without backoff
         self.assertEqual(mock_client.call_count, 1)
         
     def test_ssl_eof_error_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -453,7 +453,7 @@ class TestConnectionResetError(unittest.TestCase):
             tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
         except HTTPError:
             pass
-        # verify the code backed off and requested for 5 times
+        # verify the code raise error without backoff
         self.assertEqual(mock_client.call_count, 1) 
         
     def test_ssl_eof_error_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -567,7 +567,7 @@ class TestConnectionResetError(unittest.TestCase):
                                                force_refresh = True)
         except HTTPError:
             pass
-        # verify the code backed off and requested for 5 times
+        # verify the code raise error without backoff
         self.assertEqual(mock_client.call_count, 1)
         
     @mock.patch("tap_bing_ads.build_report_request")   
@@ -666,7 +666,7 @@ class TestConnectionResetError(unittest.TestCase):
             tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
         except HTTPError:
             pass
-        # verify the code backed off and requested for 5 times
+        # verify the code raise error without backoff
         self.assertEqual(mock_client.call_count, 1)
         
     def test_ssl_eof_error_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -762,7 +762,7 @@ class TestConnectionResetError(unittest.TestCase):
             tap_bing_ads.get_report_schema(mock_client, '')
         except HTTPError:
             pass
-        # verify the code backed off and requested for 5 times
+        # verify the code raise error without backoff
         self.assertEqual(mock_client.call_count, 1)
          
     def test_ssl_eof_error_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -858,7 +858,7 @@ class TestConnectionResetError(unittest.TestCase):
             tap_bing_ads.get_type_map(mock_client)
         except HTTPError:
             pass
-        # verify the code backed off and requested for 5 times
+        # verify the code raise error without backoff
         self.assertEqual(mock_client.call_count, 1)
         
     def test_ssl_eof_error_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -954,7 +954,7 @@ class TestConnectionResetError(unittest.TestCase):
             await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
         except HTTPError:
             pass
-        # verify the code backed off and requested for 5 times
+        # verify the code raise error without backoff
         self.assertEqual(mock_client.call_count, 1)
         
     async def test_ssl_eof_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -1086,7 +1086,7 @@ class TestConnectionResetError(unittest.TestCase):
             tap_bing_ads.create_sdk_client('dummy_service', {})
         except HTTPError:
             pass
-        # verify the code backed off and requested for 5 times
+        # verify the code raise error without backoff
         self.assertEqual(mock_oauth.call_count, 1)
         
         
