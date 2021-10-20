@@ -18,6 +18,7 @@ import stringcase
 import requests
 import arrow
 import backoff
+import urllib
 
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
@@ -98,19 +99,37 @@ class CustomServiceClient(ServiceClient):
         self._options = kwargs
         kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
         kwargs['headers']['User-Agent'] = get_user_agent()
+        # setting the timeout parameter using the set_options which sets timeout in the _soap_client
+        kwargs['timeout'] = 0.00000000001
         self._soap_client.set_options(**kwargs)
 
+def is_timeout_error():
+    def gen_fn(exc):
+        if 'timed out' in str(exc):
+            return False
+            # retry if the error string contains timed out
+        return True
+    return gen_fn
+
+@backoff.on_exception(backoff.expo,
+                      urllib.error.URLError,
+                      giveup=is_timeout_error(),
+                      max_tries=5,
+                      factor=2)
 def create_sdk_client(service, account_id):
     LOGGER.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
                 service, account_id)
 
-    require_live_connect = CONFIG.get('require_live_connect', 'True') == 'True'
+    if CONFIG.get('require_live_connect', 'True') == 'True':
+        oauth_scope = 'bingads.manage'
+    else:
+        oauth_scope = 'msads.manage'
 
     authentication = OAuthWebAuthCodeGrant(
         CONFIG['oauth_client_id'],
         CONFIG['oauth_client_secret'],
         '',
-        require_live_connect=require_live_connect) ## redirect URL not needed for refresh token
+        oauth_scope=oauth_scope) ## redirect URL not needed for refresh token
 
     authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
 
@@ -510,6 +529,11 @@ def filter_selected_fields_many(selected_fields, objs):
         return [filter_selected_fields(selected_fields, obj) for obj in objs]
     return objs
 
+@backoff.on_exception(backoff.expo,
+                      urllib.error.URLError,
+                      giveup=is_timeout_error(),
+                      max_tries=5,
+                      factor=2)
 def sync_accounts_stream(account_ids, catalog_item):
     selected_fields = get_selected_fields(catalog_item)
     accounts = []
@@ -539,6 +563,11 @@ def sync_accounts_stream(account_ids, catalog_item):
     singer.write_bookmark(STATE, 'accounts', 'last_record', max_accounts_last_modified)
     singer.write_state(STATE)
 
+@backoff.on_exception(backoff.expo,
+                      urllib.error.URLError,
+                      giveup=is_timeout_error(),
+                      max_tries=5,
+                      factor=2)
 def sync_campaigns(client, account_id, selected_streams):
     # CampaignType defaults to 'Search', but there are other types of campaigns
     response = client.GetCampaignsByAccountId(AccountId=account_id, CampaignType='Search Shopping DynamicSearchAds')
@@ -556,6 +585,11 @@ def sync_campaigns(client, account_id, selected_streams):
 
         return map(lambda x: x['Id'], campaigns)
 
+@backoff.on_exception(backoff.expo,
+                      urllib.error.URLError,
+                      giveup=is_timeout_error(),
+                      max_tries=5,
+                      factor=2)
 def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
     ad_group_ids = []
     for campaign_id in campaign_ids:
@@ -578,6 +612,11 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
             ad_group_ids += list(map(lambda x: x['Id'], ad_groups))
     return ad_group_ids
 
+@backoff.on_exception(backoff.expo,
+                      urllib.error.URLError,
+                      giveup=is_timeout_error(),
+                      max_tries=5,
+                      factor=2)
 def sync_ads(client, selected_streams, ad_group_ids):
     for ad_group_id in ad_group_ids:
         response = client.GetAdsByAdGroupId(
@@ -637,6 +676,11 @@ def type_report_row(row):
 
         row[field_name] = value
 
+@backoff.on_exception(backoff.expo,
+                      urllib.error.URLError,
+                      giveup=is_timeout_error(),
+                      max_tries=5,
+                      factor=2)
 async def poll_report(client, account_id, report_name, start_date, end_date, request_id):
     download_url = None
     with metrics.job_timer('generate_report'):
@@ -676,6 +720,11 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
 def log_retry_attempt(details):
     LOGGER.info('Retrieving report timed out, triggering retry #%d', details.get('tries'))
 
+@backoff.on_exception(backoff.expo,
+                      urllib.error.URLError,
+                      giveup=is_timeout_error(),
+                      max_tries=5,
+                      factor=2)
 @backoff.on_exception(backoff.constant,
                       requests.exceptions.ConnectionError,
                       max_tries=5,
@@ -819,6 +868,10 @@ async def sync_report_interval(client, account_id, report_stream,
         return False
 
 
+@backoff.on_exception(backoff.expo,
+                      urllib.error.URLError,
+                      max_tries=5,
+                      factor=2)
 def get_report_request_id(client, account_id, report_stream, report_name,
                           start_date, end_date, state_key, force_refresh=False):
 
@@ -835,7 +888,11 @@ def get_report_request_id(client, account_id, report_stream, report_name,
 
     return client.SubmitGenerateReport(report_request)
 
-
+@backoff.on_exception(backoff.expo,
+                      urllib.error.URLError,
+                      giveup=is_timeout_error(),
+                      max_tries=5,
+                      factor=2)
 def build_report_request(client, account_id, report_stream, report_name,
                          start_date, end_date):
     LOGGER.info(
