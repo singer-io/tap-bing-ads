@@ -24,6 +24,7 @@ from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
 
 LOGGER = singer.get_logger()
+DEFAULT_REQUEST_TIMEOUT = 300
 
 REQUIRED_CONFIG_KEYS = [
     "start_date",
@@ -100,7 +101,7 @@ class CustomServiceClient(ServiceClient):
         kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
         kwargs['headers']['User-Agent'] = get_user_agent()
         # setting the timeout parameter using the set_options which sets timeout in the _soap_client
-        kwargs['timeout'] = 0.00000000001
+        kwargs['timeout'] = CONFIG.get('request_timeout', DEFAULT_REQUEST_TIMEOUT)
         self._soap_client.set_options(**kwargs)
 
 def is_timeout_error():
