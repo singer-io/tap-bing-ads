@@ -8,45 +8,45 @@ import ssl
 from suds.transport import TransportError
     
 class MockClient():
-    
+    '''Mocked ServiceClient class and it's method to pass the test case'''
     def __init__(self, error):
         self.error = error
         self.count = 0
-        
+
     def GetCampaignsByAccountId(self, AccountId, CampaignType):
         self.count = self.count + 1
         raise self.error
-    
+
     def GetAdGroupsByCampaignId(self, CampaignId):
         self.count = self.count + 1
         raise self.error
-    
+
     def GetAdsByAdGroupId(self, AdGroupId, AdTypes):
         self.count = self.count + 1
         raise self.error
-    
+
     def PollGenerateReport(self):
         self.count = self.count + 1
         raise self.error
-    
+
     def SubmitGenerateReport(self, report_request):
         self.count = self.count + 1
         raise self.error
-    
+
     def PollGenerateReport(self, request_id):
         self.count = self.count + 1
         raise self.error
-    
+
     @property
     def factory(self):
         self.count = self.count + 1
         raise self.error
-    
-    @property 
+
+    @property
     def soap_client(self):
         self.count = self.count + 1
         raise self.error
-    
+
     @property
     def call_count(self):
         return self.count
@@ -62,16 +62,23 @@ class MockClient():
 @mock.patch("singer.write_schema", return_value = '')
 @mock.patch("tap_bing_ads.get_core_schema", return_value = '')
 @mock.patch("tap_bing_ads.get_selected_fields", return_value = '')
-class TestConnectionResetError(unittest.TestCase):
-    
+class TestBackoffError(unittest.TestCase):
+    '''
+    Test that backoff logic works properly. Mocked some common method to test the backoff including
+    filter_selected_fields_many, write_records , metrics, write_bookmark, write_state, sobject_to_dict,
+    get_bookmark, write_schema, get_core_schema, get_selected_fields, time.sleep.
+    '''
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
-    def test_connection_reset_error_get_account(self, mock_get_account, mock_create_sdk_client, 
-                                                    mock_get_selected_fields, mock_get_core_schema, 
-                                                    mock_write_schema, mock_get_bookmark, 
-                                                    mock_sobject_to_dict, mock_write_state, 
-                                                    mock_write_bookmark, mock_metrics, mock_write_records, 
+    def test_connection_reset_error_get_account(self, mock_get_account, mock_create_sdk_client,
+                                                    mock_get_selected_fields, mock_get_core_schema,
+                                                    mock_write_schema, mock_get_bookmark,
+                                                    mock_sobject_to_dict, mock_write_state,
+                                                    mock_write_bookmark, mock_metrics, mock_write_records,
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the connection reset error 5 times.
+        '''
         mock_get_account.side_effect = socket.error(104, 'Connection reset by peer')
         try:
             tap_bing_ads.sync_accounts_stream(['i1'], {})
@@ -82,12 +89,15 @@ class TestConnectionResetError(unittest.TestCase):
         
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
-    def test_socket_timeout__error_get_account(self, mock_get_account, mock_create_sdk_client, 
-                                                    mock_get_selected_fields, mock_get_core_schema, 
-                                                    mock_write_schema, mock_get_bookmark, 
-                                                    mock_sobject_to_dict, mock_write_state, 
-                                                    mock_write_bookmark, mock_metrics, mock_write_records, 
+    def test_socket_timeout__error_get_account(self, mock_get_account, mock_create_sdk_client,
+                                                    mock_get_selected_fields, mock_get_core_schema,
+                                                    mock_write_schema, mock_get_bookmark,
+                                                    mock_sobject_to_dict, mock_write_state,
+                                                    mock_write_bookmark, mock_metrics, mock_write_records,
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the socket timeout error 5 times.
+        '''
         mock_get_account.side_effect = socket.timeout()
         try:
             tap_bing_ads.sync_accounts_stream(['i1'], {})
@@ -98,12 +108,15 @@ class TestConnectionResetError(unittest.TestCase):
         
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
-    def test_http_timeout__error_get_account(self, mock_get_account, mock_create_sdk_client, 
-                                                    mock_get_selected_fields, mock_get_core_schema, 
-                                                    mock_write_schema, mock_get_bookmark, 
-                                                    mock_sobject_to_dict, mock_write_state, 
-                                                    mock_write_bookmark, mock_metrics, mock_write_records, 
+    def test_http_timeout__error_get_account(self, mock_get_account, mock_create_sdk_client,
+                                                    mock_get_selected_fields, mock_get_core_schema,
+                                                    mock_write_schema, mock_get_bookmark,
+                                                    mock_sobject_to_dict, mock_write_state,
+                                                    mock_write_bookmark, mock_metrics, mock_write_records,
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the http timeout error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_get_account.side_effect = HTTPError('url', 408, 'Request Timeout', {}, f)
         try:
@@ -115,12 +128,15 @@ class TestConnectionResetError(unittest.TestCase):
         
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
-    def test_internal_server_error_get_account(self, mock_get_account, mock_create_sdk_client, 
-                                                    mock_get_selected_fields, mock_get_core_schema, 
-                                                    mock_write_schema, mock_get_bookmark, 
-                                                    mock_sobject_to_dict, mock_write_state, 
-                                                    mock_write_bookmark, mock_metrics, mock_write_records, 
+    def test_internal_server_error_get_account(self, mock_get_account, mock_create_sdk_client,
+                                                    mock_get_selected_fields, mock_get_core_schema,
+                                                    mock_write_schema, mock_get_bookmark,
+                                                    mock_sobject_to_dict, mock_write_state,
+                                                    mock_write_bookmark, mock_metrics, mock_write_records,
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the 500 internal server error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_get_account.side_effect = HTTPError('url', 500, 'Internal Server Error', {}, f)
         try:
@@ -132,13 +148,15 @@ class TestConnectionResetError(unittest.TestCase):
         
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
-    def test_transport_error_get_account(self, mock_get_account, mock_create_sdk_client, 
-                                                
-                                                           mock_get_selected_fields, mock_get_core_schema, 
-                                                           mock_write_schema, mock_get_bookmark, 
-                                                           mock_sobject_to_dict, mock_write_state, 
-                                                           mock_write_bookmark, mock_metrics, mock_write_records, 
-                                                           mock_filter_selected_fields_many,mock_sleep):
+    def test_transport_error_get_account(self, mock_get_account, mock_create_sdk_client,
+                                                mock_get_selected_fields, mock_get_core_schema,
+                                                mock_write_schema, mock_get_bookmark,
+                                                mock_sobject_to_dict, mock_write_state, 
+                                                mock_write_bookmark, mock_metrics, mock_write_records, 
+                                                mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the Transport error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_get_account.side_effect = TransportError('url', 500, 'Internal Server Error')
         try:
@@ -156,6 +174,9 @@ class TestConnectionResetError(unittest.TestCase):
                                         mock_sobject_to_dict, mock_write_state, 
                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                         mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap does not retry on the 400 error.
+        '''
         with open('tests/base.py') as f:
             mock_get_account.side_effect = HTTPError('url', 400, 'Bad Request', {}, f)
         try:
@@ -174,6 +195,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the SSLEOFError 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_get_account.side_effect = ssl.SSLEOFError('EOF occurred in violation of protocol')
         try:
@@ -188,6 +212,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                                         mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the connection reset error 5 times.
+        '''
         mock_client = MockClient(socket.error(104, 'Connection reset by peer'))
         try:
             tap_bing_ads.sync_campaigns(mock_client, '', [])
@@ -201,6 +228,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                                         mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the socket timeout error 5 times.
+        '''
         mock_client = MockClient(socket.timeout())
         try:
             tap_bing_ads.sync_campaigns(mock_client, '', [])
@@ -214,6 +244,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the http timeout error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 408, 'Request Timeout', {}, f))
         try:
@@ -228,6 +261,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                                         mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the 500 internal server error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 500, 'Internal Server Error', {}, f))
         try:
@@ -256,6 +292,9 @@ class TestConnectionResetError(unittest.TestCase):
                                             mock_sobject_to_dict, mock_write_state, 
                                             mock_write_bookmark, mock_metrics, mock_write_records, 
                                             mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap does not retry on the 400 error.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 400, 'Bad Request', {}, f))
         try:
@@ -270,6 +309,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                 mock_sobject_to_dict, mock_write_state, 
                                                 mock_write_bookmark, mock_metrics, mock_write_records, 
                                                 mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the SSLEOFError 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(ssl.SSLEOFError('EOF occurred in violation of protocol'))
         try:
@@ -283,6 +325,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                                         mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the connection reset error 5 times.
+        '''
         mock_client = MockClient(socket.error(104, 'Connection reset by peer'))
         try:
             tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
@@ -296,6 +341,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                                         mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the socket timeout error 5 times.
+        '''
         mock_client = MockClient(socket.timeout())
         try:
             tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
@@ -309,6 +357,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the http timeout error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 408, 'Request Timeout', {}, f))
         try:
@@ -323,6 +374,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                                         mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the 500 internal server error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 500, 'Internal Server Error', {}, f))
         try:
@@ -337,6 +391,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                                         mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the Transport error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(TransportError('url', 500, 'Internal Server Error'))
         try:
@@ -351,6 +408,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                                         mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap does not retry on the 400 error.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 400, 'Bad Request', {}, f))
         try:
@@ -365,6 +425,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                 mock_sobject_to_dict, mock_write_state, 
                                                 mock_write_bookmark, mock_metrics, mock_write_records, 
                                                 mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the SSLEOFError 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(ssl.SSLEOFError('EOF occurred in violation of protocol'))
         try:
@@ -379,6 +442,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                 mock_sobject_to_dict, mock_write_state, 
                                                 mock_write_bookmark, mock_metrics, mock_write_records, 
                                                 mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the connection reset error 5 times.
+        '''
         mock_client = MockClient(socket.error(104, 'Connection reset by peer'))
         try:
             tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
@@ -392,6 +458,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                 mock_sobject_to_dict, mock_write_state, 
                                                 mock_write_bookmark, mock_metrics, mock_write_records, 
                                                 mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the socket timeout error 5 times.
+        '''
         mock_client = MockClient(socket.timeout())
         try:
             tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
@@ -405,6 +474,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                 mock_sobject_to_dict, mock_write_state, 
                                                 mock_write_bookmark, mock_metrics, mock_write_records, 
                                                 smock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the http timeout error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 408, 'Request Timeout', {}, f))
         try:
@@ -419,6 +491,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                 mock_sobject_to_dict, mock_write_state, 
                                                 mock_write_bookmark, mock_metrics, mock_write_records, 
                                                 mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the 500 internal server error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 500, 'Internal Server Error', {}, f))
         try:
@@ -433,6 +508,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                 mock_sobject_to_dict, mock_write_state, 
                                                 mock_write_bookmark, mock_metrics, mock_write_records, 
                                                 mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the Transport error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(TransportError('url', 500, 'Internal Server Error'))
         try:
@@ -447,6 +525,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                 mock_sobject_to_dict, mock_write_state, 
                                                 mock_write_bookmark, mock_metrics, mock_write_records, 
                                                 mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap does not retry on the 400 error.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 400, 'Bad Request', {}, f))
         try:
@@ -461,6 +542,9 @@ class TestConnectionResetError(unittest.TestCase):
                                         mock_sobject_to_dict, mock_write_state, 
                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                         mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the SSLEOFError 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(ssl.SSLEOFError('EOF occurred in violation of protocol'))
         try:
@@ -477,6 +561,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the connection reset error 5 times.
+        '''
         mock_client = MockClient(socket.error(104, 'Connection reset by peer'))
         try:
             tap_bing_ads.get_report_request_id(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date', 'dummy_start_key',
@@ -509,6 +596,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the http timeout error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 408, 'Request Timeout', {}, f))
         try:
@@ -526,6 +616,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the 500 internal server error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 500, 'Internal Server Error', {}, f))
         try:
@@ -543,6 +636,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the Transport error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(TransportError('url', 500, 'Internal Server Error'))
         try:
@@ -560,6 +656,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap does not retry on the 400 error.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 400, 'Bad Request', {}, f))
         try:
@@ -577,6 +676,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the SSLEOFError 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(ssl.SSLEOFError('EOF occurred in violation of protocol'))
         try:
@@ -592,6 +694,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the connection reset error 5 times.
+        '''
         mock_client = MockClient(socket.error(104, 'Connection reset by peer'))
         try:
             tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
@@ -605,6 +710,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the socket timeout error 5 times.
+        '''
         mock_client = MockClient(socket.timeout())
         try:
            tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
@@ -618,6 +726,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the http timeout error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 408, 'Request Timeout', {}, f))
         try:
@@ -632,6 +743,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the 500 internal server error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 500, 'Internal Server Error', {}, f))
         try:
@@ -646,6 +760,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the Transport error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(TransportError('url', 500, 'Internal Server Error'))
         try:
@@ -660,6 +777,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap does not retry on the 400 error.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 400, 'Bad Request', {}, f))
         try:
@@ -674,6 +794,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the SSLEOFError 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(ssl.SSLEOFError('EOF occurred in violation of protocol'))
         try:
@@ -688,6 +811,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the connection reset error 5 times.
+        '''
         mock_client = MockClient(socket.error(104, 'Connection reset by peer'))
         try:
             tap_bing_ads.get_report_schema(mock_client, '')
@@ -701,6 +827,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the socket timeout error 5 times.
+        '''
         mock_client = MockClient(socket.timeout())
         try:
            tap_bing_ads.get_report_schema(mock_client, '')
@@ -714,6 +843,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                                         mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the http timeout error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 408, 'Request Timeout', {}, f))
         try:
@@ -728,6 +860,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the 500 internal server error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 500, 'Internal Server Error', {}, f))
         try:
@@ -742,6 +877,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the Transport error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(TransportError('url', 500, 'Internal Server Error'))
         try:
@@ -756,6 +894,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap does not retry on the 400 error.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 400, 'Bad Request', {}, f))
         try:
@@ -770,6 +911,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                 mock_sobject_to_dict, mock_write_state, 
                                                 mock_write_bookmark, mock_metrics, mock_write_records, 
                                                 mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the SSLEOFError 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(ssl.SSLEOFError('EOF occurred in violation of protocol'))
         try:
@@ -784,6 +928,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the connection reset error 5 times.
+        '''
         mock_client = MockClient(socket.error(104, 'Connection reset by peer'))
         try:
             tap_bing_ads.get_type_map(mock_client)
@@ -797,6 +944,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the socket timeout error 5 times.
+        '''
         mock_client = MockClient(socket.timeout())
         try:
            tap_bing_ads.get_type_map(mock_client)
@@ -810,6 +960,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                 mock_sobject_to_dict, mock_write_state, 
                                                 mock_write_bookmark, mock_metrics, mock_write_records, 
                                                 mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the http timeout error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 408, 'Request Timeout', {}, f))
         try:
@@ -824,6 +977,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the 500 internal server error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 500, 'Internal Server Error', {}, f))
         try:
@@ -838,6 +994,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the Transport error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(TransportError('url', 500, 'Internal Server Error'))
         try:
@@ -852,6 +1011,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap does not retry on the 400 error.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 400, 'Bad Request', {}, f))
         try:
@@ -866,6 +1028,9 @@ class TestConnectionResetError(unittest.TestCase):
                                             mock_sobject_to_dict, mock_write_state, 
                                             mock_write_bookmark, mock_metrics, mock_write_records, 
                                             mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the SSLEOFError 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(ssl.SSLEOFError('EOF occurred in violation of protocol'))
         try:
@@ -880,6 +1045,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the connection reset error 5 times.
+        '''
         mock_client = MockClient(socket.error(104, 'Connection reset by peer'))
         try:
             await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
@@ -893,6 +1061,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the socket timeout error 5 times.
+        '''
         mock_client = MockClient(socket.timeout())
         try:
            await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
@@ -906,6 +1077,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                                         mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the http timeout error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 408, 'Request Timeout', {}, f))
         try:
@@ -920,6 +1094,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the 500 internal server error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 500, 'Internal Server Error', {}, f))
         try:
@@ -934,6 +1111,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the Transport error 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(TransportError('url', 500, 'Internal Server Error'))
         try:
@@ -948,6 +1128,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap does not retry on the 400 error.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 400, 'Bad Request', {}, f))
         try:
@@ -962,6 +1145,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the SSLEOFError 5 times.
+        '''
         with open('tests/base.py') as f:
             mock_client = MockClient(ssl.SSLEOFError('EOF occurred in violation of protocol'))
         try:
@@ -1000,6 +1186,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the socket timeout error 5 times.
+        '''
         mock_oauth.return_value = ''
         mock_client.side_effect = socket.timeout()
         try:
@@ -1019,6 +1208,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                                         mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the http timeout error 5 times.
+        '''
         mock_oauth.return_value = ''
         with open('tests/base.py') as f:
             mock_client.side_effect = HTTPError('url', 408, 'Request Timeout', {}, f)
@@ -1039,6 +1231,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the 500 internal server error 5 times.
+        '''
         mock_oauth.return_value = ''
         with open('tests/base.py') as f:
             mock_client.side_effect = HTTPError('url', 500, 'Internal Server Error', {}, f)
@@ -1059,6 +1254,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
                                                     mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the Transport error 5 times.
+        '''
         mock_oauth.return_value = ''
         with open('tests/base.py') as f:
             mock_client.side_effect = TransportError('url', 500, 'Internal Server Error')
@@ -1079,6 +1277,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                 mock_sobject_to_dict, mock_write_state, 
                                                 mock_write_bookmark, mock_metrics, mock_write_records, 
                                                 mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap does not retry on the 400 error.
+        '''
         mock_oauth.return_value = ''
         with open('tests/base.py') as f:
             mock_client.side_effect = HTTPError('url', 400, 'Bad Request', {}, f)
@@ -1100,6 +1301,9 @@ class TestConnectionResetError(unittest.TestCase):
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
                                                            mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the SSLEOFError 5 times.
+        '''
         mock_oauth.return_value = ''
         with open('tests/base.py') as f:
             mock_client.side_effect = ssl.SSLEOFError('EOF occurred in violation of protocol')
