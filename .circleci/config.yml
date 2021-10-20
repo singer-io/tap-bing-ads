@@ -20,9 +20,8 @@ jobs:
           name: 'Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
-            pip install nose
-            pip install coverage
-            nosetests --with-coverage --cover-erase --cover-package=tap_zendesk --cover-html-dir=htmlcov tests/unittests
+            pip install nose coverage
+            nosetests --with-coverage --cover-erase --cover-package=tap_bing_ads --cover-html-dir=htmlcov tests/unittests
             coverage html
       - store_test_results:
           path: test_output/report.xml
