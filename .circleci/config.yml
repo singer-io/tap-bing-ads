@@ -14,12 +14,7 @@ jobs:
             python3 -mvenv /usr/local/share/virtualenvs/tap-bing-ads
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
             pip install -U 'pip<19.2' 'setuptools<51.0.0'
-            pip install .[test]
-      - run:
-          name: 'pylint'
-          command: |
-            source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
-            pylint tap_bing_ads -d missing-docstring,line-too-long,invalid-name,super-with-arguments,return-in-init,deprecated-method,too-many-arguments
+            pip install .[dev]
       - add_ssh_keys
       - run:
           name: 'Integration Tests'
