@@ -1,7 +1,6 @@
 version: 2.1
 orbs:
   slack: circleci/slack@3.4.2
-
 jobs:
   build:
     docker:
@@ -17,6 +16,17 @@ jobs:
             pip install .[dev]
       - add_ssh_keys
       - run:
+          name: 'Unit Tests'
+          command: |
+            source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
+            pip install nose coverage
+            nosetests --with-coverage --cover-erase --cover-package=tap_bing_ads --cover-html-dir=htmlcov tests/unittests
+            coverage html
+      - store_test_results:
+          path: test_output/report.xml
+      - store_artifacts:
+          path: htmlcov
+      - run:
           name: 'Integration Tests'
           command: |
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
@@ -25,7 +35,6 @@ jobs:
             run-test --tap=tap-bing-ads tests
       - slack/notify-on-failure:
           only_for_branches: master
-
 workflows:
   version: 2
   commit:
