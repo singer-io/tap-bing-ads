@@ -872,6 +872,7 @@ async def sync_report_interval(client, account_id, report_stream,
 
 @backoff.on_exception(backoff.expo,
                       urllib.error.URLError,
+                      giveup=is_timeout_error(),
                       max_tries=5,
                       factor=2)
 def get_report_request_id(client, account_id, report_stream, report_name,
