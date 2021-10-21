@@ -1313,3 +1313,50 @@ class TestBackoffError(unittest.TestCase):
             pass
         # verify the code backed off and requested for 5 times
         self.assertEqual(mock_oauth.call_count, 5)
+        
+    
+    @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
+    @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
+    @mock.patch("bingads.AuthorizationData", return_value = '')
+    @mock.patch("tap_bing_ads.CustomServiceClient")
+    def test_408_exception_error_create_sdk_client(self, mock_client, mock_authorization_data, mock_oauth, mock_config,
+                                                           mock_get_selected_fields, mock_get_core_schema, 
+                                                           mock_write_schema, mock_get_bookmark, 
+                                                           mock_sobject_to_dict, mock_write_state, 
+                                                           mock_write_bookmark, mock_metrics, mock_write_records, 
+                                                           mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap retry on the 408 Request Timeout Exception of 5 times.
+        '''
+        mock_oauth.return_value = ''
+        with open('tests/base.py') as f:
+            mock_client.side_effect = Exception((408, 'Request Timeout'))
+        try:
+            tap_bing_ads.create_sdk_client('dummy_service', {})
+        except Exception:
+            pass
+        # verify the code backed off and requested for 5 times
+        self.assertEqual(mock_oauth.call_count, 5)
+        
+    @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
+    @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
+    @mock.patch("bingads.AuthorizationData", return_value = '')
+    @mock.patch("tap_bing_ads.CustomServiceClient")
+    def test_400_exception_error_create_sdk_client(self, mock_client, mock_authorization_data, mock_oauth, mock_config,
+                                                           mock_get_selected_fields, mock_get_core_schema, 
+                                                           mock_write_schema, mock_get_bookmark, 
+                                                           mock_sobject_to_dict, mock_write_state, 
+                                                           mock_write_bookmark, mock_metrics, mock_write_records, 
+                                                           mock_filter_selected_fields_many,mock_sleep):
+        '''
+        Test that tap does not retry on the 400 Bad reques Exception.
+        '''
+        mock_oauth.return_value = ''
+        with open('tests/base.py') as f:
+            mock_client.side_effect = Exception((400, 'Bad request'))
+        try:
+            tap_bing_ads.create_sdk_client('dummy_service', {})
+        except Exception:
+            pass
+        # verify the code backed off and requested for 5 times
+        self.assertEqual(mock_oauth.call_count, 1)

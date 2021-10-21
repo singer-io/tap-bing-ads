@@ -63,20 +63,22 @@ def should_retry_httperror(exception):
     try:
         if exception.code == 408:
             return True
-        
+
         return 500 <= exception.code < 600
     except AttributeError:
+        #If Exception raised with status code 408, only then perform backoff, otherwise raise error directly.
+        if type(exception) == Exception and exception.args[0][0] != 408:
+            return False
         return True
-
 def bing_ads_error_handling(fnc):
-    """ 
+    """
         Retry following errors for maximum 5 times,
         socket.timeout, ConnectionError, internal server error(500-range), SSLError, HTTPError(408), Transport error.
         Raise the error direclty for all errors except mentioned above errors.
     """
     @backoff.on_exception(backoff.expo,
                           (socket.timeout, ConnectionError,
-                           ssl.SSLError, HTTPError, suds.transport.TransportError),
+                           ssl.SSLError, HTTPError, suds.transport.TransportError, Exception),
                           max_tries=5,
                           giveup=lambda e: not should_retry_httperror(e),
                           factor=2)
