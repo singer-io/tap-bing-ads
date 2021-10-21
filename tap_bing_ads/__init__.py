@@ -105,13 +105,18 @@ class CustomServiceClient(ServiceClient):
         self._soap_client.set_options(**kwargs)
 
 def is_timeout_error():
+    """
+    This function checks whether the URLError contains 'timed out' substring and return boolean
+    values accordingly, to decide whether to backoff or not.
+    """
     def gen_fn(exc):
         if 'timed out' in str(exc):
-            return False
             # retry if the error string contains timed out
+            return False
         return True
     return gen_fn
 
+# backoff when URLError occurs with time out
 @backoff.on_exception(backoff.expo,
                       urllib.error.URLError,
                       giveup=is_timeout_error(),
@@ -564,6 +569,7 @@ def sync_accounts_stream(account_ids, catalog_item):
     singer.write_bookmark(STATE, 'accounts', 'last_record', max_accounts_last_modified)
     singer.write_state(STATE)
 
+# backoff when URLError occurs with time out
 @backoff.on_exception(backoff.expo,
                       urllib.error.URLError,
                       giveup=is_timeout_error(),
@@ -586,6 +592,7 @@ def sync_campaigns(client, account_id, selected_streams):
 
         return map(lambda x: x['Id'], campaigns)
 
+# backoff when URLError occurs with time out
 @backoff.on_exception(backoff.expo,
                       urllib.error.URLError,
                       giveup=is_timeout_error(),
@@ -613,6 +620,7 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
             ad_group_ids += list(map(lambda x: x['Id'], ad_groups))
     return ad_group_ids
 
+# backoff when URLError occurs with time out
 @backoff.on_exception(backoff.expo,
                       urllib.error.URLError,
                       giveup=is_timeout_error(),
@@ -677,6 +685,7 @@ def type_report_row(row):
 
         row[field_name] = value
 
+# backoff when URLError occurs with time out
 @backoff.on_exception(backoff.expo,
                       urllib.error.URLError,
                       giveup=is_timeout_error(),
@@ -721,6 +730,7 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
 def log_retry_attempt(details):
     LOGGER.info('Retrieving report timed out, triggering retry #%d', details.get('tries'))
 
+# backoff when URLError occurs with time out
 @backoff.on_exception(backoff.expo,
                       urllib.error.URLError,
                       giveup=is_timeout_error(),
@@ -869,7 +879,7 @@ async def sync_report_interval(client, account_id, report_stream,
         singer.write_state(STATE)
         return False
 
-
+# backoff when URLError occurs with time out
 @backoff.on_exception(backoff.expo,
                       urllib.error.URLError,
                       giveup=is_timeout_error(),
@@ -891,6 +901,7 @@ def get_report_request_id(client, account_id, report_stream, report_name,
 
     return client.SubmitGenerateReport(report_request)
 
+# backoff when URLError occurs with time out
 @backoff.on_exception(backoff.expo,
                       urllib.error.URLError,
                       giveup=is_timeout_error(),
