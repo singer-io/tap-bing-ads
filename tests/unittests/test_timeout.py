@@ -1,10 +1,7 @@
 import unittest
-import socket
 from unittest import mock
 import tap_bing_ads
-import json
 from urllib.error import HTTPError, URLError
-import ssl
 from suds.transport import TransportError
     
 class MockClient():
@@ -341,7 +338,7 @@ class TestBackoffError(unittest.TestCase):
     @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
     @mock.patch("bingads.AuthorizationData", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
-    def test_url_create_sdk_client(self, mock_client, mock_authorization_data, mock_oauth, mock_config,
+    def test_url_error_create_sdk_client(self, mock_client, mock_authorization_data, mock_oauth, mock_config,
                                                         mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
                                                         mock_sobject_to_dict, mock_write_state, 
@@ -360,7 +357,7 @@ class TestBackoffError(unittest.TestCase):
     @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
     @mock.patch("bingads.AuthorizationData", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
-    def test_url_no_timeout_create_sdk_client(self, mock_client, mock_authorization_data, mock_oauth, mock_config,
+    def test_url_error_no_timeout_create_sdk_client(self, mock_client, mock_authorization_data, mock_oauth, mock_config,
                                                         mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
                                                         mock_sobject_to_dict, mock_write_state, 
