@@ -732,7 +732,8 @@ def log_retry_attempt(details):
                       on_backoff=log_retry_attempt)
 def stream_report(stream_name, report_name, url, report_time):
     with metrics.http_request_timer('download_report'):
-        response = SESSION.get(url, headers={'User-Agent': get_user_agent()})
+        timeout = CONFIG.get('request_timeout', DEFAULT_REQUEST_TIMEOUT)
+        response = SESSION.get(url, headers={'User-Agent': get_user_agent()}, timeout=timeout)
 
     if response.status_code != 200:
         raise Exception('Non-200 ({}) response downloading report: {}'.format(
