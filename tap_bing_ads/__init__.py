@@ -24,7 +24,7 @@ from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
 
 LOGGER = singer.get_logger()
-DEFAULT_REQUEST_TIMEOUT = 300
+REQUEST_TIMEOUT = 300
 
 REQUIRED_CONFIG_KEYS = [
     "start_date",
@@ -101,7 +101,7 @@ class CustomServiceClient(ServiceClient):
         kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
         kwargs['headers']['User-Agent'] = get_user_agent()
         # setting the timeout parameter using the set_options which sets timeout in the _soap_client
-        kwargs['timeout'] = CONFIG.get('request_timeout', DEFAULT_REQUEST_TIMEOUT)
+        kwargs['timeout'] = float(CONFIG.get('request_timeout', REQUEST_TIMEOUT))
         self._soap_client.set_options(**kwargs)
 
 def is_timeout_error():
@@ -742,7 +742,7 @@ def log_retry_attempt(details):
                       on_backoff=log_retry_attempt)
 def stream_report(stream_name, report_name, url, report_time):
     with metrics.http_request_timer('download_report'):
-        timeout = CONFIG.get('request_timeout', DEFAULT_REQUEST_TIMEOUT)
+        timeout = float(CONFIG.get('request_timeout', REQUEST_TIMEOUT))
         response = SESSION.get(url, headers={'User-Agent': get_user_agent()}, timeout=timeout)
 
     if response.status_code != 200:
