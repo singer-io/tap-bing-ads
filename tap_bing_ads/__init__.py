@@ -19,6 +19,7 @@ import requests
 import arrow
 import backoff
 import urllib
+import functools
 
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
@@ -55,6 +56,32 @@ SESSION = requests.Session()
 DEFAULT_USER_AGENT = 'Singer.io Bing Ads Tap'
 
 ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z0-9]+)'
+
+def is_timeout_error():
+    """
+    This function checks whether the URLError contains 'timed out' substring and return boolean
+    values accordingly, to decide whether to backoff or not.
+    """
+    def gen_fn(exc):
+        if 'timed out' in str(exc):
+            # retry if the error string contains timed out
+            return False
+        return True
+    return gen_fn
+
+def bing_ads_error_handling(fnc):
+    """
+        Retry URLError with timeout for maximum 5 times.
+    """
+    @backoff.on_exception(backoff.expo,
+                      urllib.error.URLError,
+                      giveup=is_timeout_error(),
+                      max_tries=5,
+                      factor=2)
+    @functools.wraps(fnc)
+    def wrapper(*args, **kwargs):
+        return fnc(*args, **kwargs)
+    return wrapper
 
 def get_user_agent():
     return CONFIG.get('user_agent', DEFAULT_USER_AGENT)
@@ -102,27 +129,11 @@ class CustomServiceClient(ServiceClient):
         kwargs['headers']['User-Agent'] = get_user_agent()
         # setting the timeout parameter using the set_options which sets timeout in the _soap_client
         kwargs['timeout'] = float(CONFIG.get('request_timeout', REQUEST_TIMEOUT) or REQUEST_TIMEOUT)
-        LOGGER.info(f'>>>>>> kwargs {kwargs}')
         self._soap_client.set_options(**kwargs)
 
-def is_timeout_error():
-    """
-    This function checks whether the URLError contains 'timed out' substring and return boolean
-    values accordingly, to decide whether to backoff or not.
-    """
-    def gen_fn(exc):
-        if 'timed out' in str(exc):
-            # retry if the error string contains timed out
-            return False
-        return True
-    return gen_fn
 
 # backoff when URLError occurs with time out
-@backoff.on_exception(backoff.expo,
-                      urllib.error.URLError,
-                      giveup=is_timeout_error(),
-                      max_tries=5,
-                      factor=2)
+@bing_ads_error_handling
 def create_sdk_client(service, account_id):
     LOGGER.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
                 service, account_id)
@@ -536,11 +547,7 @@ def filter_selected_fields_many(selected_fields, objs):
         return [filter_selected_fields(selected_fields, obj) for obj in objs]
     return objs
 
-@backoff.on_exception(backoff.expo,
-                      urllib.error.URLError,
-                      giveup=is_timeout_error(),
-                      max_tries=5,
-                      factor=2)
+@bing_ads_error_handling
 def sync_accounts_stream(account_ids, catalog_item):
     selected_fields = get_selected_fields(catalog_item)
     accounts = []
@@ -571,11 +578,7 @@ def sync_accounts_stream(account_ids, catalog_item):
     singer.write_state(STATE)
 
 # backoff when URLError occurs with time out
-@backoff.on_exception(backoff.expo,
-                      urllib.error.URLError,
-                      giveup=is_timeout_error(),
-                      max_tries=5,
-                      factor=2)
+@bing_ads_error_handling
 def sync_campaigns(client, account_id, selected_streams):
     # CampaignType defaults to 'Search', but there are other types of campaigns
     response = client.GetCampaignsByAccountId(AccountId=account_id, CampaignType='Search Shopping DynamicSearchAds')
@@ -594,11 +597,7 @@ def sync_campaigns(client, account_id, selected_streams):
         return map(lambda x: x['Id'], campaigns)
 
 # backoff when URLError occurs with time out
-@backoff.on_exception(backoff.expo,
-                      urllib.error.URLError,
-                      giveup=is_timeout_error(),
-                      max_tries=5,
-                      factor=2)
+@bing_ads_error_handling
 def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
     ad_group_ids = []
     for campaign_id in campaign_ids:
@@ -622,11 +621,7 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
     return ad_group_ids
 
 # backoff when URLError occurs with time out
-@backoff.on_exception(backoff.expo,
-                      urllib.error.URLError,
-                      giveup=is_timeout_error(),
-                      max_tries=5,
-                      factor=2)
+@bing_ads_error_handling
 def sync_ads(client, selected_streams, ad_group_ids):
     for ad_group_id in ad_group_ids:
         response = client.GetAdsByAdGroupId(
@@ -687,11 +682,7 @@ def type_report_row(row):
         row[field_name] = value
 
 # backoff when URLError occurs with time out
-@backoff.on_exception(backoff.expo,
-                      urllib.error.URLError,
-                      giveup=is_timeout_error(),
-                      max_tries=5,
-                      factor=2)
+@bing_ads_error_handling
 async def poll_report(client, account_id, report_name, start_date, end_date, request_id):
     download_url = None
     with metrics.job_timer('generate_report'):
@@ -732,11 +723,7 @@ def log_retry_attempt(details):
     LOGGER.info('Retrieving report timed out, triggering retry #%d', details.get('tries'))
 
 # backoff when URLError occurs with time out
-@backoff.on_exception(backoff.expo,
-                      urllib.error.URLError,
-                      giveup=is_timeout_error(),
-                      max_tries=5,
-                      factor=2)
+@bing_ads_error_handling
 @backoff.on_exception(backoff.constant,
                       requests.exceptions.ConnectionError,
                       max_tries=5,
@@ -881,11 +868,7 @@ async def sync_report_interval(client, account_id, report_stream,
         return False
 
 # backoff when URLError occurs with time out
-@backoff.on_exception(backoff.expo,
-                      urllib.error.URLError,
-                      giveup=is_timeout_error(),
-                      max_tries=5,
-                      factor=2)
+@bing_ads_error_handling
 def get_report_request_id(client, account_id, report_stream, report_name,
                           start_date, end_date, state_key, force_refresh=False):
 
@@ -903,11 +886,7 @@ def get_report_request_id(client, account_id, report_stream, report_name,
     return client.SubmitGenerateReport(report_request)
 
 # backoff when URLError occurs with time out
-@backoff.on_exception(backoff.expo,
-                      urllib.error.URLError,
-                      giveup=is_timeout_error(),
-                      max_tries=5,
-                      factor=2)
+@bing_ads_error_handling
 def build_report_request(client, account_id, report_stream, report_name,
                          start_date, end_date):
     LOGGER.info(
