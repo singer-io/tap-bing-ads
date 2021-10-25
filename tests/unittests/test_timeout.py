@@ -1,7 +1,9 @@
 import unittest
 from unittest import mock
+from unittest.case import TestCase
 import tap_bing_ads
 from urllib.error import HTTPError, URLError
+from tap_bing_ads import CustomServiceClient
 from suds.transport import TransportError
     
 class MockClient():
@@ -408,3 +410,93 @@ class TestBackoffError(unittest.TestCase):
             pass
         # verify the code did not back off and requested for 1 time
         self.assertEqual(mocked_get.call_count, 1)
+
+# mock Client 
+class MockedClient():
+    def __init__(self) -> None:
+        pass
+
+# Mock args
+class Args():
+    def __init__(self, config):
+        self.config = config
+        self.discover = False
+        self.properties = False
+        self.catalog = False
+        self.state = False
+
+@mock.patch('tap_bing_ads.utils.parse_args')
+@mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
+@mock.patch("bingads.AuthorizationData", return_value = '')
+@mock.patch("bingads.Client.set_options")
+@mock.patch("tap_bing_ads.CustomServiceClient")
+class TestRequestTimeoutValue(unittest.TestCase):
+    def test_default_value_request_timeout(self, mock_client, mock_set_options, mock_authorization_data, mock_oauth, mocked_args):
+        """ 
+            Unit tests to ensure that request timeout is set based default value
+        """
+        tap_bing_ads.CONFIG = {}
+        config = {"customer_id": "test", "oauth_client_id": "test", "oauth_client_secret": "test", "refresh_token": "test", "developer_token": "test"}
+        args = Args(config)
+        tap_bing_ads.CONFIG.update(args.config)
+        kwargs = {'headers': {}}
+        mock_client.side_effect == MockedClient
+        service_client = CustomServiceClient('CustomerManagementService')
+        service_client.set_options(**kwargs)
+        mock_set_options.assert_called_with(headers={'User-Agent': 'Singer.io Bing Ads Tap'}, timeout=300.0)
+    
+    def test_config_provided_request_timeout(self, mock_client, mock_set_options, mock_authorization_data, mock_oauth, mocked_args):
+        """ 
+            Unit tests to ensure that request timeout is set based on config value
+        """
+        tap_bing_ads.CONFIG = {}
+        config = {"customer_id": "test", "oauth_client_id": "test", "oauth_client_secret": "test", "refresh_token": "test", "developer_token": "test", 'request_timeout': 100}
+        args = Args(config)
+        tap_bing_ads.CONFIG.update(args.config)
+        kwargs = {'headers': {}}
+        mock_client.side_effect == MockedClient
+        service_client = CustomServiceClient('CustomerManagementService')
+        service_client.set_options(**kwargs)
+        mock_set_options.assert_called_with(headers={'User-Agent': 'Singer.io Bing Ads Tap'}, timeout=100.0)
+
+    def test_float_config_provided_request_timeout(self, mock_client, mock_set_options, mock_authorization_data, mock_oauth, mocked_args):
+        """ 
+            Unit tests to ensure that request timeout is set based on config float value
+        """
+        tap_bing_ads.CONFIG = {}
+        config = {"customer_id": "test", "oauth_client_id": "test", "oauth_client_secret": "test", "refresh_token": "test", "developer_token": "test", 'request_timeout': 100.8}
+        args = Args(config)
+        tap_bing_ads.CONFIG.update(args.config)
+        kwargs = {'headers': {}}
+        mock_client.side_effect == MockedClient
+        service_client = CustomServiceClient('CustomerManagementService')
+        service_client.set_options(**kwargs)
+        mock_set_options.assert_called_with(headers={'User-Agent': 'Singer.io Bing Ads Tap'}, timeout=100.8)
+    
+    def test_string_config_provided_request_timeout(self, mock_client, mock_set_options, mock_authorization_data, mock_oauth, mocked_args):
+        """ 
+            Unit tests to ensure that request timeout is set based on config string value
+        """
+        tap_bing_ads.CONFIG = {}
+        config = {"customer_id": "test", "oauth_client_id": "test", "oauth_client_secret": "test", "refresh_token": "test", "developer_token": "test", 'request_timeout': '100'}
+        args = Args(config)
+        tap_bing_ads.CONFIG.update(args.config)
+        kwargs = {'headers': {}}
+        mock_client.side_effect == MockedClient
+        service_client = CustomServiceClient('CustomerManagementService')
+        service_client.set_options(**kwargs)
+        mock_set_options.assert_called_with(headers={'User-Agent': 'Singer.io Bing Ads Tap'}, timeout=100.0)
+    
+    def test_empty_config_provided_request_timeout(self, mock_client, mock_set_options, mock_authorization_data, mock_oauth, mocked_args):
+        """ 
+            Unit tests to ensure that request timeout is set based on default value if empty value is given in config
+        """
+        tap_bing_ads.CONFIG = {}
+        config = {"customer_id": "test", "oauth_client_id": "test", "oauth_client_secret": "test", "refresh_token": "test", "developer_token": "test", 'request_timeout': ''}
+        args = Args(config)
+        tap_bing_ads.CONFIG.update(args.config)
+        kwargs = {'headers': {}}
+        mock_client.side_effect == MockedClient
+        service_client = CustomServiceClient('CustomerManagementService')
+        service_client.set_options(**kwargs)
+        mock_set_options.assert_called_with(headers={'User-Agent': 'Singer.io Bing Ads Tap'}, timeout=300.0)

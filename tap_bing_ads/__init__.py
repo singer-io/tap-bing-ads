@@ -101,7 +101,8 @@ class CustomServiceClient(ServiceClient):
         kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
         kwargs['headers']['User-Agent'] = get_user_agent()
         # setting the timeout parameter using the set_options which sets timeout in the _soap_client
-        kwargs['timeout'] = float(CONFIG.get('request_timeout', REQUEST_TIMEOUT))
+        kwargs['timeout'] = float(CONFIG.get('request_timeout', REQUEST_TIMEOUT) or REQUEST_TIMEOUT)
+        LOGGER.info(f'>>>>>> kwargs {kwargs}')
         self._soap_client.set_options(**kwargs)
 
 def is_timeout_error():
@@ -742,7 +743,7 @@ def log_retry_attempt(details):
                       on_backoff=log_retry_attempt)
 def stream_report(stream_name, report_name, url, report_time):
     with metrics.http_request_timer('download_report'):
-        timeout = float(CONFIG.get('request_timeout', REQUEST_TIMEOUT))
+        timeout = float(CONFIG.get('request_timeout', REQUEST_TIMEOUT) or REQUEST_TIMEOUT)
         response = SESSION.get(url, headers={'User-Agent': get_user_agent()}, timeout=timeout)
 
     if response.status_code != 200:
