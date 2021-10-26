@@ -2,9 +2,8 @@ import unittest
 from unittest import mock
 from unittest.case import TestCase
 import tap_bing_ads
-from urllib.error import HTTPError, URLError
+from urllib.error import URLError
 from tap_bing_ads import CustomServiceClient
-from suds.transport import TransportError
     
 class MockClient():
     '''Mocked ServiceClient class and it's method to pass the test case'''

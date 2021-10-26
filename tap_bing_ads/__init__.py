@@ -128,9 +128,10 @@ class CustomServiceClient(ServiceClient):
         kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
         kwargs['headers']['User-Agent'] = get_user_agent()
         # setting the timeout parameter using the set_options which sets timeout in the _soap_client
-        kwargs['timeout'] = float(CONFIG.get('request_timeout', REQUEST_TIMEOUT) or REQUEST_TIMEOUT)
+        # If value is 0,"0","" or not passed then set default to 300 seconds
+        config_request_timeout = CONFIG.get('request_timeout')
+        kwargs['timeout'] = config_request_timeout and  float(config_request_timeout) or REQUEST_TIMEOUT
         self._soap_client.set_options(**kwargs)
-
 
 # backoff when URLError occurs with time out
 @bing_ads_error_handling
@@ -730,7 +731,10 @@ def log_retry_attempt(details):
                       on_backoff=log_retry_attempt)
 def stream_report(stream_name, report_name, url, report_time):
     with metrics.http_request_timer('download_report'):
-        timeout = float(CONFIG.get('request_timeout', REQUEST_TIMEOUT) or REQUEST_TIMEOUT)
+        # Set request timeout with config param `request_timeout`.
+        # If value is 0,"0","" or not passed then set default to 300 seconds.
+        config_request_timeout = CONFIG.get('request_timeout')
+        timeout = config_request_timeout and  float(config_request_timeout) or REQUEST_TIMEOUT
         response = SESSION.get(url, headers={'User-Agent': get_user_agent()}, timeout=timeout)
 
     if response.status_code != 200:
