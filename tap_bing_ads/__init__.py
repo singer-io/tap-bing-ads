@@ -101,7 +101,7 @@ class CustomServiceClient(ServiceClient):
 
 def create_sdk_client(service, account_id):
     LOGGER.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
-                str(service), account_id)
+                service, account_id)
 
     require_live_connect = CONFIG.get('require_live_connect', 'True') == 'True'
 
