@@ -718,10 +718,8 @@ def get_report_interval(state_key):
         start_date = config_start_date.floor('day')
 
     start_date = min(start_date, conversion_min_date)
-    LOGGER.info(f'>>>> s date {(start_date)}')
 
     end_date = min(config_end_date, arrow.get().floor('day'))
-    LOGGER.info(f'>>>> se date {type(end_date)}')
 
     return start_date, end_date
 
