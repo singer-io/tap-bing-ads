@@ -354,7 +354,7 @@ def discover_core_objects():
     return core_object_streams
 
 def get_report_schema(client, report_name):
-    column_obj_name = f'{report_name}Column'
+    column_obj_name = '{}Column'.format(report_name) # pylint: disable=consider-using-f-string
 
     report_columns_type = None
     for _type in client.soap_client.sd[0].types:
@@ -496,7 +496,7 @@ def get_selected_fields(catalog_item, exclude=None):
             selected_fields.append(prop)
 
     if any(invalid_selections):
-        raise Exception(f"Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{json.dumps(invalid_selections, indent=4)}")
+        raise Exception("Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{}".format(json.dumps(invalid_selections, indent=4))) # pylint: disable=consider-using-f-string
     return selected_fields
 
 def filter_selected_fields(selected_fields, obj):
@@ -683,8 +683,7 @@ def stream_report(stream_name, report_name, url, report_time):
         response = SESSION.get(url, headers={'User-Agent': get_user_agent()})
 
     if response.status_code != 200:
-        raise Exception(f'Non-200 ({response.status_code}) response downloading report: {report_name}')
-
+        raise Exception('Non-200 ({}) response downloading report: {}'.format(response.status_code, report_name)) # pylint: disable=consider-using-f-string
     with ZipFile(io.BytesIO(response.content)) as zip_file:
         with zip_file.open(zip_file.namelist()[0]) as binary_file:
             with io.TextIOWrapper(binary_file, encoding='utf-8') as csv_file:
@@ -727,7 +726,7 @@ def get_report_interval(state_key):
 async def sync_report(client, account_id, report_stream):
     report_max_days = int(CONFIG.get('report_max_days', 30))
 
-    state_key = f'{account_id}_{report_stream.stream}'
+    state_key = '{}_{}'.format(account_id, report_stream.stream) # pylint: disable=consider-using-f-string
 
     start_date, end_date = get_report_interval(state_key)
 
@@ -756,7 +755,7 @@ async def sync_report(client, account_id, report_stream):
 
 async def sync_report_interval(client, account_id, report_stream,
                                start_date, end_date):
-    state_key = f'{account_id}_{report_stream.stream}'
+    state_key = '{}_{}'.format(account_id, report_stream.stream) # pylint: disable=consider-using-f-string
     report_name = stringcase.pascalcase(report_stream.stream)
 
     report_schema = get_report_schema(client, report_name)
@@ -835,7 +834,7 @@ def build_report_request(client, account_id, report_stream, report_name,
     LOGGER.info('Syncing report for account %s: %s - from %s to %s',
                 account_id, report_name, str(start_date), str(end_date))
 
-    report_request = client.factory.create(f'{report_name}Request')
+    report_request = client.factory.create('{}Request'.format(report_name)) # pylint: disable=consider-using-f-string
     report_request.Format = 'Csv'
     report_request.Aggregation = 'Daily'
     report_request.ExcludeReportHeader = True
@@ -851,10 +850,9 @@ def build_report_request(client, account_id, report_stream, report_name,
                                           exclude=excluded_fields)
 
     report_columns = client.factory.create(
-        f'ArrayOf{report_name}Column'
+        'ArrayOf{}Column'.format(report_name) # pylint: disable=consider-using-f-string
     )
-    getattr(report_columns, f'{report_name}Column') \
-        .append(selected_fields)
+    getattr(report_columns, '{}Column'.format(report_name)).append(selected_fields) # pylint: disable=consider-using-f-string
     report_request.Columns = report_columns
 
     request_start_date = client.factory.create('Date')

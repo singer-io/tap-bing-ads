@@ -1,7 +1,6 @@
 version: 2.1
 orbs:
   slack: circleci/slack@3.4.2
-
 jobs:
   build:
     docker:
@@ -19,7 +18,7 @@ jobs:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
-            pylint tap_bing_ads -d missing-docstring,line-too-long,invalid-name,super-with-arguments,return-in-init,deprecated-method,too-many-arguments
+            pylint tap_bing_ads -d missing-docstring,line-too-long,invalid-name,super-with-arguments,return-in-init,too-many-arguments,deprecated-method
       - add_ssh_keys
       - run:
           name: 'Integration Tests'
@@ -30,7 +29,6 @@ jobs:
             run-test --tap=tap-bing-ads tests
       - slack/notify-on-failure:
           only_for_branches: master
-
 workflows:
   version: 2
   commit:
