@@ -644,12 +644,12 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
                 i,
                 MAX_NUM_REPORT_POLLS,
                 report_name,
-                str(start_date),
-                str(end_date))
+                start_date,
+                end_date)
             response = client.PollGenerateReport(request_id)
             if response.Status == 'Error':
                 LOGGER.warn('Error polling %s for account %s with request id %s',
-                            report_name, str(account_id), str(request_id))
+                            report_name, account_id, request_id)
                 return False, None
             if response.Status == 'Success':
                 if response.ReportDownloadUrl:
@@ -657,15 +657,15 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
                 else:
                     LOGGER.info('No results for report: %s - from %s to %s',
                                 report_name,
-                                str(start_date),
-                                str(end_date))
+                                start_date,
+                                end_date)
                 break
 
             if i == MAX_NUM_REPORT_POLLS:
                 LOGGER.info('Generating report timed out: %s - from %s to %s',
                             report_name,
-                            str(start_date),
-                            str(end_date))
+                            start_date,
+                            end_date)
             else:
                 await asyncio.sleep(REPORT_POLL_SLEEP)
 
@@ -718,8 +718,10 @@ def get_report_interval(state_key):
         start_date = config_start_date.floor('day')
 
     start_date = min(start_date, conversion_min_date)
+    LOGGER.info(f'>>>> s date {(start_date)}')
 
     end_date = min(config_end_date, arrow.get().floor('day'))
+    LOGGER.info(f'>>>> se date {type(end_date)}')
 
     return start_date, end_date
 
@@ -731,7 +733,7 @@ async def sync_report(client, account_id, report_stream):
     start_date, end_date = get_report_interval(state_key)
 
     LOGGER.info('Generating %s reports for account %s between %s - %s',
-        report_stream.stream, str(account_id), str(start_date), str(end_date))
+        report_stream.stream, account_id, start_date, end_date)
 
     current_start_date = start_date
     while current_start_date <= end_date:
@@ -790,7 +792,7 @@ async def sync_report_interval(client, account_id, report_stream,
 
     if success and download_url: # pylint: disable=no-else-return
         LOGGER.info('Streaming report: %s for account %s - from %s to %s',
-                    report_name, account_id, str(start_date), str(end_date))
+                    report_name, account_id, start_date, end_date)
 
         stream_report(report_stream.stream,
                       report_name,
@@ -802,14 +804,14 @@ async def sync_report_interval(client, account_id, report_stream,
         return True
     elif success and not download_url:
         LOGGER.info('No data for report: %s for account %s - from %s to %s',
-                    report_name, account_id, str(start_date), str(end_date))
+                    report_name, account_id, start_date, end_date)
         singer.write_bookmark(STATE, state_key, 'request_id', None)
         singer.write_bookmark(STATE, state_key, 'date', end_date.isoformat())
         singer.write_state(STATE)
         return True
     else:
         LOGGER.info('Unsuccessful request for report: %s for account %s - from %s to %s',
-                    report_name, account_id, str(start_date), str(end_date))
+                    report_name, account_id, start_date, end_date)
         singer.write_bookmark(STATE, state_key, 'request_id', None)
         singer.write_state(STATE)
         return False
@@ -832,7 +834,7 @@ def get_report_request_id(client, account_id, report_stream, report_name,
 def build_report_request(client, account_id, report_stream, report_name,
                          start_date, end_date):
     LOGGER.info('Syncing report for account %s: %s - from %s to %s',
-                account_id, report_name, str(start_date), str(end_date))
+                account_id, report_name, start_date, end_date)
 
     report_request = client.factory.create('{}Request'.format(report_name)) # pylint: disable=consider-using-f-string
     report_request.Format = 'Csv'
