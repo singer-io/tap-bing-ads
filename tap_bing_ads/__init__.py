@@ -324,6 +324,7 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
     if replication_key:
         mdata = metadata.write(mdata, ('properties', replication_key), 'inclusion', 'automatic')
 
+    # For the report streams, we have some stream_metadata which have list fields to make automatic and a list of file exclusions.
     if stream_metadata:
         for field in stream_metadata:
             if field.get('metadata').get('inclusion') == 'automatic':
