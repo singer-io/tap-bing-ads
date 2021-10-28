@@ -328,6 +328,8 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
         for field in stream_metadata:
             if field.get('metadata').get('inclusion') == 'automatic':
                 mdata = metadata.write(mdata, tuple(field.get('breadcrumb')), 'inclusion', 'automatic')
+            if field.get('metadata').get('fieldExclusions'):
+                mdata = metadata.write(mdata, tuple(field.get('breadcrumb')), 'fieldExclusions', field.get('metadata').get('fieldExclusions'))
 
     stream_def['metadata'] = metadata.to_list(mdata)
 
