@@ -82,7 +82,7 @@ def bing_ads_error_handling(fnc):
                            ssl.SSLError, HTTPError, suds.transport.TransportError, Exception),
                         #   max_tries=5,
                           giveup=lambda e: not should_retry_httperror(e),
-                          max_time=60, # seconds
+                          max_time=10, # seconds
                           factor=2)
     @functools.wraps(fnc)
     def wrapper(*args, **kwargs):
@@ -683,33 +683,15 @@ def type_report_row(row):
 
         row[field_name] = value
 
+@bing_ads_error_handling
 def generate_poll_report(client, request_id):
     """
         Retry following errors for maximum 5 times,
         socket.timeout, ConnectionError, internal server error(500-range), SSLError, HTTPError(408), Transport error.
         Raise the error direclty for all errors except mentioned above errors.
     """
-    count = 0
-    while True:
-        if count > 5:
-            break
-        try:
-            response = client.PollGenerateReport(request_id)
-            return response
-        except (socket.timeout, ConnectionError, ssl.SSLError, HTTPError, suds.transport.TransportError, OSError, Exception) as e:
-            try:
-                if e.code == 408 or 500 <= e.code < 600:
-                    pass
-                else:
-                    raise e
-            except AttributeError:
-                #If Exception raised with status code 408, only then perform backoff, otherwise raise error directly.
-                if type(e) == Exception and e.args[0][0] != 408:
-                    raise e
-            count = count + 1
-            LOGGER.info('Backing off poll_report(...) {}'.format(str(e)))
-            time.sleep(2)
-
+    return client.PollGenerateReport(request_id)
+    
 async def poll_report(client, account_id, report_name, start_date, end_date, request_id):
     download_url = None
     with metrics.job_timer('generate_report'):
