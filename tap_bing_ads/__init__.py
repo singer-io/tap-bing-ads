@@ -351,7 +351,10 @@ def discover_core_objects():
 
     account_schema = get_core_schema(client, 'AdvertiserAccount')
     core_object_streams.append(
-        get_stream_def('accounts', account_schema, pks=['Id'], replication_key='LastModifiedTime'))
+        # Adding LastModifiedTime in the pks as after new standard metadata changes we are getting Id as primary key only 
+        # while earlier we were getting Id and LastModifiedTime both because of the coding mistake 
+        # but to keep client experience same, adding LastModifiedTime in pks.
+        get_stream_def('accounts', account_schema, pks=['Id','LastModifiedTime'], replication_key='LastModifiedTime'))
 
     LOGGER.info('Initializing CampaignManagementService client - Loading WSDL')
     client = CustomServiceClient('CampaignManagementService')
