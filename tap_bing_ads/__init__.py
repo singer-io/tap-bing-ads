@@ -82,7 +82,7 @@ def bing_ads_error_handling(fnc):
                            ssl.SSLError, HTTPError, suds.transport.TransportError, Exception),
                         #   max_tries=5,
                           giveup=lambda e: not should_retry_httperror(e),
-                          max_time=10, # seconds
+                          max_time=60, # seconds
                           factor=2)
     @functools.wraps(fnc)
     def wrapper(*args, **kwargs):
