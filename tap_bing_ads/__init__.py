@@ -73,16 +73,15 @@ def should_retry_httperror(exception):
         return True
 def bing_ads_error_handling(fnc):
     """
-        Retry following errors for maximum 5 times,
+        Retry following errors for 60 seconds,
         socket.timeout, ConnectionError, internal server error(500-range), SSLError, HTTPError(408), Transport error.
         Raise the error direclty for all errors except mentioned above errors.
     """
     @backoff.on_exception(backoff.expo,
                           (socket.timeout, ConnectionError,
                            ssl.SSLError, HTTPError, suds.transport.TransportError, Exception),
-                        #   max_tries=5,
                           giveup=lambda e: not should_retry_httperror(e),
-                          max_time=60, # seconds
+                          max_time=60, # 60 seconds
                           factor=2)
     @functools.wraps(fnc)
     def wrapper(*args, **kwargs):
@@ -686,7 +685,7 @@ def type_report_row(row):
 @bing_ads_error_handling
 def generate_poll_report(client, request_id):
     """
-        Retry following errors for maximum 5 times,
+        Retry following errors for 60 seconds,
         socket.timeout, ConnectionError, internal server error(500-range), SSLError, HTTPError(408), Transport error.
         Raise the error direclty for all errors except mentioned above errors.
     """
