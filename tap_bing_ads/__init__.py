@@ -127,10 +127,14 @@ class CustomServiceClient(ServiceClient):
         self._options = kwargs
         kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
         kwargs['headers']['User-Agent'] = get_user_agent()
+        request_timeout = CONFIG.get('request_timeout')
+        # if request_timeout is other than 0,"0" or "" then use request_timeout
+        if request_timeout and float(request_timeout):
+            request_timeout = float(request_timeout)
+        else: # If value is 0,"0" or "" then set default to 300 seconds.
+            request_timeout = REQUEST_TIMEOUT
         # setting the timeout parameter using the set_options which sets timeout in the _soap_client
-        # If value is 0,"0","" or not passed then set default to 300 seconds
-        config_request_timeout = CONFIG.get('request_timeout')
-        kwargs['timeout'] = config_request_timeout and  float(config_request_timeout) or REQUEST_TIMEOUT
+        kwargs['timeout'] = request_timeout
         self._soap_client.set_options(**kwargs)
 
 # backoff when URLError occurs with time out
