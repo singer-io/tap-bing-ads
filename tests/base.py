@@ -3,6 +3,7 @@ Setup expectations for test sub classes
 Run discovery for as a prerequisite for most tests
 """
 import unittest
+import backoff
 import copy
 import os
 from datetime import timedelta
@@ -10,6 +11,15 @@ from datetime import datetime as dt
 from datetime import timezone as tz
 
 from tap_tester import connections, menagerie, runner
+
+def backoff_wait_times():
+    """Create a generator of wait times as [30, 60, 120, 240, 480, ...]"""
+    return backoff.expo(factor=30)
+
+
+class RetryableTapError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
 
 
 class BingAdsBaseTest(unittest.TestCase):
@@ -197,14 +207,35 @@ class BingAdsBaseTest(unittest.TestCase):
         """Create a new connection with the test name"""
         # Create the connection
         conn_id = connections.ensure_connection(self, original_properties)
+        self.run_check_mode(conn_id)
+        return conn_id
 
+    @backoff.on_exception(backoff_wait_times,
+                          RetryableTapError,
+                          max_tries=3)
+    def run_check_mode(self, conn_id):
         # Run a check job using orchestrator (discovery)
         check_job_name = runner.run_check_mode(self, conn_id)
 
         # Assert that the check job succeeded
         exit_status = menagerie.get_exit_status(conn_id, check_job_name)
-        menagerie.verify_check_exit_status(self, exit_status, check_job_name)
-        return conn_id
+        try:
+            menagerie.verify_check_exit_status(self, exit_status, check_job_name)
+        except AssertionError as e:
+            if exit_status['discovery_error_message']:
+                print("*******************RETRYING CHECK FOR DISCOVERY FAILURE*******************")
+                raise RetryableTapError(e)
+
+            raise
+
+    def verify_check_mode(self, conn_id):
+        found_catalogs = menagerie.get_catalogs(conn_id)
+        self.assertGreater(len(found_catalogs), 0, msg="unable to locate schemas for connection {}".format(conn_id))
+
+        found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
+        self.assertSetEqual(self.expected_streams(), found_catalog_names, msg="discovered schemas do not match")
+        print("discovered schemas are OK")
+        return found_catalogs
 
     def run_and_verify_check_mode(self, conn_id):
         """
@@ -213,34 +244,34 @@ class BingAdsBaseTest(unittest.TestCase):
 
         Return the connection id and found catalogs from menagerie.
         """
-        # run in check mode
-        check_job_name = runner.run_check_mode(self, conn_id)
+        self.run_check_mode(conn_id)
+        return self.verify_check_mode(conn_id)
 
-        # verify check exit codes
-        exit_status = menagerie.get_exit_status(conn_id, check_job_name)
-        menagerie.verify_check_exit_status(self, exit_status, check_job_name)
-
-        found_catalogs = menagerie.get_catalogs(conn_id)
-        self.assertGreater(len(found_catalogs), 0, msg="unable to locate schemas for connection {}".format(conn_id))
-
-        found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
-        self.assertSetEqual(self.expected_streams(), found_catalog_names, msg="discovered schemas do not match")
-        print("discovered schemas are OK")
-
-        return found_catalogs
-
-    def run_and_verify_sync(self, conn_id):
+    @backoff.on_exception(backoff_wait_times,
+                          RetryableTapError,
+                          max_tries=3)
+    def run_and_verify_sync(self, conn_id, state):
         """
         Run a sync job and make sure it exited properly.
         Return a dictionary with keys of streams synced
         and values of records synced for each stream
         """
+        # reset state to the state at the start of the sync in case we got interrupted
+        menagerie.set_state(conn_id, state)
+
         # Run a sync job using orchestrator
         sync_job_name = runner.run_sync_mode(self, conn_id)
 
         # Verify tap and target exit codes
         exit_status = menagerie.get_exit_status(conn_id, sync_job_name)
-        menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
+        try:
+            menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
+        except AssertionError as e:
+            if exit_status['discovery_error_message'] or exit_status['tap_error_message']:
+                print("*******************RETRYING SYNC FOR TAP/DISCOVERY FAILURE*******************")
+                raise RetryableTapError(e)
+
+            raise
 
         # Verify actual rows were synced
         sync_record_count = runner.examine_target_output_file(

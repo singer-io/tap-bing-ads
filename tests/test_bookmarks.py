@@ -99,7 +99,8 @@ class TestBingAdsBookmarks(BingAdsBaseTest):
         # )
 
         # Run a sync job using orchestrator
-        first_sync_record_count = self.run_and_verify_sync(conn_id)
+        state = menagerie.get_state(conn_id)
+        first_sync_record_count = self.run_and_verify_sync(conn_id, state)
         first_sync_records = runner.get_records_from_target_output()
         first_sync_bookmarks = menagerie.get_state(conn_id)
 
@@ -111,7 +112,8 @@ class TestBingAdsBookmarks(BingAdsBaseTest):
         menagerie.set_state(conn_id, new_state)
 
         # Run a second sync job using orchestrator
-        second_sync_record_count = self.run_and_verify_sync(conn_id)
+        state = menagerie.get_state(conn_id)
+        second_sync_record_count = self.run_and_verify_sync(conn_id, state)
         second_sync_records = runner.get_records_from_target_output()
         second_sync_bookmarks = menagerie.get_state(conn_id)
 

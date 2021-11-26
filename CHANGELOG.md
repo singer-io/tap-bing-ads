@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0
+  * Update the BingAds library to `13.0.11`
+
+## 2.0.17
+  * Remove null characters from incoming CSV [#78](https://github.com/singer-io/tap-bing-ads/pull/78)
+
 ## 2.0.16
   * Temporary fix for `wsdl_type_to_schema` [#71](https://github.com/singer-io/tap-bing-ads/pull/71)
 
