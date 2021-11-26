@@ -736,10 +736,13 @@ def log_retry_attempt(details):
 def stream_report(stream_name, report_name, url, report_time):
     with metrics.http_request_timer('download_report'):
         # Set request timeout with config param `request_timeout`.
-        # If value is 0,"0","" or not passed then set default to 300 seconds.
-        config_request_timeout = CONFIG.get('request_timeout')
-        timeout = config_request_timeout and  float(config_request_timeout) or REQUEST_TIMEOUT
-        response = SESSION.get(url, headers={'User-Agent': get_user_agent()}, timeout=timeout)
+        request_timeout = CONFIG.get('request_timeout')
+        # if request_timeout is other than 0, "0" or "" then use request_timeout else use default request timeout.
+        if request_timeout and float(request_timeout):
+            request_timeout = float(request_timeout)
+        else: # If value is 0, "0" or "" then set default to 300 seconds.
+            request_timeout = REQUEST_TIMEOUT
+        response = SESSION.get(url, headers={'User-Agent': get_user_agent()}, timeout=request_timeout)
 
     if response.status_code != 200:
         raise Exception('Non-200 ({}) response downloading report: {}'.format(
