@@ -66,7 +66,7 @@ def should_retry_httperror(exception):
     try:
         if exception.code == 408:
             return True
-    
+     
         # return true if the status code is between 500 to 600
         return 500 <= exception.code < 600
     except AttributeError:
