@@ -763,7 +763,7 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
 def log_retry_attempt(details):
     LOGGER.info('Retrieving report timed out, triggering retry #%d', details.get('tries'))
 
-# backoff for 60 seconds to keep consistent withother backoffs when URLError occurs indicating request timeout
+# backoff for 60 seconds to keep consistent with other backoffs when URLError occurs indicating request timeout
 @backoff.on_exception(backoff.expo,
                       urllib.error.URLError,
                       giveup=is_timeout_error(),
