@@ -65,7 +65,9 @@ def should_retry_httperror(exception):
     """ Retry 500-range and 408 errors. """
     try:
         if exception.code == 408:
-            return True
+            return True        
+
+        # return true if the status code is between 500 to 600
         return 500 <= exception.code < 600
     except AttributeError:
         # As ConnectionError, socket.timeout, SSLError, Transport does not have `code` property, it throws AttributeError.
