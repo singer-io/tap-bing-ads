@@ -1,9 +1,8 @@
 import unittest
 from unittest import mock
-from unittest.case import TestCase
 import tap_bing_ads
 from urllib.error import URLError
-from tap_bing_ads import CustomServiceClient, LOGGER
+from tap_bing_ads import CustomServiceClient
 import datetime
     
 class MockClient():
