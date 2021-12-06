@@ -2,7 +2,6 @@ import unittest
 import socket
 from unittest import mock
 import tap_bing_ads
-import json
 from urllib.error import HTTPError
 import ssl
 from suds.transport import TransportError
@@ -1564,55 +1563,3 @@ class TestBackoffError(unittest.TestCase):
         # verify the code backed off for 60 seconds
         # time_difference should be greater or equall 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
-        
-    
-    @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
-    @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
-    @mock.patch("bingads.AuthorizationData", return_value = '')
-    @mock.patch("tap_bing_ads.CustomServiceClient")
-    def test_408_exception_error_create_sdk_client(self, mock_client, mock_authorization_data, mock_oauth, mock_config,
-                                                           mock_get_selected_fields, mock_get_core_schema, 
-                                                           mock_write_schema, mock_get_bookmark, 
-                                                           mock_sobject_to_dict, mock_write_state, 
-                                                           mock_write_bookmark, mock_metrics, mock_write_records, 
-                                                           mock_filter_selected_fields_many):
-        '''
-        Test that tap retry for 60 seconds on the 408 Request Timeout Exception of.
-        '''
-        mock_oauth.return_value = ''
-        with open('tests/base.py') as f:
-            mock_client.side_effect = Exception((408, 'Request Timeout'))
-        before_time = datetime.datetime.now()
-        try:
-            tap_bing_ads.create_sdk_client('dummy_service', {})
-        except Exception:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equall 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
-        
-    @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
-    @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
-    @mock.patch("bingads.AuthorizationData", return_value = '')
-    @mock.patch("tap_bing_ads.CustomServiceClient")
-    def test_400_exception_error_create_sdk_client(self, mock_client, mock_authorization_data, mock_oauth, mock_config,
-                                                           mock_get_selected_fields, mock_get_core_schema, 
-                                                           mock_write_schema, mock_get_bookmark, 
-                                                           mock_sobject_to_dict, mock_write_state, 
-                                                           mock_write_bookmark, mock_metrics, mock_write_records, 
-                                                           mock_filter_selected_fields_many):
-        '''
-        Test that tap does not retry on the 400 Bad reques Exception.
-        '''
-        mock_oauth.return_value = ''
-        with open('tests/base.py') as f:
-            mock_client.side_effect = Exception((400, 'Bad request'))
-        before_time = datetime.datetime.now()
-        try:
-            tap_bing_ads.create_sdk_client('dummy_service', {})
-        except Exception:
-            pass
-        # verify the code backed off and requested for
-        self.assertEqual(mock_oauth.call_count, 1)
