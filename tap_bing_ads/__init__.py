@@ -21,9 +21,8 @@ import backoff
 import socket
 import ssl
 import functools
-from urllib.error import HTTPError
+from urllib.error import URLError
 
-import time
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
 
@@ -60,25 +59,30 @@ DEFAULT_USER_AGENT = 'Singer.io Bing Ads Tap'
 ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z0-9]+)'
 
 def should_retry_httperror(exception):
-    """ Retry 500-range and 408 errors. """
+    """ Return true if exception is required to retry otherwise return false """
     try:
-        if exception.code == 408:
+        if isinstance(exception, ConnectionError) or isinstance(exception, ssl.SSLError):
             return True
-     
-        # return true if the status code is between 500 to 600
-        return 500 <= exception.code < 600
+        elif isinstance(exception, suds.transport.TransportError) or isinstance(exception, socket.timeout):
+            return True
+        elif type(exception) == URLError:
+            return True
+        elif type(exception) == Exception and exception.args[0][0] == 408:
+            return True
+        elif exception.code == 408:
+            return True
+        return 500 <= exception.code < 60
     except AttributeError:
-        # As ConnectionError, socket.timeout, SSLError, Transport does not have `code` property, it throws AttributeError.
-        return True
+        return False
+
 def bing_ads_error_handling(fnc):
     """
         Retry following errors for 60 seconds,
-        socket.timeout, ConnectionError, internal server error(500-range), SSLError, HTTPError(408), Transport error.
+        socket.timeout, ConnectionError, internal server error(500-range), SSLError, URLError, HTTPError(408), Transport errors.
         Raise the error direclty for all errors except mentioned above errors.
     """
     @backoff.on_exception(backoff.expo,
-                          (socket.timeout, ConnectionError,
-                           ssl.SSLError, HTTPError, suds.transport.TransportError),
+                          (Exception),
                           giveup=lambda e: not should_retry_httperror(e),
                           max_time=60, # 60 seconds
                           factor=2)
