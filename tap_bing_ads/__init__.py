@@ -71,7 +71,7 @@ def should_retry_httperror(exception):
             return True
         elif exception.code == 408:
             return True
-        return 500 <= exception.code < 60
+        return 500 <= exception.code < 600
     except AttributeError:
         return False
 
