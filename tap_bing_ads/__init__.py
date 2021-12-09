@@ -748,13 +748,9 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
 def log_retry_attempt(details):
     LOGGER.info('Retrieving report timed out, triggering retry #%d', details.get('tries'))
 
-# backoff for 60 seconds to keep consistent with other backoffs when URLError occurs indicating request timeout
-@backoff.on_exception(backoff.expo,
-                      urllib.error.URLError,
-                      max_time=60,
-                      factor=2)
+# retry the request for 5 times when Timeout error occurs
 @backoff.on_exception(backoff.constant,
-                      requests.exceptions.ConnectionError,
+                      (requests.exceptions.Timeout ,requests.exceptions.ConnectionError),
                       max_tries=5,
                       on_backoff=log_retry_attempt)
 def stream_report(stream_name, report_name, url, report_time):

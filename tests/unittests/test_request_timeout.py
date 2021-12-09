@@ -1,5 +1,7 @@
 import unittest
 from unittest import mock
+
+from requests.exceptions import Timeout
 import tap_bing_ads
 from urllib.error import URLError
 from tap_bing_ads import CustomServiceClient
@@ -278,25 +280,21 @@ class TestBackoffError(unittest.TestCase):
         self.assertGreaterEqual(time_difference, 60)
 
     @mock.patch('tap_bing_ads.requests.Session.get')
-    def test_url_error_stream_report(self, mocked_get, mock_get_selected_fields, mock_get_core_schema, 
+    def test_timeout_error_stream_report(self, mocked_get, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
                                                         mock_filter_selected_fields_many):
         '''
-        Test that tap retry on the url timeout error for 1 minute.
+        Test that tap retry on the timeout error for 5 times.
         '''
-        mocked_get.side_effect = URLError('_ssl.c:1059: The handshake operation timed out')
-        before_time = datetime.datetime.now()
+        mocked_get.side_effect = Timeout
         try:
             tap_bing_ads.stream_report('dummy_report', '', 'http://test.com', 'dummy_time')
-        except URLError:
+        except Timeout:
             pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equall 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+        # verify that the request backoffs for 5 times in case of Timeout error
+        self.assertEqual(mocked_get.call_count, 5)
 
 # Mock Client 
 class MockedClient():
