@@ -79,7 +79,7 @@ def bing_ads_error_handling(fnc):
     """
         Retry following errors for 60 seconds,
         socket.timeout, ConnectionError, internal server error(500-range), SSLError, URLError, HTTPError(408), Transport errors.
-        Raise the error direclty for all errors except mentioned above errors.
+        Raise the error directly for all errors except mentioned above errors.
     """
     @backoff.on_exception(backoff.expo,
                           (Exception),
@@ -690,7 +690,7 @@ def generate_poll_report(client, request_id):
     """
         Retry following errors for 60 seconds,
         socket.timeout, ConnectionError, internal server error(500-range), SSLError, HTTPError(408), Transport error.
-        Raise the error direclty for all errors except mentioned above errors.
+        Raise the error directly for all errors except mentioned above errors.
     """
     return client.PollGenerateReport(request_id)
     
@@ -704,7 +704,7 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
                 report_name,
                 start_date,
                 end_date))
-            # As in async method backoff does not work directly we created seprate method to handle it.
+            # As in the async method backoff does not work directly we created a separate method to handle it.
             response = generate_poll_report(client, request_id)
             if response.Status == 'Error':
                 LOGGER.warn(
