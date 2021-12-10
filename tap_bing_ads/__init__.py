@@ -96,7 +96,7 @@ class CustomServiceClient(ServiceClient):
         return super().__init__(name, 'v13', **kwargs)
 
     def __getattr__(self, name):
-        # Log and return serivcecall(suds client call) object
+        # Log and return service call(suds client call) object
         service_method = super(CustomServiceClient, self).__getattr__(name)
         return log_service_call(service_method, self._authorization_data.account_id)
 
