@@ -87,7 +87,7 @@ class TestBackoffError(unittest.TestCase):
         after_time = datetime.datetime.now()
         time_difference = (after_time - before_time).total_seconds()
         # verify the code backed off for 60 seconds
-        # time_difference should be greater or equall 60 as some time elapsed while calculating `after_time`
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
 
     def test_url_error_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -107,7 +107,7 @@ class TestBackoffError(unittest.TestCase):
         after_time = datetime.datetime.now()
         time_difference = (after_time - before_time).total_seconds()
         # verify the code backed off for 60 seconds
-        # time_difference should be greater or equall 60 as some time elapsed while calculating `after_time`
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
 
     def test_url_error_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -127,7 +127,7 @@ class TestBackoffError(unittest.TestCase):
         after_time = datetime.datetime.now()
         time_difference = (after_time - before_time).total_seconds()
         # verify the code backed off for 60 seconds
-        # time_difference should be greater or equall 60 as some time elapsed while calculating `after_time`
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
 
     def test_url_error_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -147,7 +147,7 @@ class TestBackoffError(unittest.TestCase):
         after_time = datetime.datetime.now()
         time_difference = (after_time - before_time).total_seconds()
         # verify the code backed off for 60 seconds
-        # time_difference should be greater or equall 60 as some time elapsed while calculating `after_time`
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60) 
 
     @mock.patch("tap_bing_ads.build_report_request")
@@ -170,7 +170,7 @@ class TestBackoffError(unittest.TestCase):
         after_time = datetime.datetime.now()
         time_difference = (after_time - before_time).total_seconds()
         # verify the code backed off for 60 seconds
-        # time_difference should be greater or equall 60 as some time elapsed while calculating `after_time`
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
 
     def test_url_error_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -190,7 +190,7 @@ class TestBackoffError(unittest.TestCase):
         after_time = datetime.datetime.now()
         time_difference = (after_time - before_time).total_seconds()
         # verify the code backed off for 60 seconds
-        # time_difference should be greater or equall 60 as some time elapsed while calculating `after_time`
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
 
     def test_url_error_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -210,7 +210,7 @@ class TestBackoffError(unittest.TestCase):
         after_time = datetime.datetime.now()
         time_difference = (after_time - before_time).total_seconds()
         # verify the code backed off for 60 seconds
-        # time_difference should be greater or equall 60 as some time elapsed while calculating `after_time`
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
 
     def test_url_error_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -230,7 +230,7 @@ class TestBackoffError(unittest.TestCase):
         after_time = datetime.datetime.now()
         time_difference = (after_time - before_time).total_seconds()
         # verify the code backed off for 60 seconds
-        # time_difference should be greater or equall 60 as some time elapsed while calculating `after_time`
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
 
     async def test_url_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -250,7 +250,7 @@ class TestBackoffError(unittest.TestCase):
         after_time = datetime.datetime.now()
         time_difference = (after_time - before_time).total_seconds()
         # verify the code backed off for 60 seconds
-        # time_difference should be greater or equall 60 as some time elapsed while calculating `after_time`
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
 
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
@@ -276,7 +276,7 @@ class TestBackoffError(unittest.TestCase):
         after_time = datetime.datetime.now()
         time_difference = (after_time - before_time).total_seconds()
         # verify the code backed off for 60 seconds
-        # time_difference should be greater or equall 60 as some time elapsed while calculating `after_time`
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
 
     @mock.patch('tap_bing_ads.requests.Session.get')
