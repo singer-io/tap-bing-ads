@@ -62,7 +62,7 @@ class InvalidDateRangeEnd(Exception):
 
 def log_service_call(service_method, account_id):
     def wrapper(*args, **kwargs): # pylint: disable=inconsistent-return-statements
-        log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + list(map(lambda kv: '{}={}'.format(*kv), kwargs.items())) # pylint: disable=consider-using-f-string
+        log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
         LOGGER.info('Calling: %s(%s) for account: %s',
                     service_method.name,
                     ','.join(log_args),
@@ -357,7 +357,7 @@ def discover_core_objects():
     return core_object_streams
 
 def get_report_schema(client, report_name):
-    column_obj_name = '{}Column'.format(report_name) # pylint: disable=consider-using-f-string
+    column_obj_name = '{}Column'.format(report_name)
 
     report_columns_type = None
     for _type in client.soap_client.sd[0].types:
@@ -499,7 +499,7 @@ def get_selected_fields(catalog_item, exclude=None):
             selected_fields.append(prop)
 
     if any(invalid_selections):
-        raise Exception("Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{}".format(json.dumps(invalid_selections, indent=4))) # pylint: disable=consider-using-f-string
+        raise Exception("Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{}".format(json.dumps(invalid_selections, indent=4)))
     return selected_fields
 
 def filter_selected_fields(selected_fields, obj):
@@ -686,7 +686,7 @@ def stream_report(stream_name, report_name, url, report_time):
         response = SESSION.get(url, headers={'User-Agent': get_user_agent()})
 
     if response.status_code != 200:
-        raise Exception('Non-200 ({}) response downloading report: {}'.format(response.status_code, report_name)) # pylint: disable=consider-using-f-string
+        raise Exception('Non-200 ({}) response downloading report: {}'.format(response.status_code, report_name))
     with ZipFile(io.BytesIO(response.content)) as zip_file:
         with zip_file.open(zip_file.namelist()[0]) as binary_file:
             with io.TextIOWrapper(binary_file, encoding='utf-8') as csv_file:
@@ -729,7 +729,7 @@ def get_report_interval(state_key):
 async def sync_report(client, account_id, report_stream):
     report_max_days = int(CONFIG.get('report_max_days', 30))
 
-    state_key = '{}_{}'.format(account_id, report_stream.stream) # pylint: disable=consider-using-f-string
+    state_key = '{}_{}'.format(account_id, report_stream.stream)
 
     start_date, end_date = get_report_interval(state_key)
 
@@ -758,7 +758,7 @@ async def sync_report(client, account_id, report_stream):
 
 async def sync_report_interval(client, account_id, report_stream,
                                start_date, end_date):
-    state_key = '{}_{}'.format(account_id, report_stream.stream) # pylint: disable=consider-using-f-string
+    state_key = '{}_{}'.format(account_id, report_stream.stream)
     report_name = stringcase.pascalcase(report_stream.stream)
 
     report_schema = get_report_schema(client, report_name)
@@ -837,7 +837,7 @@ def build_report_request(client, account_id, report_stream, report_name,
     LOGGER.info('Syncing report for account %s: %s - from %s to %s',
                 account_id, report_name, start_date, end_date)
 
-    report_request = client.factory.create('{}Request'.format(report_name)) # pylint: disable=consider-using-f-string
+    report_request = client.factory.create('{}Request'.format(report_name))
     report_request.Format = 'Csv'
     report_request.Aggregation = 'Daily'
     report_request.ExcludeReportHeader = True
@@ -853,9 +853,9 @@ def build_report_request(client, account_id, report_stream, report_name,
                                           exclude=excluded_fields)
 
     report_columns = client.factory.create(
-        'ArrayOf{}Column'.format(report_name) # pylint: disable=consider-using-f-string
+        'ArrayOf{}Column'.format(report_name)
     )
-    getattr(report_columns, '{}Column'.format(report_name)).append(selected_fields) # pylint: disable=consider-using-f-string
+    getattr(report_columns, '{}Column'.format(report_name)).append(selected_fields)
     report_request.Columns = report_columns
 
     request_start_date = client.factory.create('Date')
