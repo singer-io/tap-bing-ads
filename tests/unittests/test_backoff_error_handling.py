@@ -25,10 +25,6 @@ class MockClient():
         self.count = self.count + 1
         raise self.error
 
-    def PollGenerateReport(self):
-        self.count = self.count + 1
-        raise self.error
-
     def SubmitGenerateReport(self, report_request):
         self.count = self.count + 1
         raise self.error
@@ -253,6 +249,30 @@ class TestBackoffError(unittest.TestCase):
         # verify the code backed off for 60 seconds
         # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
+
+    @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
+    @mock.patch("tap_bing_ads.CustomServiceClient")
+    def test_exception_408_error_get_account(self, mock_get_account, mock_create_sdk_client,
+                                                           mock_get_selected_fields, mock_get_core_schema, 
+                                                           mock_write_schema, mock_get_bookmark, 
+                                                           mock_sobject_to_dict, mock_write_state, 
+                                                           mock_write_bookmark, mock_metrics, mock_write_records, 
+                                                           mock_filter_selected_fields_many):
+        '''
+        Test that tap retry for 60 seconds on the Exception with error code 408.
+        '''
+        mock_get_account.side_effect = Exception((408, 'Request Timeout'))
+
+        before_time = datetime.datetime.now()
+        try:
+            tap_bing_ads.sync_accounts_stream(['i1'], {})
+        except Exception:
+            pass
+        after_time = datetime.datetime.now()
+        time_difference = (after_time - before_time).total_seconds()
+        # verify the code backed off for 60 seconds
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+        self.assertGreaterEqual(time_difference, 60)
         
     def test_connection_reset_error_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -409,6 +429,25 @@ class TestBackoffError(unittest.TestCase):
         # verify the code backed off for 60 seconds
         # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
+
+    def test_exception_408_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
+                                                        mock_write_schema, mock_get_bookmark, 
+                                                        mock_sobject_to_dict, mock_write_state, 
+                                                        mock_write_bookmark, mock_metrics, mock_write_records, 
+                                                        mock_filter_selected_fields_many):
+        mock_client = MockClient(Exception((408, 'Request Timeout')))
+        
+        before_time = datetime.datetime.now()
+        try:
+            tap_bing_ads.sync_campaigns(mock_client, '', [])
+        except Exception:
+            pass
+        after_time = datetime.datetime.now()
+        time_difference = (after_time - before_time).total_seconds()
+        # verify the code backed off for 60 seconds
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+        self.assertGreaterEqual(time_difference, 60)
+
     def test_connection_reset_error_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
                                                         mock_sobject_to_dict, mock_write_state, 
@@ -570,7 +609,28 @@ class TestBackoffError(unittest.TestCase):
         # verify the code backed off for 60 seconds
         # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)        
+
+    def test_exception_408_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
+                                                        mock_write_schema, mock_get_bookmark, 
+                                                        mock_sobject_to_dict, mock_write_state, 
+                                                        mock_write_bookmark, mock_metrics, mock_write_records, 
+                                                        mock_filter_selected_fields_many):
+        '''
+        Test that tap retry for 60 seconds on the Exception with error code 408.
+        '''
+        mock_client = MockClient(Exception((408, 'Request Timeout')))
         
+        before_time = datetime.datetime.now()
+        try:
+            tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
+        except Exception:
+            pass
+        after_time = datetime.datetime.now()
+        time_difference = (after_time - before_time).total_seconds()
+        # verify the code backed off for 60 seconds
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+        self.assertGreaterEqual(time_difference, 60)
+
     def test_connection_reset_error_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
                                                 mock_sobject_to_dict, mock_write_state, 
@@ -732,7 +792,28 @@ class TestBackoffError(unittest.TestCase):
         # verify the code backed off for 60 seconds
         # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)  
+
+    def test_exception_408_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
+                                                mock_write_schema, mock_get_bookmark, 
+                                                mock_sobject_to_dict, mock_write_state, 
+                                                mock_write_bookmark, mock_metrics, mock_write_records, 
+                                                mock_filter_selected_fields_many):
+        '''
+        Test that tap retry for 60 seconds on the Exception with error code 408.
+        '''
+        mock_client = MockClient(Exception((408, 'Request Timeout')))
         
+        before_time = datetime.datetime.now()
+        try:
+            tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
+        except Exception:
+            pass
+        after_time = datetime.datetime.now()
+        time_difference = (after_time - before_time).total_seconds()
+        # verify the code backed off for 60 seconds
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+        self.assertGreaterEqual(time_difference, 60) 
+
     @mock.patch("tap_bing_ads.build_report_request")
     def test_connection_reset_error_get_report_request_id(self, mock_build_report_request, 
                                                            mock_get_selected_fields, mock_get_core_schema, 
@@ -915,7 +996,31 @@ class TestBackoffError(unittest.TestCase):
         # verify the code backed off for 60 seconds
         # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
-                
+
+    @mock.patch("tap_bing_ads.build_report_request")   
+    def test_url_error_get_report_request_id(self, mock_build_report_request,
+                                                           mock_get_selected_fields, mock_get_core_schema, 
+                                                           mock_write_schema, mock_get_bookmark, 
+                                                           mock_sobject_to_dict, mock_write_state, 
+                                                           mock_write_bookmark, mock_metrics, mock_write_records, 
+                                                           mock_filter_selected_fields_many):
+        '''
+        Test that tap retry for 60 seconds on the Exception with error code 408.
+        '''
+        mock_client = MockClient(Exception((408, 'Request Timeout')))
+        
+        before_time = datetime.datetime.now()
+        try:
+            tap_bing_ads.get_report_request_id(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date', 'dummy_start_key',
+                                               force_refresh = True)
+        except Exception:
+            pass
+        after_time = datetime.datetime.now()
+        time_difference = (after_time - before_time).total_seconds()
+        # verify the code backed off for 60 seconds
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+        self.assertGreaterEqual(time_difference, 60)
+
     def test_connection_reset_error_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
                                                            mock_sobject_to_dict, mock_write_state, 
@@ -1076,7 +1181,27 @@ class TestBackoffError(unittest.TestCase):
         # verify the code backed off for 60 seconds
         # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
-               
+
+    def test_408_exception_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
+                                                           mock_write_schema, mock_get_bookmark, 
+                                                           mock_sobject_to_dict, mock_write_state, 
+                                                           mock_write_bookmark, mock_metrics, mock_write_records, 
+                                                           mock_filter_selected_fields_many):
+        '''
+        Test that tap retry for 60 seconds on the Exception with error code 408.
+        '''
+        mock_client = MockClient(Exception((408, 'Request Timeout')))
+        before_time = datetime.datetime.now()
+        try:
+            tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
+        except Exception:
+            pass
+        after_time = datetime.datetime.now()
+        time_difference = (after_time - before_time).total_seconds()
+        # verify the code backed off for 60 seconds
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+        self.assertGreaterEqual(time_difference, 60)  
+
     def test_connection_reset_error_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
                                                            mock_sobject_to_dict, mock_write_state, 
@@ -1238,6 +1363,28 @@ class TestBackoffError(unittest.TestCase):
         # verify the code backed off for 60 seconds
         # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
+    
+    def test_exception_408_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
+                                                mock_write_schema, mock_get_bookmark, 
+                                                mock_sobject_to_dict, mock_write_state, 
+                                                mock_write_bookmark, mock_metrics, mock_write_records, 
+                                                mock_filter_selected_fields_many):
+        '''
+        Test that tap retry for 60 seconds on the Exception with error code 408.
+        '''
+        with open('tests/base.py') as f:
+            mock_client = MockClient(Exception((408, 'Request Timeout')))
+        before_time = datetime.datetime.now()
+        try:
+            tap_bing_ads.get_report_schema(mock_client, '')
+        except Exception:
+            pass
+        after_time = datetime.datetime.now()
+        time_difference = (after_time - before_time).total_seconds()
+        # verify the code backed off for 60 seconds
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+        self.assertGreaterEqual(time_difference, 60)
+
                 
     def test_connection_reset_error_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
@@ -1394,6 +1541,26 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_type_map(mock_client)
         except ssl.SSLEOFError:
+            pass
+        after_time = datetime.datetime.now()
+        time_difference = (after_time - before_time).total_seconds()
+        # verify the code backed off for 60 seconds
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+        self.assertGreaterEqual(time_difference, 60)
+
+    def test_exception_408_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
+                                                    mock_write_schema, mock_get_bookmark, 
+                                                    mock_sobject_to_dict, mock_write_state, 
+                                                    mock_write_bookmark, mock_metrics, mock_write_records, 
+                                                    mock_filter_selected_fields_many):
+        '''
+        Test that tap retry for 60 seconds on the Exception with error code 408.
+        '''
+        mock_client = MockClient(Exception((408, 'Request Timeout')))
+        before_time = datetime.datetime.now()
+        try:
+           tap_bing_ads.get_type_map(mock_client)
+        except Exception:
             pass
         after_time = datetime.datetime.now()
         time_difference = (after_time - before_time).total_seconds()
@@ -1562,7 +1729,28 @@ class TestBackoffError(unittest.TestCase):
         # verify the code backed off for 60 seconds
         # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
+
+    async def test_exception_408_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
+                                                           mock_write_schema, mock_get_bookmark, 
+                                                           mock_sobject_to_dict, mock_write_state, 
+                                                           mock_write_bookmark, mock_metrics, mock_write_records, 
+                                                           mock_filter_selected_fields_many):
+        '''
+        Test that tap retry for 60 seconds on the Exception with error code 408.
+        '''
+        mock_client = MockClient(Exception((408, 'Request Timeout')))
         
+        before_time = datetime.datetime.now()
+        try:
+            await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
+        except Exception:
+            pass
+        after_time = datetime.datetime.now()
+        time_difference = (after_time - before_time).total_seconds()
+        # verify the code backed off for 60 seconds
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+        self.assertGreaterEqual(time_difference, 60)
+
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
     @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
     @mock.patch("bingads.AuthorizationData", return_value = '')
@@ -1770,3 +1958,30 @@ class TestBackoffError(unittest.TestCase):
         # verify the code backed off for 60 seconds
         # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
         self.assertGreaterEqual(time_difference, 60)
+
+    @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
+    @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
+    @mock.patch("bingads.AuthorizationData", return_value = '')
+    @mock.patch("tap_bing_ads.CustomServiceClient")
+    def test_exception_408_error_create_sdk_client(self, mock_client, mock_authorization_data, mock_oauth, mock_config,
+                                                    mock_get_selected_fields, mock_get_core_schema, 
+                                                    mock_write_schema, mock_get_bookmark, 
+                                                    mock_sobject_to_dict, mock_write_state, 
+                                                    mock_write_bookmark, mock_metrics, mock_write_records, 
+                                                    mock_filter_selected_fields_many):
+        '''
+        Test that tap retry for 60 seconds on the Exception with error code 408.
+        '''
+        mock_oauth.return_value = ''
+        mock_client.side_effect = Exception((408, 'Request Timeout'))
+        before_time = datetime.datetime.now()
+        try:
+            tap_bing_ads.create_sdk_client('dummy_service', {})
+        except Exception:
+            pass
+        after_time = datetime.datetime.now()
+        time_difference = (after_time - before_time).total_seconds()
+        # verify the code backed off for 60 seconds
+        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+        self.assertGreaterEqual(time_difference, 60)
+
