@@ -147,9 +147,8 @@ class CustomServiceClient(ServiceClient):
         self._options = kwargs
         kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
         kwargs['headers']['User-Agent'] = get_user_agent()
-        request_timeout = get_request_timeout()
         # setting the timeout parameter using the set_options which sets timeout in the _soap_client
-        kwargs['timeout'] = request_timeout
+        kwargs['timeout'] = get_request_timeout()
         self._soap_client.set_options(**kwargs)
 
 @bing_ads_error_handling

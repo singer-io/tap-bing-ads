@@ -14,41 +14,50 @@ class MockClient():
         self.count = 0
 
     def GetCampaignsByAccountId(self, AccountId, CampaignType):
+        '''Mocked GetCampaignsByAccountId method of the Client class'''
         self.count = self.count + 1
         raise self.error
 
     def GetAdGroupsByCampaignId(self, CampaignId):
+        '''Mocked GetAdGroupsByCampaignId method of the Client class'''
         self.count = self.count + 1
         raise self.error
 
     def GetAdsByAdGroupId(self, AdGroupId, AdTypes):
+        '''Mocked GetAdsByAdGroupId method of the Client class'''
         self.count = self.count + 1
         raise self.error
 
     def PollGenerateReport(self):
+        '''Mocked PollGenerateReport method of the Client class'''
         self.count = self.count + 1
         raise self.error
 
     def SubmitGenerateReport(self, report_request):
+        '''Mocked SubmitGenerateReport method of the Client class'''
         self.count = self.count + 1
         raise self.error
 
     def PollGenerateReport(self, request_id):
+        '''Mocked PollGenerateReport method of the Client class'''
         self.count = self.count + 1
         raise self.error
 
     @property
     def factory(self):
+        '''Mocked factory property of the Client class'''
         self.count = self.count + 1
         raise self.error
 
     @property
     def soap_client(self):
+        '''Mocked soap_client property of the Client class'''
         self.count = self.count + 1
         raise self.error
 
     @property
     def call_count(self):
+        '''Mocked call_count property of the Client class'''
         return self.count
 
 @mock.patch("tap_bing_ads.filter_selected_fields_many", return_value = '')
