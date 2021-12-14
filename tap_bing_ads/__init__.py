@@ -67,9 +67,10 @@ def should_retry_httperror(exception):
             return True
         elif type(exception) == URLError:
             return True
-        elif type(exception) == Exception and exception.args[0][0] == 408:
-            return True
-        elif exception.code == 408:
+        elif (type(exception) == Exception and exception.args[0][0] == 408) or exception.code == 408:
+            # A 408 Request Timeout is an HTTP response status code that indicates the server didn't receive a complete
+            # request message within the server's allotted timeout period. A suds SDK catches HTTPError with status code 408 and
+            # raises Exception: (408, 'Request Timeout'). That's why we retrying this error also.
             return True
         return 500 <= exception.code < 600
     except AttributeError:
