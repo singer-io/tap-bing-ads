@@ -69,9 +69,10 @@ def should_retry_httperror(exception):
             return True
         elif type(exception) == URLError:
             return True
-        elif type(exception) == Exception and exception.args[0][0] == 408:
-            return True
-        elif exception.code == 408:
+        elif (type(exception) == Exception and exception.args[0][0] == 408) or exception.code == 408:
+            # A 408 Request Timeout is an HTTP response status code that indicates the server didn't receive a complete
+            # request message within the server's allotted timeout period. A suds SDK catches HTTPError with status code 408 and
+            # raises Exception: (408, 'Request Timeout'). That's why we retrying this error also.
             return True
         return 500 <= exception.code < 600
     except AttributeError:
@@ -81,7 +82,7 @@ def bing_ads_error_handling(fnc):
     """
         Retry following errors for 60 seconds,
         socket.timeout, ConnectionError, internal server error(500-range), SSLError, URLError, HTTPError(408), Transport errors.
-        Raise the error direclty for all errors except mentioned above errors.
+        Raise the error directly for all errors except mentioned above errors.
     """
     @backoff.on_exception(backoff.expo,
                           (Exception),
@@ -703,7 +704,7 @@ def generate_poll_report(client, request_id):
     """
         Retry following errors for 60 seconds,
         socket.timeout, ConnectionError, internal server error(500-range), SSLError, HTTPError(408), Transport error.
-        Raise the error direclty for all errors except mentioned above errors.
+        Raise the error directly for all errors except mentioned above errors.
     """
     return client.PollGenerateReport(request_id)
     
@@ -717,7 +718,7 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
                 report_name,
                 start_date,
                 end_date))
-            # As in async method backoff does not work directly we created seprate method to handle it.
+            # As in the async method backoff does not work directly we created a separate method to handle it.
             response = generate_poll_report(client, request_id)
             if response.Status == 'Error':
                 LOGGER.warn(
