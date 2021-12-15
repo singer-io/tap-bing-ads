@@ -686,7 +686,8 @@ def stream_report(stream_name, report_name, url, report_time):
         response = SESSION.get(url, headers={'User-Agent': get_user_agent()})
 
     if response.status_code != 200:
-        raise Exception('Non-200 ({}) response downloading report: {}'.format(response.status_code, report_name))
+        raise Exception('Non-200 ({}) response downloading report: {}'.format(
+            response.status_code, report_name))
     with ZipFile(io.BytesIO(response.content)) as zip_file:
         with zip_file.open(zip_file.namelist()[0]) as binary_file:
             with io.TextIOWrapper(binary_file, encoding='utf-8') as csv_file:
@@ -855,7 +856,8 @@ def build_report_request(client, account_id, report_stream, report_name,
     report_columns = client.factory.create(
         'ArrayOf{}Column'.format(report_name)
     )
-    getattr(report_columns, '{}Column'.format(report_name)).append(selected_fields)
+    getattr(report_columns, '{}Column'.format(report_name)) \
+        .append(selected_fields)
     report_request.Columns = report_columns
 
     request_start_date = client.factory.create('Date')
