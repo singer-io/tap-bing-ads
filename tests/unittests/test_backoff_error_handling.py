@@ -1924,6 +1924,7 @@ class TestBackoffError(unittest.TestCase):
             tap_bing_ads.create_sdk_client('dummy_service', {})
         except HTTPError:
             pass
+        after_time = datetime.datetime.now()
         time_difference = (after_time - before_time).total_seconds()
         # verify the code raise error without backoff
         # time_difference should be less or equal 1 as it directly raise the error without backoff
