@@ -11,41 +11,36 @@ class MockClient():
     '''Mocked ServiceClient class and it's method to pass the test case'''
     def __init__(self, error):
         self.error = error
-        self.count = 0
 
     def GetCampaignsByAccountId(self, AccountId, CampaignType):
-        self.count = self.count + 1
+        """ Mocked GetCampaignsByAccountId to test the backoff in sync_campaigns method """
         raise self.error
 
     def GetAdGroupsByCampaignId(self, CampaignId):
-        self.count = self.count + 1
+        """ Mocked GetAdGroupsByCampaignId to test the backoff in sync_ad_groups method"""
         raise self.error
 
     def GetAdsByAdGroupId(self, AdGroupId, AdTypes):
-        self.count = self.count + 1
+        """ Mocked GetAdsByAdGroupId test to the backoff in sync_ads method"""
         raise self.error
 
     def SubmitGenerateReport(self, report_request):
-        self.count = self.count + 1
+        """ Mocked SubmitGenerateReport to test the backoff in get_report_request_id method"""
         raise self.error
 
     def PollGenerateReport(self, request_id):
-        self.count = self.count + 1
+        """ Mocked PollGenerateReport to test the backoff in poll_report method"""
         raise self.error
 
     @property
     def factory(self):
-        self.count = self.count + 1
+        """ Mocked factory to test backoff the in build_report_request method"""
         raise self.error
 
     @property
     def soap_client(self):
-        self.count = self.count + 1
+        """ Mocked soap_client to test backoff in get_type_map method"""
         raise self.error
-
-    @property
-    def call_count(self):
-        return self.count
 
 @mock.patch("tap_bing_ads.filter_selected_fields_many", return_value = '')
 @mock.patch("singer.write_records", return_value = '')
