@@ -96,7 +96,7 @@ class BingAdsBaseTest(unittest.TestCase):
             self.FOREIGN_KEYS: {"AccountId"}
         }
         accounts_meta = {
-            self.PRIMARY_KEYS: {"Id"},
+            self.PRIMARY_KEYS: {"Id", "LastModifiedTime"}, # As per catalog currently 2 primary keys for account: ("Id", "LastModifiedTime")
             self.REPLICATION_METHOD: self.INCREMENTAL,
             self.REPLICATION_KEYS: {"LastModifiedTime"}
         }
