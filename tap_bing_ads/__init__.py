@@ -61,11 +61,7 @@ ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z0-9]+)'
 def should_retry_httperror(exception):
     """ Return true if exception is required to retry otherwise return false """
     try:
-        if isinstance(exception, ConnectionError) or isinstance(exception, ssl.SSLError):
-            return True
-        elif isinstance(exception, suds.transport.TransportError) or isinstance(exception, socket.timeout):
-            return True
-        elif type(exception) == URLError:
+        if isinstance(exception, ConnectionError) or isinstance(exception, ssl.SSLError) or isinstance(exception, suds.transport.TransportError) or isinstance(exception, socket.timeout) or type(exception) == URLError:
             return True
         elif (type(exception) == Exception and exception.args[0][0] == 408) or exception.code == 408:
             # A 408 Request Timeout is an HTTP response status code that indicates the server didn't receive a complete
@@ -78,9 +74,9 @@ def should_retry_httperror(exception):
 
 def bing_ads_error_handling(fnc):
     """
-        Retry following errors for 60 seconds,
-        socket.timeout, ConnectionError, internal server error(500-range), SSLError, URLError, HTTPError(408), Transport errors.
-        Raise the error directly for all errors except mentioned above errors.
+        Retry following errors until 60 seconds(7 or 8 times retry perform).
+        socket.timeout, ConnectionError, internal server error(500-range), SSLError, URLError, HTTPError(408), Transport errors, Exception with 408 error code.
+        If after passing 60 seconds the same error comes, then it will be raised. Raise the error directly for all errors except mentioned above errors.
     """
     @backoff.on_exception(backoff.expo,
                           (Exception),
