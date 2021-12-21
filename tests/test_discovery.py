@@ -134,43 +134,40 @@ class DiscoveryTest(BingAdsBaseTest):
                 # in the expected fields.
                 expected_automatic_fields = expected_primary_keys | expected_replication_keys \
                     | expected_foreign_keys | expected_required_keys | {'_sdc_report_datetime'}
+
+                # verify that primary, replication and foreign keys
+                # are given the inclusion of automatic in annotated schema.
+                actual_automatic_fields = {key for key, value in schema["properties"].items()
+                                           if value.get("inclusion") == "automatic"}
+                self.assertEqual(expected_automatic_fields, actual_automatic_fields)
+
+
+                # verify that all other fields have inclusion of available
+                # This assumes there are no unsupported fields for SaaS sources
+                self.assertTrue(
+                    all({value.get("inclusion") == "available" for key, value
+                         in schema["properties"].items()
+                         if key not in actual_automatic_fields}),
+                    msg="Not all non key properties are set to available in annotated schema")
+
+                # verify that primary, replication and foreign keys
+                # are given the inclusion of automatic in metadata.
+                actual_automatic_fields = {item.get("breadcrumb", ["properties", None])[1]
+                                           for item in metadata
+                                           if item.get("metadata").get("inclusion") == "automatic"}
                 
+                self.assertEqual(expected_automatic_fields,
+                                 actual_automatic_fields,
+                                 msg="expected {} automatic fields but got {}".format(
+                                     expected_automatic_fields,
+                                     actual_automatic_fields))
 
-                # BUG | https://stitchdata.atlassian.net/browse/SRCE-4313
-                #       Uncomment from this point forward to see test failure and address bug
-
-                # # verify that primary, replication and foreign keys
-                # # are given the inclusion of automatic in annotated schema.
-                # actual_automatic_fields = {key for key, value in schema["properties"].items()
-                #                            if value.get("inclusion") == "automatic"}
-                # self.assertEqual(expected_automatic_fields, actual_automatic_fields)
-
-
-                # # verify that all other fields have inclusion of available
-                # # This assumes there are no unsupported fields for SaaS sources
-                # self.assertTrue(
-                #     all({value.get("inclusion") == "available" for key, value
-                #          in schema["properties"].items()
-                #          if key not in actual_automatic_fields}),
-                #     msg="Not all non key properties are set to available in annotated schema")
-
-                # # verify that primary, replication and foreign keys
-                # # are given the inclusion of automatic in metadata.
-                # actual_automatic_fields = {item.get("breadcrumb", ["properties", None])[1]
-                #                            for item in metadata
-                #                            if item.get("metadata").get("inclusion") == "automatic"}
-                # self.assertEqual(expected_automatic_fields,
-                #                  actual_automatic_fields,
-                #                  msg="expected {} automatic fields but got {}".format(
-                #                      expected_automatic_fields,
-                #                      actual_automatic_fields))
-
-                # # verify that all other fields have inclusion of available
-                # # This assumes there are no unsupported fields for SaaS sources
-                # self.assertTrue(
-                #     all({item.get("metadata").get("inclusion") == "available"
-                #          for item in metadata
-                #          if item.get("breadcrumb", []) != []
-                #          and item.get("breadcrumb", ["properties", None])[1]
-                #          not in actual_automatic_fields}),
-                #     msg="Not all non key properties are set to available in metadata")
+                # verify that all other fields have inclusion of available
+                # This assumes there are no unsupported fields for SaaS sources
+                self.assertTrue(
+                    all({item.get("metadata").get("inclusion") == "available"
+                         for item in metadata
+                         if item.get("breadcrumb", []) != []
+                         and item.get("breadcrumb", ["properties", None])[1]
+                         not in actual_automatic_fields}),
+                    msg="Not all non key properties are set to available in metadata")
