@@ -358,7 +358,7 @@ def get_type_map(client):
 
     return type_map
 
-def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replication_key=None):
+def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replication_keys=None):
     '''Generate schema with metadata for the given stream.'''
 
     stream_def = {
@@ -375,14 +375,15 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
             metadata.get_standard_metadata(
                 schema = schema,
                 key_properties = pks,
-                valid_replication_keys = replication_key,
-                replication_method = 'INCREMENTAL' if replication_key else 'FULL_TABLE'
+                valid_replication_keys = replication_keys,
+                replication_method = 'INCREMENTAL' if replication_keys else 'FULL_TABLE'
             )
         )
 
     # Marking replication key as automatic
-    if replication_key:
-        mdata = metadata.write(mdata, ('properties', replication_key), 'inclusion', 'automatic')
+    if replication_keys:
+        for replication_key in replication_keys:
+            mdata = metadata.write(mdata, ('properties', replication_key), 'inclusion', 'automatic')
 
     # For the report streams, we have some stream_metadata which have list fields to make automatic and a list of file exclusions.
     if stream_metadata:
@@ -414,7 +415,7 @@ def discover_core_objects():
         # while earlier we were getting Id and LastModifiedTime both because of the coding mistake 
         # but we are writing Id only while writing the schema (func: sync_accounts_stream) in sync mode, 
         # Hence we are keeping ID only in pks.
-        get_stream_def('accounts', account_schema, pks=['Id'], replication_key='LastModifiedTime'))
+        get_stream_def('accounts', account_schema, pks=['Id'], replication_keys=['LastModifiedTime']))
 
     LOGGER.info('Initializing CampaignManagementService client - Loading WSDL')
     client = CustomServiceClient('CampaignManagementService')

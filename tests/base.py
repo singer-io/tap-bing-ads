@@ -92,7 +92,7 @@ class BingAdsBaseTest(unittest.TestCase):
         default_report = {
             self.PRIMARY_KEYS: set(), # "_sdc_report_datetime" is added by tap
             self.REPLICATION_METHOD: self.INCREMENTAL,
-            self.REPLICATION_KEYS: {"TimePeriod"},
+            # self.REPLICATION_KEYS: {"TimePeriod"}, # TDL-15816: As there is a discrepancy for replication key in existing tap and documentation. 
             self.FOREIGN_KEYS: {"AccountId"}
         }
         accounts_meta = {

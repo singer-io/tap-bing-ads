@@ -79,16 +79,16 @@ class DiscoveryTest(BingAdsBaseTest):
                                 msg="There is NOT only one top level breadcrumb for {}".format(stream) + \
                                 "\nstream_properties | {}".format(stream_properties))
 
-                # # verify replication key(s)
-                # self.assertEqual(
-                #     set(stream_properties[0].get(
-                #         "metadata", {self.REPLICATION_KEYS: []}).get(self.REPLICATION_KEYS, [])),
-                #     self.expected_replication_keys()[stream],
-                #     msg="expected replication key {} but actual is {}".format(
-                #         self.expected_replication_keys()[stream],
-                #         set(stream_properties[0].get(
-                #             "metadata", {self.REPLICATION_KEYS: None}).get(
-                #                 self.REPLICATION_KEYS, []))))
+                # verify replication key(s)
+                self.assertEqual(
+                    set(stream_properties[0].get(
+                        "metadata", {self.REPLICATION_KEYS: []}).get(self.REPLICATION_KEYS, [])),
+                    self.expected_replication_keys()[stream],
+                    msg="expected replication key {} but actual is {}".format(
+                        self.expected_replication_keys()[stream],
+                        set(stream_properties[0].get(
+                            "metadata", {self.REPLICATION_KEYS: None}).get(
+                                self.REPLICATION_KEYS, []))))
 
                 # verify primary key(s)
                 self.assertEqual(
