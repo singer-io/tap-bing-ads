@@ -74,13 +74,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_accounts_stream(['i1'], {})
         except ConnectionResetError:
-            pass
-        
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
@@ -98,12 +96,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_accounts_stream(['i1'], {})
         except socket.timeout:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
@@ -122,12 +119,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_accounts_stream(['i1'], {})
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
@@ -146,12 +142,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_accounts_stream(['i1'], {})
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
@@ -169,12 +164,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_accounts_stream(['i1'], {})
         except TransportError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
@@ -193,13 +187,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_accounts_stream(['i1'], {})
         except HTTPError:
-            pass
-        
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code raise error without backoff
-        # time_difference should be less or equal 1 as it directly raise the error without backoff
-        self.assertGreaterEqual(1, time_difference)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code raise error without backoff
+            # time_difference should be less or equal 1 as it directly raise the error without backoff
+            self.assertGreaterEqual(1, time_difference)
 
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
@@ -218,12 +210,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_accounts_stream(['i1'], {})
         except URLError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
        
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
@@ -242,12 +233,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_accounts_stream(['i1'], {})
         except ssl.SSLEOFError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
@@ -266,12 +256,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_accounts_stream(['i1'], {})
         except Exception:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_connection_reset_error_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -286,12 +275,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_campaigns(mock_client, '', [])
         except ConnectionResetError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_socket_timeout_error_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -306,12 +294,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_campaigns(mock_client, '', [])
         except socket.timeout:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_http_timeout_error_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
@@ -327,12 +314,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_campaigns(mock_client, '', [])
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_internal_server_error_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -348,12 +334,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_campaigns(mock_client, '', [])
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_transport_server_error_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -365,12 +350,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_campaigns(mock_client, '', [])
         except TransportError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_400_error_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
                                             mock_write_schema, mock_get_bookmark, 
@@ -386,12 +370,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_campaigns(mock_client, '', [])
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code raise error without backoff
-        # time_difference should be less or equal 1 as it directly raise the error without backoff
-        self.assertGreaterEqual(1, time_difference)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code raise error without backoff
+            # time_difference should be less or equal 1 as it directly raise the error without backoff
+            self.assertGreaterEqual(1, time_difference)
     
     def test_url_error_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -404,12 +387,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_campaigns(mock_client, '', [])
         except URLError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     def test_ssl_eof_error_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
@@ -425,12 +407,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_campaigns(mock_client, '', [])
         except ssl.SSLEOFError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     def test_exception_408_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -443,12 +424,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_campaigns(mock_client, '', [])
         except Exception:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     def test_connection_reset_error_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -463,12 +443,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
         except ConnectionResetError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_socket_timeout_error_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -483,12 +462,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
         except socket.timeout:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_http_timeout_error_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
@@ -504,12 +482,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_internal_server_error_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -525,12 +502,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_transport_error_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -545,12 +521,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
         except TransportError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_400_error_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -566,12 +541,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code raise error without backoff
-        # time_difference should be less or equal 1 as it directly raise the error without backoff
-        self.assertGreaterEqual(1, time_difference)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code raise error without backoff
+            # time_difference should be less or equal 1 as it directly raise the error without backoff
+            self.assertGreaterEqual(1, time_difference)
 
     def test_url_error_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -587,12 +561,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
         except URLError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
  
     def test_ssl_eof_error_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
@@ -608,12 +581,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
         except ssl.SSLEOFError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)        
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)        
 
     def test_exception_408_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -629,12 +601,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
         except Exception:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     def test_connection_reset_error_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
@@ -649,12 +620,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
         except ConnectionResetError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_socket_timeout_error_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
@@ -669,12 +639,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
         except socket.timeout:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_http_timeout_error_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
@@ -690,12 +659,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_internal_server_error_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
@@ -711,12 +679,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)        
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)        
 
     def test_transport_error_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
@@ -731,12 +698,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
         except TransportError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60) 
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60) 
 
     def test_400_error_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
@@ -752,12 +718,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code raise error without backoff
-        # time_difference should be less or equal 1 as it directly raise the error without backoff
-        self.assertGreaterEqual(1, time_difference)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code raise error without backoff
+            # time_difference should be less or equal 1 as it directly raise the error without backoff
+            self.assertGreaterEqual(1, time_difference)
 
     def test_url_error_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
@@ -773,12 +738,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
         except URLError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60) 
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60) 
 
     def test_ssl_eof_error_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
                                         mock_write_schema, mock_get_bookmark, 
@@ -794,12 +758,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
         except ssl.SSLEOFError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)  
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)  
 
     def test_exception_408_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
@@ -815,12 +778,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
         except Exception:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60) 
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60) 
 
     @mock.patch("tap_bing_ads.build_report_request")
     def test_connection_reset_error_get_report_request_id(self, mock_build_report_request, 
@@ -838,12 +800,11 @@ class TestBackoffError(unittest.TestCase):
             tap_bing_ads.get_report_request_id(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date', 'dummy_start_key',
                                                 force_refresh = True)
         except ConnectionResetError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     @mock.patch("tap_bing_ads.build_report_request")
     def test_socket_timeout_error_get_report_request_id(self, mock_build_report_request, 
@@ -858,12 +819,11 @@ class TestBackoffError(unittest.TestCase):
            tap_bing_ads.get_report_request_id(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date', 'dummy_start_key', 
                                               force_refresh = True)
         except socket.timeout:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     @mock.patch("tap_bing_ads.build_report_request")
     def test_http_timeout_error_get_report_request_id(self, mock_build_report_request, 
@@ -882,12 +842,11 @@ class TestBackoffError(unittest.TestCase):
             tap_bing_ads.get_report_request_id(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date', 'dummy_start_key',
                                                force_refresh = True)
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
      
     @mock.patch("tap_bing_ads.build_report_request")   
     def test_internal_server_error_get_report_request_id(self, mock_build_report_request,
@@ -906,12 +865,11 @@ class TestBackoffError(unittest.TestCase):
             tap_bing_ads.get_report_request_id(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date', 'dummy_start_key',
                                                force_refresh = True)
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     @mock.patch("tap_bing_ads.build_report_request")   
     def test_transport_error_get_report_request_id(self, mock_build_report_request,
@@ -929,12 +887,11 @@ class TestBackoffError(unittest.TestCase):
             tap_bing_ads.get_report_request_id(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date', 'dummy_start_key',
                                                force_refresh = True)
         except TransportError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     @mock.patch("tap_bing_ads.build_report_request")   
     def test_400_error_get_report_request_id(self, mock_build_report_request,
@@ -953,12 +910,11 @@ class TestBackoffError(unittest.TestCase):
             tap_bing_ads.get_report_request_id(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date', 'dummy_start_key',
                                                force_refresh = True)
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code raise error without backoff
-        # time_difference should be less or equal 1 as it directly raise the error without backoff
-        self.assertGreaterEqual(1, time_difference)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code raise error without backoff
+            # time_difference should be less or equal 1 as it directly raise the error without backoff
+            self.assertGreaterEqual(1, time_difference)
 
     @mock.patch("tap_bing_ads.build_report_request")   
     def test_url_error_get_report_request_id(self, mock_build_report_request,
@@ -977,12 +933,11 @@ class TestBackoffError(unittest.TestCase):
             tap_bing_ads.get_report_request_id(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date', 'dummy_start_key',
                                                force_refresh = True)
         except URLError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
     
     @mock.patch("tap_bing_ads.build_report_request")   
     def test_ssl_eof_error_get_report_request_id(self, mock_build_report_request,
@@ -1001,12 +956,11 @@ class TestBackoffError(unittest.TestCase):
             tap_bing_ads.get_report_request_id(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date', 'dummy_start_key',
                                                force_refresh = True)
         except ssl.SSLEOFError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     @mock.patch("tap_bing_ads.build_report_request")   
     def test_url_error_get_report_request_id(self, mock_build_report_request,
@@ -1025,12 +979,11 @@ class TestBackoffError(unittest.TestCase):
             tap_bing_ads.get_report_request_id(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date', 'dummy_start_key',
                                                force_refresh = True)
         except Exception:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     def test_connection_reset_error_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1045,12 +998,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
         except ConnectionResetError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_socket_timeout_error_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1065,12 +1017,11 @@ class TestBackoffError(unittest.TestCase):
         try:
            tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
         except socket.timeout:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_http_timeout_error_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1086,12 +1037,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
      
     def test_internal_server_error_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1107,12 +1057,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_transport_error_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1127,12 +1076,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
         except TransportError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_400_error_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1148,12 +1096,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code raise error without backoff
-        # time_difference should be less or equal 1 as it directly raise the error without backoff
-        self.assertGreaterEqual(1, time_difference)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code raise error without backoff
+            # time_difference should be less or equal 1 as it directly raise the error without backoff
+            self.assertGreaterEqual(1, time_difference)
 
     def test_url_error_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1168,12 +1115,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
         except URLError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)   
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)   
     
     def test_ssl_eof_error_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
@@ -1189,12 +1135,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
         except ssl.SSLEOFError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     def test_408_exception_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1209,12 +1154,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
         except Exception:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)  
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)  
 
     def test_connection_reset_error_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1229,12 +1173,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_report_schema(mock_client, '')
         except ConnectionResetError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_socket_timeout_error_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1249,12 +1192,11 @@ class TestBackoffError(unittest.TestCase):
         try:
            tap_bing_ads.get_report_schema(mock_client, '')
         except socket.timeout:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_http_timeout_error_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -1270,12 +1212,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_report_schema(mock_client, '')
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
      
     def test_internal_server_error_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1291,12 +1232,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_report_schema(mock_client, '')
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     def test_transport_error_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1311,12 +1251,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_report_schema(mock_client, '')
         except TransportError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     def test_400_error_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1332,12 +1271,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_report_schema(mock_client, '')
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code raise error without backoff
-        # time_difference should be less or equal 1 as it directly raise the error without backoff
-        self.assertGreaterEqual(1, time_difference)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code raise error without backoff
+            # time_difference should be less or equal 1 as it directly raise the error without backoff
+            self.assertGreaterEqual(1, time_difference)
 
     def test_url_error_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1353,12 +1291,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_report_schema(mock_client, '')
         except URLError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
     
     def test_ssl_eof_error_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
@@ -1374,12 +1311,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_report_schema(mock_client, '')
         except ssl.SSLEOFError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
     
     def test_exception_408_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
@@ -1395,12 +1331,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_report_schema(mock_client, '')
         except Exception:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
                 
     def test_connection_reset_error_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
@@ -1416,12 +1351,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_type_map(mock_client)
         except ConnectionResetError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_socket_timeout_error_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
@@ -1436,12 +1370,11 @@ class TestBackoffError(unittest.TestCase):
         try:
            tap_bing_ads.get_type_map(mock_client)
         except socket.timeout:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_http_timeout_error_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
@@ -1457,12 +1390,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_type_map(mock_client)
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
      
     def test_internal_server_error_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
@@ -1478,12 +1410,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_type_map(mock_client)
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     def test_transport_error_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
@@ -1498,12 +1429,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_type_map(mock_client)
         except TransportError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     def test_400_error_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
@@ -1519,12 +1449,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_type_map(mock_client)
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code raise error without backoff
-        # time_difference should be less or equal 1 as it directly raise the error without backoff
-        self.assertGreaterEqual(1, time_difference)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code raise error without backoff
+            # time_difference should be less or equal 1 as it directly raise the error without backoff
+            self.assertGreaterEqual(1, time_difference)
 
     def test_url_error_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
@@ -1540,12 +1469,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_type_map(mock_client)
         except URLError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
    
     def test_ssl_eof_error_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
                                             mock_write_schema, mock_get_bookmark, 
@@ -1561,12 +1489,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.get_type_map(mock_client)
         except ssl.SSLEOFError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     def test_exception_408_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
@@ -1581,12 +1508,11 @@ class TestBackoffError(unittest.TestCase):
         try:
            tap_bing_ads.get_type_map(mock_client)
         except Exception:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     async def test_connection_reset_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1601,12 +1527,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
         except ConnectionResetError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     async def test_socket_timeout_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1621,12 +1546,11 @@ class TestBackoffError(unittest.TestCase):
         try:
            await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
         except socket.timeout:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     async def test_http_timeout_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
@@ -1642,12 +1566,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
      
     async def test_internal_server_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1663,12 +1586,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
             
     async def test_transport_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1683,12 +1605,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
         except TransportError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     async def test_400_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1704,12 +1625,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code raise error without backoff
-        # time_difference should be less or equal 1 as it directly raise the error without backoff
-        self.assertGreaterEqual(1, time_difference)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code raise error without backoff
+            # time_difference should be less or equal 1 as it directly raise the error without backoff
+            self.assertGreaterEqual(1, time_difference)
 
     async def test_url_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1725,12 +1645,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
         except URLError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     async def test_ssl_eof_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
@@ -1746,12 +1665,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             s = await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
         except ssl.SSLEOFError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     async def test_exception_408_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
@@ -1767,12 +1685,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
         except Exception:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
     @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
@@ -1790,12 +1707,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.create_sdk_client('dummy_service', {})
         except ConnectionResetError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
     @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
@@ -1816,12 +1732,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.create_sdk_client('dummy_service', {})
         except socket.timeout:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
     @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
@@ -1843,12 +1758,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.create_sdk_client('dummy_service', {})
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
     @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
@@ -1870,12 +1784,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.create_sdk_client('dummy_service', {})
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
     @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
@@ -1896,12 +1809,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.create_sdk_client('dummy_service', {})
         except TransportError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
         
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
     @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
@@ -1923,12 +1835,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.create_sdk_client('dummy_service', {})
         except HTTPError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code raise error without backoff
-        # time_difference should be less or equal 1 as it directly raise the error without backoff
-        self.assertGreaterEqual(1, time_difference)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code raise error without backoff
+            # time_difference should be less or equal 1 as it directly raise the error without backoff
+            self.assertGreaterEqual(1, time_difference)
         
         
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
@@ -1951,12 +1862,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.create_sdk_client('dummy_service', {})
         except ssl.SSLEOFError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
     @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
@@ -1978,12 +1888,11 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.create_sdk_client('dummy_service', {})
         except URLError:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
     @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
@@ -2004,10 +1913,9 @@ class TestBackoffError(unittest.TestCase):
         try:
             tap_bing_ads.create_sdk_client('dummy_service', {})
         except Exception:
-            pass
-        after_time = datetime.datetime.now()
-        time_difference = (after_time - before_time).total_seconds()
-        # verify the code backed off for 60 seconds
-        # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-        self.assertGreaterEqual(time_difference, 60)
+            after_time = datetime.datetime.now()
+            time_difference = (after_time - before_time).total_seconds()
+            # verify the code backed off for 60 seconds
+            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
+            self.assertGreaterEqual(time_difference, 60)
 
