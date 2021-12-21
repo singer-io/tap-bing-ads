@@ -18,6 +18,10 @@ import stringcase
 import requests
 import arrow
 import backoff
+import socket
+import ssl
+import functools
+from urllib.error import URLError
 
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
@@ -53,6 +57,36 @@ SESSION = requests.Session()
 DEFAULT_USER_AGENT = 'Singer.io Bing Ads Tap'
 
 ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z0-9]+)'
+
+def should_retry_httperror(exception):
+    """ Return true if exception is required to retry otherwise return false """
+    try:
+        if isinstance(exception, ConnectionError) or isinstance(exception, ssl.SSLError) or isinstance(exception, suds.transport.TransportError) or isinstance(exception, socket.timeout) or type(exception) == URLError:
+            return True
+        elif (type(exception) == Exception and exception.args[0][0] == 408) or exception.code == 408:
+            # A 408 Request Timeout is an HTTP response status code that indicates the server didn't receive a complete
+            # request message within the server's allotted timeout period. A suds SDK catches HTTPError with status code 408 and
+            # raises Exception: (408, 'Request Timeout'). That's why we retrying this error also.
+            return True
+        return 500 <= exception.code < 600
+    except AttributeError:
+        return False
+
+def bing_ads_error_handling(fnc):
+    """
+        Retry following errors until 60 seconds(7 or 8 times retry perform).
+        socket.timeout, ConnectionError, internal server error(500-range), SSLError, URLError, HTTPError(408), Transport errors, Exception with 408 error code.
+        If after passing 60 seconds the same error comes, then it will be raised. Raise the error directly for all errors except mentioned above errors.
+    """
+    @backoff.on_exception(backoff.expo,
+                          (Exception),
+                          giveup=lambda e: not should_retry_httperror(e),
+                          max_time=60, # 60 seconds
+                          factor=2)
+    @functools.wraps(fnc)
+    def wrapper(*args, **kwargs):
+        return fnc(*args, **kwargs)
+    return wrapper
 
 def get_user_agent():
     return CONFIG.get('user_agent', DEFAULT_USER_AGENT)
@@ -91,6 +125,7 @@ def log_service_call(service_method, account_id):
 
 class CustomServiceClient(ServiceClient):
     # This class calling the methods of the specified Bing Ads service.
+    @bing_ads_error_handling
     def __init__(self, name, **kwargs):
         # Initializes a new instance of this ServiceClient class.
         return super().__init__(name, 'v13', **kwargs)
@@ -109,6 +144,7 @@ class CustomServiceClient(ServiceClient):
 
         self._soap_client.set_options(**kwargs)
 
+@bing_ads_error_handling
 def create_sdk_client(service, account_id):
     # Creates SOAP client with OAuth refresh credentials for services
     LOGGER.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
@@ -300,6 +336,7 @@ def fill_in_nested_types(type_map, schema):
             return type_map[schema]
     return schema
 
+@bing_ads_error_handling
 def get_type_map(client):
     inherited_types = {}
     type_map = {}
@@ -383,6 +420,7 @@ def discover_core_objects():
 
     return core_object_streams
 
+@bing_ads_error_handling
 def get_report_schema(client, report_name):
     # Load report's schemas
     column_obj_name = '{}Column'.format(report_name)
@@ -550,6 +588,7 @@ def filter_selected_fields_many(selected_fields, objs):
         return [filter_selected_fields(selected_fields, obj) for obj in objs]
     return objs
 
+@bing_ads_error_handling
 def sync_accounts_stream(account_ids, catalog_item):
     selected_fields = get_selected_fields(catalog_item)
     accounts = []
@@ -582,6 +621,7 @@ def sync_accounts_stream(account_ids, catalog_item):
     singer.write_bookmark(STATE, 'accounts', 'last_record', max_accounts_last_modified)
     singer.write_state(STATE)
 
+@bing_ads_error_handling
 def sync_campaigns(client, account_id, selected_streams):
     # CampaignType defaults to 'Search', but there are other types of campaigns
     response = client.GetCampaignsByAccountId(AccountId=account_id, CampaignType='Search Shopping DynamicSearchAds')
@@ -599,6 +639,7 @@ def sync_campaigns(client, account_id, selected_streams):
 
         return map(lambda x: x['Id'], campaigns)
 
+@bing_ads_error_handling
 def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
     ad_group_ids = []
     for campaign_id in campaign_ids:
@@ -621,6 +662,7 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
             ad_group_ids += list(map(lambda x: x['Id'], ad_groups))
     return ad_group_ids
 
+@bing_ads_error_handling
 def sync_ads(client, selected_streams, ad_group_ids):
     for ad_group_id in ad_group_ids:
         response = client.GetAdsByAdGroupId(
@@ -681,6 +723,15 @@ def type_report_row(row):
 
         row[field_name] = value
 
+@bing_ads_error_handling
+def generate_poll_report(client, request_id):
+    """
+        Retry following errors for 60 seconds,
+        socket.timeout, ConnectionError, internal server error(500-range), SSLError, HTTPError(408), Transport error.
+        Raise the error directly for all errors except mentioned above errors.
+    """
+    return client.PollGenerateReport(request_id)
+    
 async def poll_report(client, account_id, report_name, start_date, end_date, request_id):
     # Get download_url of generated report
     download_url = None
@@ -692,7 +743,8 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
                 report_name,
                 start_date,
                 end_date))
-            response = client.PollGenerateReport(request_id)
+            # As in the async method backoff does not work directly we created a separate method to handle it.
+            response = generate_poll_report(client, request_id)
             if response.Status == 'Error':
                 LOGGER.warn(
                         'Error polling {} for account {} with request id {}'
@@ -868,6 +920,7 @@ async def sync_report_interval(client, account_id, report_stream,
         return False
 
 
+@bing_ads_error_handling
 def get_report_request_id(client, account_id, report_stream, report_name,
                           start_date, end_date, state_key, force_refresh=False):
 
@@ -885,6 +938,7 @@ def get_report_request_id(client, account_id, report_stream, report_name,
     return client.SubmitGenerateReport(report_request)
 
 
+@bing_ads_error_handling
 def build_report_request(client, account_id, report_stream, report_name,
                          start_date, end_date):
     # Build request for report
