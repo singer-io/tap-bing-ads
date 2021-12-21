@@ -1,7 +1,6 @@
 version: 2.1
 orbs:
   slack: circleci/slack@3.4.2
-
 jobs:
   build:
     docker:
@@ -36,7 +35,6 @@ jobs:
             run-test --tap=tap-bing-ads tests
       - slack/notify-on-failure:
           only_for_branches: master
-
 workflows:
   version: 2
   commit:
