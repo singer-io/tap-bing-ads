@@ -73,33 +73,43 @@ class DiscoveryTest(BingAdsBaseTest):
                 schema = schema_and_metadata["annotated-schema"]
 
                 # verify the stream level properties are as expected
-                # BUG | https://stitchdata.atlassian.net/browse/SRCE-4315
-                # # verify there is only 1 top level breadcrumb
-                # stream_properties = [item for item in metadata if item.get("breadcrumb") == []]
-                # self.assertTrue(len(stream_properties) == 1,
-                #                 msg="There is NOT only one top level breadcrumb for {}".format(stream) + \
-                #                 "\nstream_properties | {}".format(stream_properties))
+                # verify there is only 1 top level breadcrumb
+                stream_properties = [item for item in metadata if item.get("breadcrumb") == []]
+                self.assertTrue(len(stream_properties) == 1,
+                                msg="There is NOT only one top level breadcrumb for {}".format(stream) + \
+                                "\nstream_properties | {}".format(stream_properties))
 
-                # # verify replication key(s)
-                # self.assertEqual(
-                #     set(stream_properties[0].get(
-                #         "metadata", {self.REPLICATION_KEYS: []}).get(self.REPLICATION_KEYS, [])),
-                #     self.expected_replication_keys()[stream],
-                #     msg="expected replication key {} but actual is {}".format(
-                #         self.expected_replication_keys()[stream],
-                #         set(stream_properties[0].get(
-                #             "metadata", {self.REPLICATION_KEYS: None}).get(
-                #                 self.REPLICATION_KEYS, []))))
+                expected_primary_keys = self.expected_primary_keys()[stream]
+                expected_foreign_keys = self.expected_foreign_keys()[stream]
+                expected_replication_keys = self.expected_replication_keys()[stream]
+                # As there is a discrepancy for replication key in existing tap's catalog, sync mode behavior and documentation
+                # removing replication key "TimePeriod" from each report streams. Bug: TDL-15816
+                if stream.endswith("_report"):
+                    expected_replication_keys = expected_replication_keys - {"TimePeriod"}
+                expected_required_keys = self.expected_required_fields()[stream]
+                expected_automatic_fields = expected_primary_keys | expected_replication_keys \
+                    | expected_foreign_keys | expected_required_keys
 
-                # # verify primary key(s)
-                # self.assertEqual(
-                #     set(stream_properties[0].get(
-                #         "metadata", {self.PRIMARY_KEYS: []}).get(self.PRIMARY_KEYS, [])),
-                #     self.expected_primary_keys()[stream],
-                #     msg="expected primary key {} but actual is {}".format(
-                #         self.expected_primary_keys()[stream],
-                #         set(stream_properties[0].get(
-                #             "metadata", {self.PRIMARY_KEYS: None}).get(self.PRIMARY_KEYS, []))))
+                # verify replication key(s)
+                self.assertEqual(
+                    set(stream_properties[0].get(
+                        "metadata", {self.REPLICATION_KEYS: []}).get(self.REPLICATION_KEYS, [])),
+                    expected_replication_keys,
+                    msg="expected replication key {} but actual is {}".format(
+                        expected_replication_keys,
+                        set(stream_properties[0].get(
+                            "metadata", {self.REPLICATION_KEYS: None}).get(
+                                self.REPLICATION_KEYS, []))))
+
+                # verify primary key(s)
+                self.assertEqual(
+                    set(stream_properties[0].get(
+                        "metadata", {self.PRIMARY_KEYS: []}).get(self.PRIMARY_KEYS, [])),
+                    expected_primary_keys,
+                    msg="expected primary key {} but actual is {}".format(
+                        expected_primary_keys,
+                        set(stream_properties[0].get(
+                            "metadata", {self.PRIMARY_KEYS: None}).get(self.PRIMARY_KEYS, []))))
 
                 # # verify that if there is a replication key we are doing INCREMENTAL otherwise FULL
                 # actual_replication_method = stream_properties[0].get(
@@ -111,7 +121,7 @@ class DiscoveryTest(BingAdsBaseTest):
                 #                     msg="Expected INCREMENTAL replication "
                 #                         "since there is a replication key")
                 # else:
-                #     self.assertTrue(actual_replication_method == self.FULL,
+                #     self.assertTrue(actual_replication_method == self.FULL_TABLE,
                 #                     msg="Expected FULL replication "
                 #                         "since there is no replication key")
 
