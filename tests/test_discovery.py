@@ -79,13 +79,24 @@ class DiscoveryTest(BingAdsBaseTest):
                                 msg="There is NOT only one top level breadcrumb for {}".format(stream) + \
                                 "\nstream_properties | {}".format(stream_properties))
 
+                expected_primary_keys = self.expected_primary_keys()[stream]
+                expected_foreign_keys = self.expected_foreign_keys()[stream]
+                expected_replication_keys = self.expected_replication_keys()[stream]
+                # As there is a discrepancy for replication key in existing tap's catalog, sync mode behavior and documentation
+                # removing replication key "TimePeriod" from each report streams. Bug: TDL-15816
+                if stream.endswith("_report"):
+                    expected_replication_keys = expected_replication_keys - {"TimePeriod"}
+                expected_required_keys = self.expected_required_fields()[stream]
+                expected_automatic_fields = expected_primary_keys | expected_replication_keys \
+                    | expected_foreign_keys | expected_required_keys
+
                 # verify replication key(s)
                 self.assertEqual(
                     set(stream_properties[0].get(
                         "metadata", {self.REPLICATION_KEYS: []}).get(self.REPLICATION_KEYS, [])),
-                    self.expected_replication_keys()[stream],
+                    expected_replication_keys,
                     msg="expected replication key {} but actual is {}".format(
-                        self.expected_replication_keys()[stream],
+                        expected_replication_keys,
                         set(stream_properties[0].get(
                             "metadata", {self.REPLICATION_KEYS: None}).get(
                                 self.REPLICATION_KEYS, []))))
@@ -94,9 +105,9 @@ class DiscoveryTest(BingAdsBaseTest):
                 self.assertEqual(
                     set(stream_properties[0].get(
                         "metadata", {self.PRIMARY_KEYS: []}).get(self.PRIMARY_KEYS, [])),
-                    self.expected_primary_keys()[stream],
+                    expected_primary_keys,
                     msg="expected primary key {} but actual is {}".format(
-                        self.expected_primary_keys()[stream],
+                        expected_primary_keys,
                         set(stream_properties[0].get(
                             "metadata", {self.PRIMARY_KEYS: None}).get(self.PRIMARY_KEYS, []))))
 
@@ -123,13 +134,6 @@ class DiscoveryTest(BingAdsBaseTest):
                 #         self.expected_replication_method().get(stream, None)))
 
                 # END OF BUG SRCE-4315
-
-                expected_primary_keys = self.expected_primary_keys()[stream]
-                expected_foreign_keys = self.expected_foreign_keys()[stream]
-                expected_replication_keys = self.expected_replication_keys()[stream]
-                expected_required_keys = self.expected_required_fields()[stream]
-                expected_automatic_fields = expected_primary_keys | expected_replication_keys \
-                    | expected_foreign_keys | expected_required_keys
 
                 # BUG | https://stitchdata.atlassian.net/browse/SRCE-4313
                 #       Uncomment from this point forward to see test failure and address bug
