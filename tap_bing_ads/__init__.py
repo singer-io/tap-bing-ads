@@ -9,6 +9,10 @@ import io
 from datetime import datetime
 from zipfile import ZipFile
 
+import socket
+import ssl
+import functools
+from urllib.error import URLError
 import singer
 from singer import utils, metadata, metrics
 from bingads import AuthorizationData, OAuthWebAuthCodeGrant, ServiceClient
@@ -18,10 +22,6 @@ import stringcase
 import requests
 import arrow
 import backoff
-import socket
-import ssl
-import functools
-from urllib.error import URLError
 
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
@@ -61,7 +61,7 @@ ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z0-9]+)'
 def should_retry_httperror(exception):
     """ Return true if exception is required to retry otherwise return false """
     try:
-        if isinstance(exception, ConnectionError) or isinstance(exception, ssl.SSLError) or isinstance(exception, suds.transport.TransportError) or isinstance(exception, socket.timeout) or type(exception) == URLError:
+        if isinstance(exception, ConnectionError) or isinstance(exception, ssl.SSLError) or isinstance(exception, suds.transport.TransportError) or isinstance(exception, socket.timeout) or type(exception) == URLError: # pylint: disable=consider-merging-isinstance,no-else-return)
             return True
         elif (type(exception) == Exception and exception.args[0][0] == 408) or exception.code == 408:
             # A 408 Request Timeout is an HTTP response status code that indicates the server didn't receive a complete
@@ -134,8 +134,8 @@ class CustomServiceClient(ServiceClient):
 
     def set_options(self, **kwargs):
         # Set suds options, these options will be passed to suds.
-        self._options = kwargs
-        
+        self._options = kwargs # pylint: disable=attribute-defined-outside-init
+
         kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
         kwargs['headers']['User-Agent'] = get_user_agent()
 
@@ -408,9 +408,9 @@ def discover_core_objects():
     # Load Account's schemas
     account_schema = get_core_schema(client, 'AdvertiserAccount')
     core_object_streams.append(
-        # After new standard metadata changes we are getting Id as primary key only 
-        # while earlier we were getting Id and LastModifiedTime both because of the coding mistake 
-        # but we are writing Id only while writing the schema (func: sync_accounts_stream) in sync mode, 
+        # After new standard metadata changes we are getting Id as primary key only
+        # while earlier we were getting Id and LastModifiedTime both because of the coding mistake
+        # but we are writing Id only while writing the schema (func: sync_accounts_stream) in sync mode,
         # Hence we are keeping ID only in pks.
         get_stream_def('accounts', account_schema, pks=['Id'], replication_keys=['LastModifiedTime']))
 
@@ -550,7 +550,7 @@ def do_discover(account_ids):
 
 
 def check_for_invalid_selections(prop, mdata, invalid_selections):
-    # Check whether fields 'fieldExclusions' selected or not 
+    # Check whether fields 'fieldExclusions' selected or not
     field_exclusions = metadata.get(mdata, ('properties', prop), 'fieldExclusions')
     is_prop_selected = metadata.get(mdata, ('properties', prop), 'selected')
     if field_exclusions and is_prop_selected:
@@ -589,7 +589,7 @@ def get_selected_fields(catalog_item, exclude=None):
     return selected_fields
 
 def filter_selected_fields(selected_fields, obj):
-    # Return only selected fields 
+    # Return only selected fields
     if selected_fields:
         return {key:value for key, value in obj.items() if key in selected_fields}
     return obj
@@ -633,7 +633,7 @@ def sync_accounts_stream(account_ids, catalog_item):
     singer.write_state(STATE)
 
 @bing_ads_error_handling
-def sync_campaigns(client, account_id, selected_streams):
+def sync_campaigns(client, account_id, selected_streams): # pylint: disable=inconsistent-return-statements
     # CampaignType defaults to 'Search', but there are other types of campaigns
     response = client.GetCampaignsByAccountId(AccountId=account_id, CampaignType='Search Shopping DynamicSearchAds')
     response_dict = sobject_to_dict(response)
@@ -742,7 +742,7 @@ def generate_poll_report(client, request_id):
         Raise the error directly for all errors except mentioned above errors.
     """
     return client.PollGenerateReport(request_id)
-    
+
 async def poll_report(client, account_id, report_name, start_date, end_date, request_id):
     # Get download_url of generated report
     download_url = None
@@ -813,7 +813,7 @@ def stream_report(stream_name, report_name, url, report_time):
 
 def get_report_interval(state_key):
     # Return start_date and end_date for report interval
-    report_max_days = int(CONFIG.get('report_max_days', 30))
+    report_max_days = int(CONFIG.get('report_max_days', 30)) # pylint: disable=unused-variable
     conversion_window = int(CONFIG.get('conversion_window', -30))
 
     config_start_date = arrow.get(CONFIG.get('start_date'))
