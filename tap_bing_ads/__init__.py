@@ -358,32 +358,42 @@ def get_type_map(client):
 
     return type_map
 
-def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replication_key=None):
+def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replication_keys=None):
+    '''Generate schema with metadata for the given stream.'''
+
     stream_def = {
         'tap_stream_id': stream_name,
         'stream': stream_name,
         'schema': schema
     }
 
-    excluded_inclusion_fields = []
     if pks:
         stream_def['key_properties'] = pks
-        excluded_inclusion_fields = pks
 
-    if replication_key:
-        stream_def['replication_key'] = replication_key
-        stream_def['replication_method'] = 'INCREMENTAL'
-        excluded_inclusion_fields += [replication_key]
-    else:
-        stream_def['replication_method'] = 'FULL_TABLE'
+    # Defining standered matadata
+    mdata = metadata.to_map(
+            metadata.get_standard_metadata(
+                schema = schema,
+                key_properties = pks,
+                valid_replication_keys = replication_keys,
+                replication_method = 'INCREMENTAL' if replication_keys else 'FULL_TABLE'
+            )
+        )
 
+    # Marking replication key as automatic
+    if replication_keys:
+        for replication_key in replication_keys:
+            mdata = metadata.write(mdata, ('properties', replication_key), 'inclusion', 'automatic')
+
+    # For the report streams, we have some stream_metadata which have list fields to make automatic and a list of file exclusions.
     if stream_metadata:
-        stream_def['metadata'] = stream_metadata
-    else:
-        # Set available inclusion for all keys except replication and primary keys
-        stream_def['metadata'] = list(map(
-          lambda field: {"metadata": {"inclusion": "available"}, "breadcrumb": ["properties", field]},
-          (schema['properties'].keys() - excluded_inclusion_fields)))
+        for field in stream_metadata:
+            if field.get('metadata').get('inclusion') == 'automatic':
+                mdata = metadata.write(mdata, tuple(field.get('breadcrumb')), 'inclusion', 'automatic')
+            if field.get('metadata').get('fieldExclusions'):
+                mdata = metadata.write(mdata, tuple(field.get('breadcrumb')), 'fieldExclusions', field.get('metadata').get('fieldExclusions'))
+
+    stream_def['metadata'] = metadata.to_list(mdata)
 
     return stream_def
 
@@ -401,7 +411,11 @@ def discover_core_objects():
     # Load Account's schemas
     account_schema = get_core_schema(client, 'AdvertiserAccount')
     core_object_streams.append(
-        get_stream_def('accounts', account_schema, pks=['Id'], replication_key='LastModifiedTime'))
+        # After new standard metadata changes we are getting Id as primary key only 
+        # while earlier we were getting Id and LastModifiedTime both because of the coding mistake 
+        # but we are writing Id only while writing the schema (func: sync_accounts_stream) in sync mode, 
+        # Hence we are keeping ID only in pks.
+        get_stream_def('accounts', account_schema, pks=['Id'], replication_keys=['LastModifiedTime']))
 
     LOGGER.info('Initializing CampaignManagementService client - Loading WSDL')
     client = CustomServiceClient('CampaignManagementService')
