@@ -139,11 +139,16 @@ class DiscoveryTest(BingAdsBaseTest):
                 expected_foreign_keys = self.expected_foreign_keys()[stream]
                 expected_replication_keys = self.expected_replication_keys()[stream]
                 expected_required_keys = self.expected_required_fields()[stream]
-                # adding '_sdc_report_datetime in the expected automatic fields list as there was 
+                # These streams does not include the field `_sdc_report_datetime` in their schema
+                if stream in ['ads', 'ad_groups', 'campaigns', 'accounts']:
+                    expected_automatic_fields = expected_primary_keys | expected_replication_keys \
+                        | expected_foreign_keys | expected_required_keys
+                # adding `_sdc_report_datetime` in the expected automatic fields list as there was 
                 # a failure experienced for all the streams that the particular field was missing
                 # in the expected fields.
-                expected_automatic_fields = expected_primary_keys | expected_replication_keys \
-                    | expected_foreign_keys | expected_required_keys | {'_sdc_report_datetime'}
+                else:
+                    expected_automatic_fields = expected_primary_keys | expected_replication_keys \
+                        | expected_foreign_keys | expected_required_keys | {'_sdc_report_datetime'}
 
                 # verify that primary, replication and foreign keys
                 # are given the inclusion of automatic in annotated schema.
