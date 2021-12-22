@@ -22,15 +22,12 @@ import stringcase
 import requests
 import arrow
 import backoff
-import socket
-import ssl
-import functools
-from urllib.error import URLError
 
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
 
 LOGGER = singer.get_logger()
+REQUEST_TIMEOUT = 300
 
 REQUIRED_CONFIG_KEYS = [
     "start_date",
@@ -124,6 +121,15 @@ def log_service_call(service_method, account_id):
 
     return wrapper
 
+def get_request_timeout():
+    request_timeout = CONFIG.get('request_timeout')
+    # if request_timeout is other than 0, "0" or "" then use request_timeout else use default request timeout.
+    if request_timeout and float(request_timeout):
+        request_timeout = float(request_timeout)
+    else: # If value is 0, "0" or "" then set default to 300 seconds.
+        request_timeout = REQUEST_TIMEOUT
+    return request_timeout
+
 class CustomServiceClient(ServiceClient):
     # This class calling the methods of the specified Bing Ads service.
     @bing_ads_error_handling
@@ -142,7 +148,8 @@ class CustomServiceClient(ServiceClient):
 
         kwargs = ServiceClient._ensemble_header(self.authorization_data, **self._options)
         kwargs['headers']['User-Agent'] = get_user_agent()
-
+        # setting the timeout parameter using the set_options which sets timeout in the _soap_client
+        kwargs['timeout'] = get_request_timeout()
         self._soap_client.set_options(**kwargs)
 
 @bing_ads_error_handling
@@ -787,14 +794,17 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
 def log_retry_attempt(details):
     LOGGER.info('Retrieving report timed out, triggering retry #%d', details.get('tries'))
 
+# retry the request for 5 times when Timeout error occurs
 @backoff.on_exception(backoff.constant,
-                      requests.exceptions.ConnectionError,
+                      (requests.exceptions.Timeout ,requests.exceptions.ConnectionError),
                       max_tries=5,
                       on_backoff=log_retry_attempt)
 def stream_report(stream_name, report_name, url, report_time):
     # Write stream report with backoff of ConnectionError
     with metrics.http_request_timer('download_report'):
-        response = SESSION.get(url, headers={'User-Agent': get_user_agent()})
+        # Set request timeout with config param `request_timeout`.
+        request_timeout = get_request_timeout()
+        response = SESSION.get(url, headers={'User-Agent': get_user_agent()}, timeout=request_timeout)
 
     if response.status_code != 200:
         raise Exception('Non-200 ({}) response downloading report: {}'.format(
