@@ -32,7 +32,14 @@ REPORT_SPECIFIC_REQUIRED_FIELDS = {
         'Ctr',
         'Impressions'
     ],
-    'GoalsAndFunnelsReport': ['Goal']
+    'GoalsAndFunnelsReport': ['Goal'],
+    # added required fields for `AgeGenderAudienceReport` as mentioned in the bing-ads docs
+    'AgeGenderAudienceReport': [
+        'AccountName',
+        'AdGroupName',
+        'AgeGroup',
+        'Gender'
+    ],
 }
 
 ## Any not listed here are strings
