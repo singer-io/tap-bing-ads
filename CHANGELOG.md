@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.20
+  * Implement Timeout Request [#93](https://github.com/singer-io/tap-bing-ads/pull/93)
+  * Added Top Level Breadcrumb [#91](https://github.com/singer-io/tap-bing-ads/pull/91)
+  * Added Retry Logic for 500 errors [#90](https://github.com/singer-io/tap-bing-ads/pull/90)
+  * Added required fields for age_gender_audience_report [#86](https://github.com/singer-io/tap-bing-ads/pull/86)
+  * Removed automatic fields from ad_ext report [#85](https://github.com/singer-io/tap-bing-ads/pull/85)
+
+
 ## 2.1.0
   * Update the BingAds library to `13.0.11`
 
