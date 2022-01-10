@@ -15,6 +15,7 @@ setup(
         'bingads==13.0.3',
         'requests==2.20.0',
         'singer-python==5.9.0',
+        "tenacity==8.0.1",
         'stringcase==1.2.0',
         'backoff==1.8.0',
     ],

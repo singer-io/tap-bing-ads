@@ -21,6 +21,7 @@ import backoff
 
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
+from tenacity import stop_after_attempt, wait_exponential, retry_if_exception_type, after_log, retry
 
 LOGGER = singer.get_logger()
 
@@ -41,6 +42,19 @@ TOP_LEVEL_CORE_OBJECTS = [
     'AdGroup',
     'Ad'
 ]
+
+class RetryException(Exception):
+    pass
+
+RETRY_STRATEGY = {
+    "stop": stop_after_attempt(5),
+    "wait": wait_exponential(multiplier=5),
+    "retry": (
+            retry_if_exception_type(RetryException) |
+            retry_if_exception_type(requests.ReadTimeout)
+    ),
+    "after": after_log(LOGGER.getLogger("RetryStrategy"), LOGGER.INFO),
+}
 
 CONFIG = {}
 STATE = {}
@@ -450,11 +464,16 @@ def discover_reports():
 
     return report_streams
 
+@retry(**RETRY_STRATEGY)
 def test_credentials(account_ids):
     if not account_ids:
         raise Exception('At least one id in account_ids is required to test authentication')
 
-    create_sdk_client('CustomerManagementService', account_ids[0])
+    try:
+        create_sdk_client('CustomerManagementService', account_ids[0])
+    except Exception as e:
+        if e[0][0]['code'] == 104:
+            raise RetryException
 
 def do_discover(account_ids):
     LOGGER.info('Testing authentication')
