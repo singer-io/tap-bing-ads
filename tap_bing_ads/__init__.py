@@ -3,6 +3,7 @@
 import asyncio
 import json
 import csv
+import logging
 import sys
 import re
 import io
@@ -22,8 +23,7 @@ import backoff
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
 from tenacity import stop_after_attempt, wait_exponential, retry_if_exception_type, after_log, retry
-
-LOGGER = singer.get_logger()
+import logging
 
 REQUIRED_CONFIG_KEYS = [
     "start_date",
@@ -53,7 +53,7 @@ RETRY_STRATEGY = {
             retry_if_exception_type(RetryException) |
             retry_if_exception_type(requests.ReadTimeout)
     ),
-    "after": after_log(LOGGER.getLogger("RetryStrategy"), LOGGER.INFO),
+    "after": after_log(logging.getLogger("RetryStrategy"), logging.INFO),
 }
 
 CONFIG = {}
@@ -78,7 +78,7 @@ def log_service_call(service_method, account_id):
     def wrapper(*args, **kwargs):
         log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + \
                    list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
-        LOGGER.info('Calling: {}({}) for account: {}'.format(
+        logging.info('Calling: {}({}) for account: {}'.format(
             service_method.name,
             ','.join(log_args),
             account_id))
@@ -93,7 +93,7 @@ def log_service_call(service_method, account_id):
                                                      if oe.ErrorCode == 'InvalidCustomDateRangeEnd']
                     if any(invalid_date_range_end_errors):
                         raise InvalidDateRangeEnd(invalid_date_range_end_errors) from e
-                    LOGGER.info('Caught exception for account: {}'.format(account_id))
+                    logging.info('Caught exception for account: {}'.format(account_id))
                     raise Exception(operation_errors) from e
                 if hasattr(e.fault.detail, 'AdApiFaultDetail'):
                     raise Exception(e.fault.detail.AdApiFaultDetail.Errors) from e
@@ -115,7 +115,7 @@ class CustomServiceClient(ServiceClient):
         self._soap_client.set_options(**kwargs)
 
 def create_sdk_client(service, account_id):
-    LOGGER.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
+    logging.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
                 service, account_id)
 
     require_live_connect = CONFIG.get('require_live_connect', 'True') == 'True'
@@ -352,14 +352,14 @@ def get_core_schema(client, obj):
 def discover_core_objects():
     core_object_streams = []
 
-    LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
+    logging.info('Initializing CustomerManagementService client - Loading WSDL')
     client = CustomServiceClient('CustomerManagementService')
 
     account_schema = get_core_schema(client, 'AdvertiserAccount')
     core_object_streams.append(
         get_stream_def('accounts', account_schema, pks=['Id'], replication_key='LastModifiedTime'))
 
-    LOGGER.info('Initializing CampaignManagementService client - Loading WSDL')
+    logging.info('Initializing CampaignManagementService client - Loading WSDL')
     client = CustomServiceClient('CampaignManagementService')
 
     campaign_schema = get_core_schema(client, 'Campaign')
@@ -444,7 +444,7 @@ def get_report_metadata(report_name, report_schema):
 
 def discover_reports():
     report_streams = []
-    LOGGER.info('Initializing ReportingService client - Loading WSDL')
+    logging.info('Initializing ReportingService client - Loading WSDL')
     client = CustomServiceClient('ReportingService')
     type_map = get_type_map(client)
     report_column_regex = r'^(?!ArrayOf)(.+Report)Column$'
@@ -471,18 +471,17 @@ def test_credentials(account_ids):
 
     try:
         create_sdk_client('CustomerManagementService', account_ids[0])
-    except Exception as e:
-        if e[0][0]['code'] == 104:
-            raise RetryException
+    except suds.transport.TransportError as e:
+        raise RetryException
 
 def do_discover(account_ids):
-    LOGGER.info('Testing authentication')
+    logging.info('Testing authentication')
     test_credentials(account_ids)
 
-    LOGGER.info('Discovering core objects')
+    logging.info('Discovering core objects')
     core_object_streams = discover_core_objects()
 
-    LOGGER.info('Discovering reports')
+    logging.info('Discovering reports')
     report_streams = discover_reports()
 
     json.dump({'streams': core_object_streams + report_streams}, sys.stdout, indent=2)
@@ -539,7 +538,7 @@ def sync_accounts_stream(account_ids, catalog_item):
     selected_fields = get_selected_fields(catalog_item)
     accounts = []
 
-    LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
+    logging.info('Initializing CustomerManagementService client - Loading WSDL')
     client = CustomServiceClient('CustomerManagementService')
     account_schema = get_core_schema(client, 'AdvertiserAccount')
     singer.write_schema('accounts', account_schema, ['Id'])
@@ -591,7 +590,7 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
             ad_groups = sobject_to_dict(response)['AdGroup']
 
             if 'ad_groups' in selected_streams:
-                LOGGER.info('Syncing AdGroups for Account: {}, Campaign: {}'.format(
+                logging.info('Syncing AdGroups for Account: {}, Campaign: {}'.format(
                     account_id, campaign_id))
                 selected_fields = get_selected_fields(selected_streams['ad_groups'])
                 singer.write_schema('ad_groups', get_core_schema(client, 'AdGroup'), ['Id'])
@@ -630,13 +629,13 @@ def sync_ads(client, selected_streams, ad_group_ids):
 def sync_core_objects(account_id, selected_streams):
     client = create_sdk_client('CampaignManagementService', account_id)
 
-    LOGGER.info('Syncing Campaigns for Account: {}'.format(account_id))
+    logging.info('Syncing Campaigns for Account: {}'.format(account_id))
     campaign_ids = sync_campaigns(client, account_id, selected_streams)
 
     if campaign_ids and ('ad_groups' in selected_streams or 'ads' in selected_streams):
         ad_group_ids = sync_ad_groups(client, account_id, campaign_ids, selected_streams)
         if 'ads' in selected_streams:
-            LOGGER.info('Syncing Ads for Account: {}'.format(account_id))
+            logging.info('Syncing Ads for Account: {}'.format(account_id))
             sync_ads(client, selected_streams, ad_group_ids)
 
 def type_report_row(row):
@@ -666,7 +665,7 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
     download_url = None
     with metrics.job_timer('generate_report'):
         for i in range(1, MAX_NUM_REPORT_POLLS + 1):
-            LOGGER.info('Polling report job {}/{} - {} - from {} to {}'.format(
+            logging.info('Polling report job {}/{} - {} - from {} to {}'.format(
                 i,
                 MAX_NUM_REPORT_POLLS,
                 report_name,
@@ -674,7 +673,7 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
                 end_date))
             response = client.PollGenerateReport(request_id)
             if response.Status == 'Error':
-                LOGGER.warn(
+                logging.warning(
                         'Error polling {} for account {} with request id {}'
                         .format(report_name, account_id, request_id))
                 return False, None
@@ -682,14 +681,14 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
                 if response.ReportDownloadUrl:
                     download_url = response.ReportDownloadUrl
                 else:
-                    LOGGER.info('No results for report: {} - from {} to {}'.format(
+                    logging.info('No results for report: {} - from {} to {}'.format(
                         report_name,
                         start_date,
                         end_date))
                 break
 
             if i == MAX_NUM_REPORT_POLLS:
-                LOGGER.info('Generating report timed out: {} - from {} to {}'.format(
+                logging.info('Generating report timed out: {} - from {} to {}'.format(
                         report_name,
                         start_date,
                         end_date))
@@ -699,7 +698,7 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
     return True, download_url
 
 def log_retry_attempt(details):
-    LOGGER.info('Retrieving report timed out, triggering retry #%d', details.get('tries'))
+    logging.info('Retrieving report timed out, triggering retry #%d', details.get('tries'))
 
 @backoff.on_exception(backoff.constant,
                       requests.exceptions.ConnectionError,
@@ -759,7 +758,7 @@ async def sync_report(client, account_id, report_stream):
 
     start_date, end_date = get_report_interval(state_key)
 
-    LOGGER.info('Generating {} reports for account {} between {} - {}'.format(
+    logging.info('Generating {} reports for account {} between {} - {}'.format(
         report_stream.stream, account_id, start_date, end_date))
 
     current_start_date = start_date
@@ -775,7 +774,7 @@ async def sync_report(client, account_id, report_stream):
                                                  current_start_date,
                                                  current_end_date)
         except InvalidDateRangeEnd as ex:
-            LOGGER.warn("Bing reported that the requested report date range ended outside of "
+            logging.warn("Bing reported that the requested report date range ended outside of "
                         "their data retention period. Skipping to next range...")
             success = True
 
@@ -804,7 +803,7 @@ async def sync_report_interval(client, account_id, report_stream,
                                                   start_date, end_date, request_id)
 
     except Exception as some_error:
-        LOGGER.info('The request_id %s for %s is invalid, generating a new one',
+        logging.info('The request_id %s for %s is invalid, generating a new one',
                     request_id,
                     state_key)
         request_id = get_report_request_id(client, account_id, report_stream,
@@ -818,7 +817,7 @@ async def sync_report_interval(client, account_id, report_stream,
                                                   start_date, end_date, request_id)
 
     if success and download_url:
-        LOGGER.info('Streaming report: {} for account {} - from {} to {}'
+        logging.info('Streaming report: {} for account {} - from {} to {}'
                     .format(report_name, account_id, start_date, end_date))
 
         stream_report(report_stream.stream,
@@ -830,14 +829,14 @@ async def sync_report_interval(client, account_id, report_stream,
         singer.write_state(STATE)
         return True
     elif success and not download_url:
-        LOGGER.info('No data for report: {} for account {} - from {} to {}'
+        logging.info('No data for report: {} for account {} - from {} to {}'
                     .format(report_name, account_id, start_date, end_date))
         singer.write_bookmark(STATE, state_key, 'request_id', None)
         singer.write_bookmark(STATE, state_key, 'date', end_date.isoformat())
         singer.write_state(STATE)
         return True
     else:
-        LOGGER.info('Unsuccessful request for report: {} for account {} - from {} to {}'
+        logging.info('Unsuccessful request for report: {} for account {} - from {} to {}'
                     .format(report_name, account_id, start_date, end_date))
         singer.write_bookmark(STATE, state_key, 'request_id', None)
         singer.write_state(STATE)
@@ -849,7 +848,7 @@ def get_report_request_id(client, account_id, report_stream, report_name,
 
     saved_request_id = singer.get_bookmark(STATE, state_key, 'request_id')
     if not force_refresh and saved_request_id is not None:
-        LOGGER.info(
+        logging.info(
             'Resuming polling for account {}: {}'
             .format(account_id, report_name)
         )
@@ -863,7 +862,7 @@ def get_report_request_id(client, account_id, report_stream, report_name,
 
 def build_report_request(client, account_id, report_stream, report_name,
                          start_date, end_date):
-    LOGGER.info(
+    logging.info(
         'Syncing report for account {}: {} - from {} to {}'
         .format(account_id, report_name, start_date, end_date)
     )
@@ -933,11 +932,11 @@ async def sync_account_data(account_id, catalog, selected_streams):
     }
 
     if len(all_core_streams & set(selected_streams)):
-        LOGGER.info('Syncing core objects')
+        logging.info('Syncing core objects')
         sync_core_objects(account_id, selected_streams)
 
     if len(all_report_streams & set(selected_streams)):
-        LOGGER.info('Syncing reports')
+        logging.info('Syncing reports')
         await sync_reports(account_id, catalog)
 
 async def do_sync_all_accounts(account_ids, catalog):
@@ -946,7 +945,7 @@ async def do_sync_all_accounts(account_ids, catalog):
         selected_streams[stream.tap_stream_id] = stream
 
     if 'accounts' in selected_streams:
-        LOGGER.info('Syncing Accounts')
+        logging.info('Syncing Accounts')
         sync_accounts_stream(account_ids, selected_streams['accounts'])
 
     sync_account_data_tasks = [
@@ -964,19 +963,19 @@ async def main_impl():
 
     if args.discover:
         do_discover(account_ids)
-        LOGGER.info("Discovery complete")
+        logging.info("Discovery complete")
     elif args.catalog:
         await do_sync_all_accounts(account_ids, args.catalog)
-        LOGGER.info("Sync Completed")
+        logging.info("Sync Completed")
     else:
-        LOGGER.info("No catalog was provided")
+        logging.info("No catalog was provided")
 
 def main():
     try:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(main_impl())
     except Exception as exc:
-        LOGGER.critical(exc)
+        logging.critical(exc)
         raise exc
 
 if __name__ == "__main__":
