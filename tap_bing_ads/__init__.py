@@ -19,6 +19,8 @@ import stringcase
 import requests
 import arrow
 import backoff
+from suds.transport.https import HttpTransport
+from suds.transport import TransportError
 
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
@@ -43,6 +45,8 @@ TOP_LEVEL_CORE_OBJECTS = [
     'Ad'
 ]
 
+
+
 class RetryException(Exception):
     pass
 
@@ -55,6 +59,15 @@ RETRY_STRATEGY = {
     ),
     "after": after_log(logging.getLogger("RetryStrategy"), logging.INFO),
 }
+
+class CustomHTTPTransport(HttpTransport):
+    @retry(**RETRY_STRATEGY)
+    def open(self, request):
+        try:
+            return super().open(request)
+        except TransportError:
+            raise RetryException
+
 
 CONFIG = {}
 STATE = {}
@@ -102,7 +115,7 @@ def log_service_call(service_method, account_id):
 
 class CustomServiceClient(ServiceClient):
     def __init__(self, name, **kwargs):
-        return super().__init__(name, 'v13', **kwargs)
+        return super().__init__(name, 'v13', transport=CustomHTTPTransport(), **kwargs)
 
     def __getattr__(self, name):
         service_method = super(CustomServiceClient, self).__getattr__(name)
@@ -464,15 +477,11 @@ def discover_reports():
 
     return report_streams
 
-@retry(**RETRY_STRATEGY)
 def test_credentials(account_ids):
     if not account_ids:
         raise Exception('At least one id in account_ids is required to test authentication')
-
-    try:
-        create_sdk_client('CustomerManagementService', account_ids[0])
-    except suds.transport.TransportError as e:
-        raise RetryException
+    
+    create_sdk_client('CustomerManagementService', account_ids[0])
 
 def do_discover(account_ids):
     logging.info('Testing authentication')
