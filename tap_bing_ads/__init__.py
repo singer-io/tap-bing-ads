@@ -21,6 +21,7 @@ import arrow
 import backoff
 from suds.transport.https import HttpTransport
 from suds.transport import TransportError
+from urllib.error import URLError
 
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
@@ -65,7 +66,7 @@ class CustomHTTPTransport(HttpTransport):
     def open(self, request):
         try:
             return super().open(request)
-        except TransportError:
+        except (TransportError, URLError, ConnectionResetError):
             raise RetryException
 
 
