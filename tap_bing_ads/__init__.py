@@ -4,6 +4,7 @@ import asyncio
 import json
 import csv
 import logging
+import socket
 import sys
 import re
 import io
@@ -66,7 +67,7 @@ class CustomHTTPTransport(HttpTransport):
     def open(self, request):
         try:
             return super().open(request)
-        except (TransportError, URLError, ConnectionResetError):
+        except (TransportError, URLError, ConnectionResetError, socket.timeout):
             raise RetryException
 
 
