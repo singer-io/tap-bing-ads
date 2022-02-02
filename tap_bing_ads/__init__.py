@@ -15,6 +15,7 @@ import functools
 from urllib.error import URLError
 import singer
 from singer import utils, metadata, metrics
+import bingads
 from bingads import AuthorizationData, OAuthWebAuthCodeGrant, ServiceClient
 import suds
 from suds.sudsobject import asdict
@@ -152,26 +153,38 @@ class CustomServiceClient(ServiceClient):
         kwargs['timeout'] = get_request_timeout()
         self._soap_client.set_options(**kwargs)
 
+def get_authentication():
+    """
+    Authenticate using the new method (no scope specified) and
+    fall back to the legacy method using the bingads.manage scope if
+    that fails.
+    """
+    # Represents an OAuth authorization object implementing the authorization code grant flow for use in a web application.
+    try:
+        authentication = OAuthWebAuthCodeGrant(
+            CONFIG['oauth_client_id'],
+            CONFIG['oauth_client_secret'],
+            '') ## redirect URL not needed for refresh token
+        # Retrieves OAuth access and refresh tokens from the Microsoft Account authorization service.
+        authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
+        return authentication
+    except bingads.exceptions.OAuthTokenRequestException:
+        authentication = OAuthWebAuthCodeGrant(
+            CONFIG['oauth_client_id'],
+            CONFIG['oauth_client_secret'],
+            '',
+            oauth_scope='bingads.manage') ## redirect URL not needed for refresh token
+        # Retrieves OAuth access and refresh tokens from the Microsoft Account authorization service.
+        authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
+        return authentication
+
 @bing_ads_error_handling
 def create_sdk_client(service, account_id):
     # Creates SOAP client with OAuth refresh credentials for services
     LOGGER.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
                 service, account_id)
 
-    if CONFIG.get('require_live_connect', 'True') == 'True':
-        oauth_scope = 'bingads.manage'
-    else:
-        oauth_scope = 'msads.manage'
-
-    # Represents an OAuth authorization object implementing the authorization code grant flow for use in a web application.
-    authentication = OAuthWebAuthCodeGrant(
-        CONFIG['oauth_client_id'],
-        CONFIG['oauth_client_secret'],
-        '',
-        oauth_scope=oauth_scope) ## redirect URL not needed for refresh token
-
-    # Retrieves OAuth access and refresh tokens from the Microsoft Account authorization service.
-    authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
+    authentication = get_authentication()
 
     # Instance require to authenticate with Bing Ads
     authorization_data = AuthorizationData(
