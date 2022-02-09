@@ -1,7 +1,6 @@
 version: 2.1
 orbs:
   slack: circleci/slack@3.4.2
-
 jobs:
   build:
     docker:
@@ -14,8 +13,24 @@ jobs:
             python3 -mvenv /usr/local/share/virtualenvs/tap-bing-ads
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
             pip install -U 'pip<19.2' 'setuptools<51.0.0'
-            pip install .[dev]
+            pip install .[test]
+      - run:
+          name: 'pylint'
+          command: |
+            source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
+            pylint tap_bing_ads -d missing-docstring,line-too-long,invalid-name,super-with-arguments,return-in-init,too-many-arguments,deprecated-method,consider-using-f-string,too-many-lines,unidiomatic-typecheck
       - add_ssh_keys
+      - run:
+          name: 'Unit Tests'
+          command: |
+            source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
+            pip install nose coverage
+            nosetests --with-coverage --cover-erase --cover-package=tap_bing_ads --cover-html-dir=htmlcov tests/unittests
+            coverage html
+      - store_test_results:
+          path: test_output/report.xml
+      - store_artifacts:
+          path: htmlcov
       - run:
           name: 'Integration Tests'
           command: |
@@ -25,21 +40,20 @@ jobs:
             run-test --tap=tap-bing-ads tests
       - slack/notify-on-failure:
           only_for_branches: master
-
 workflows:
   version: 2
-  commit:
+  commit: &commit_jobs
     jobs:
       - build:
-          context: circleci-user
+          context:
+          - circleci-user
+          - tier-1-tap-user
   build_daily:
+    <<: *commit_jobs
     triggers:
       - schedule:
-          cron: "0 6 * * *"
+          cron: "0 1 * * *"
           filters:
             branches:
               only:
                 - master
-    jobs:
-      - build:
-          context: circleci-user

@@ -92,7 +92,7 @@ class BingAdsBaseTest(unittest.TestCase):
         default_report = {
             self.PRIMARY_KEYS: set(), # "_sdc_report_datetime" is added by tap
             self.REPLICATION_METHOD: self.INCREMENTAL,
-            self.REPLICATION_KEYS: {"TimePeriod"},
+            self.REPLICATION_KEYS: {"TimePeriod"}, # It used in sync but not mentioned in catalog. Bug: TDL-15816
             self.FOREIGN_KEYS: {"AccountId"}
         }
         accounts_meta = {
@@ -117,8 +117,7 @@ class BingAdsBaseTest(unittest.TestCase):
         #               'Impressions', 'Ctr', 'Clicks' shouldn't be automatic
         extension_report = copy.deepcopy(default_report)
         extension_report[self.REQUIRED_KEYS] = {
-            'AdExtensionId', 'AdExtensionPropertyValue', 'AdExtensionType', 'AdExtensionTypeId',
-            'Impressions', 'Ctr', 'Clicks'  # Comment this line to reproduce BUG_SRCE-4578
+            'AdExtensionId', 'AdExtensionPropertyValue', 'AdExtensionType', 'AdExtensionTypeId'
         }
 
         age_gender_report = copy.deepcopy(default_report)
