@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import asyncio
+from http.client import RemoteDisconnected
 import json
 import csv
 import logging
@@ -63,11 +64,17 @@ RETRY_STRATEGY = {
 }
 
 class CustomHTTPTransport(HttpTransport):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        logging.warning("Starting Custom Transport")
+
     @retry(**RETRY_STRATEGY)
     def open(self, request):
         try:
             return super().open(request)
-        except (TransportError, URLError, ConnectionResetError, socket.timeout):
+        except (TransportError, URLError, ConnectionResetError, socket.timeout, RemoteDisconnected) as e:
+            logging.warning("{} thrown retrying".format(str(e)))
             raise RetryException
 
 
