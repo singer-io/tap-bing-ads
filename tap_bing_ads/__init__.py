@@ -67,7 +67,7 @@ class CustomHTTPTransport(HttpTransport):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        logging.warning("Starting Custom Transport")
+        logging.info("Starting Custom Transport")
 
     @retry(**RETRY_STRATEGY)
     def open(self, request):
