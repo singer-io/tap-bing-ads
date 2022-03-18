@@ -486,6 +486,15 @@ def discover_reports():
 
     return report_streams
 
+def convert_primary_keys_to_string(streams):
+    for stream in streams:
+        if stream['schema']['properties'].get("Id"):
+            stream['schema']['properties']['Id']["type"] = ["null", "string"]
+            stream['schema']['properties']['customIdVal'] = stream['schema']['properties']['Id']
+            pass
+
+    return streams
+
 def test_credentials(account_ids):
     if not account_ids:
         raise Exception('At least one id in account_ids is required to test authentication')
@@ -498,6 +507,7 @@ def do_discover(account_ids):
 
     logging.info('Discovering core objects')
     core_object_streams = discover_core_objects()
+    core_object_streams = convert_primary_keys_to_string(core_object_streams)
 
     logging.info('Discovering reports')
     report_streams = discover_reports()
@@ -641,7 +651,13 @@ def sync_ads(client, selected_streams, ad_group_ids):
             singer.write_schema('ads', get_core_schema(client, 'Ad'), ['Id'])
             with metrics.record_counter('ads') as counter:
                 ads = response_dict['Ad']
-                singer.write_records('ads', filter_selected_fields_many(selected_fields, ads))
+                record_data = filter_selected_fields_many(selected_fields, ads)
+
+                for record in record_data:
+                    record["Id"] = str(record["Id"])
+                    record["customIdVal"] = str(record["Id"])
+
+                singer.write_records('ads', record_data)
                 counter.increment(len(ads))
 
 def sync_core_objects(account_id, selected_streams):
