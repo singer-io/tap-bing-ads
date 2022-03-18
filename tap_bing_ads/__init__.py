@@ -48,6 +48,8 @@ TOP_LEVEL_CORE_OBJECTS = [
     'Ad'
 ]
 
+written_schemas = []
+
 
 
 class RetryException(Exception):
@@ -490,7 +492,7 @@ def convert_primary_keys_to_string(streams):
     for stream in streams:
         if stream['schema']['properties'].get("Id"):
             stream['schema']['properties']['Id']["type"] = ["null", "string"]
-            stream['schema']['properties']['customIdVal'] = stream['schema']['properties']['Id']
+            stream['schema']['properties']['testColumn'] = stream['schema']['properties']['Id']
             pass
 
     return streams
@@ -569,7 +571,10 @@ def sync_accounts_stream(account_ids, catalog_item):
     logging.info('Initializing CustomerManagementService client - Loading WSDL')
     client = CustomServiceClient('CustomerManagementService')
     account_schema = get_core_schema(client, 'AdvertiserAccount')
-    singer.write_schema('accounts', account_schema, ['Id'])
+
+    if 'accounts' not in written_schemas:
+        singer.write_schema('accounts', account_schema, ['Id'])
+        written_schemas.append('accounts')
 
     for account_id in account_ids:
         client = create_sdk_client('CustomerManagementService', account_id)
@@ -600,7 +605,11 @@ def sync_campaigns(client, account_id, selected_streams):
 
         if 'campaigns' in selected_streams:
             selected_fields = get_selected_fields(selected_streams['campaigns'])
-            singer.write_schema('campaigns', get_core_schema(client, 'Campaign'), ['Id'])
+
+            if 'campaigns' not in written_schemas:
+                singer.write_schema('campaigns', get_core_schema(client, 'Campaign'), ['Id'])
+                written_schemas.append('campaigns')
+
             with metrics.record_counter('campaigns') as counter:
                 singer.write_records('campaigns',
                                      filter_selected_fields_many(selected_fields, campaigns))
@@ -621,7 +630,11 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
                 logging.info('Syncing AdGroups for Account: {}, Campaign: {}'.format(
                     account_id, campaign_id))
                 selected_fields = get_selected_fields(selected_streams['ad_groups'])
-                singer.write_schema('ad_groups', get_core_schema(client, 'AdGroup'), ['Id'])
+
+                if 'ad_groups' not in written_schemas:
+                    singer.write_schema('ad_groups', get_core_schema(client, 'AdGroup'), ['Id'])
+                    written_schemas.append('ad_groups')
+
                 with metrics.record_counter('ad_groups') as counter:
                     singer.write_records('ad_groups',
                                          filter_selected_fields_many(selected_fields, ad_groups))
@@ -648,14 +661,18 @@ def sync_ads(client, selected_streams, ad_group_ids):
 
         if 'Ad' in response_dict:
             selected_fields = get_selected_fields(selected_streams['ads'])
-            singer.write_schema('ads', get_core_schema(client, 'Ad'), ['Id'])
+
+            if 'ads' not in written_schemas:
+                singer.write_schema('ads', get_core_schema(client, 'Ad'), ['Id'])
+                written_schemas.append('ads')
+
             with metrics.record_counter('ads') as counter:
                 ads = response_dict['Ad']
                 record_data = filter_selected_fields_many(selected_fields, ads)
 
                 for record in record_data:
                     record["Id"] = str(record["Id"])
-                    record["customIdVal"] = str(record["Id"])
+                    record["testColumn"] = 'testValue'
 
                 singer.write_records('ads', record_data)
                 counter.increment(len(ads))
@@ -821,7 +838,10 @@ async def sync_report_interval(client, account_id, report_stream,
     report_name = stringcase.pascalcase(report_stream.stream)
 
     report_schema = get_report_schema(client, report_name)
-    singer.write_schema(report_stream.stream, report_schema, [])
+
+    if report_stream.stream not in written_schemas:
+        singer.write_schema(report_stream.stream, report_schema, [])
+        written_schemas.append(report_stream.stream)
 
     report_time = arrow.get().isoformat()
 
