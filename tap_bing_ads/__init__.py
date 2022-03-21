@@ -346,12 +346,12 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
     excluded_inclusion_fields = []
     if pks:
         stream_def['key_properties'] = pks
-        excluded_inclusion_fields = pks
+        # excluded_inclusion_fields = pks
 
     if replication_key:
         stream_def['replication_key'] = replication_key
         stream_def['replication_method'] = 'INCREMENTAL'
-        excluded_inclusion_fields += [replication_key]
+        # excluded_inclusion_fields += [replication_key]
     else:
         stream_def['replication_method'] = 'FULL_TABLE'
 
@@ -488,15 +488,6 @@ def discover_reports():
 
     return report_streams
 
-def convert_primary_keys_to_string(streams):
-    for stream in streams:
-        if stream['schema']['properties'].get("Id"):
-            stream['schema']['properties']['Id']["type"] = ["null", "string"]
-            stream['schema']['properties']['testColumn'] = stream['schema']['properties']['Id']
-            pass
-
-    return streams
-
 def test_credentials(account_ids):
     if not account_ids:
         raise Exception('At least one id in account_ids is required to test authentication')
@@ -509,7 +500,6 @@ def do_discover(account_ids):
 
     logging.info('Discovering core objects')
     core_object_streams = discover_core_objects()
-    core_object_streams = convert_primary_keys_to_string(core_object_streams)
 
     logging.info('Discovering reports')
     report_streams = discover_reports()
@@ -663,16 +653,14 @@ def sync_ads(client, selected_streams, ad_group_ids):
             selected_fields = get_selected_fields(selected_streams['ads'])
 
             if 'ads' not in written_schemas:
-                singer.write_schema('ads', get_core_schema(client, 'Ad'), ['Id'])
+                schema = get_core_schema(client, 'Ad')
+
+                singer.write_schema('ads', schema, ["Id"])
                 written_schemas.append('ads')
 
             with metrics.record_counter('ads') as counter:
                 ads = response_dict['Ad']
                 record_data = filter_selected_fields_many(selected_fields, ads)
-
-                for record in record_data:
-                    record["Id"] = str(record["Id"])
-                    record["testColumn"] = 'testValue'
 
                 singer.write_records('ads', record_data)
                 counter.increment(len(ads))
