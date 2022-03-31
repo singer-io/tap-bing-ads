@@ -23,12 +23,13 @@ import arrow
 import backoff
 from suds.transport.https import HttpTransport
 from suds.transport import TransportError
-from urllib.error import URLError
+from urllib.error import URLError, HTTPError
 
 from tap_bing_ads import reports
 from tap_bing_ads.exclusions import EXCLUSIONS
 from tenacity import stop_after_attempt, wait_exponential, retry_if_exception_type, after_log, retry
 import logging
+import traceback
 
 REQUIRED_CONFIG_KEYS = [
     "start_date",
@@ -75,10 +76,13 @@ class CustomHTTPTransport(HttpTransport):
     def open(self, request):
         try:
             return super().open(request)
-        except (TransportError, URLError, ConnectionResetError, socket.timeout, RemoteDisconnected) as e:
-            logging.warning("{} thrown retrying".format(str(e)))
+        except (TransportError, URLError, HTTPError, ConnectionResetError, socket.timeout, RemoteDisconnected) as e:
+            logging.warning("CustomHTTPTransport error: {}".format(json.dumps(e.__dict__)))
+            logging.warning("CustomHTTPTransport traceback: {}".format(traceback.format_exc()))
             raise RetryException
-
+        except Exception as e:
+            logging.warning("CustomHTTPTransport generic error: {}".format(json.dumps(e.__dict__)))
+            logging.warning("CustomHTTPTransport generic traceback: {}".format(traceback.format_exc()))
 
 CONFIG = {}
 STATE = {}
