@@ -77,12 +77,21 @@ class CustomHTTPTransport(HttpTransport):
         try:
             return super().open(request)
         except (TransportError, URLError, HTTPError, ConnectionResetError, socket.timeout, RemoteDisconnected) as e:
-            logging.warning("CustomHTTPTransport error: {}".format(json.dumps(e.__dict__)))
+            if hasattr(e, 'code'):
+                logging.warning("CustomHTTPTransport error code: {}".format(str(e.code)))
+            if hasattr(e, 'msg'):
+                logging.warning("CustomHTTPTransport error msg: {} ".format(str(e.msg)))
+
             logging.warning("CustomHTTPTransport traceback: {}".format(traceback.format_exc()))
+            
             raise RetryException
         except Exception as e:
-            logging.warning("CustomHTTPTransport generic error: {}".format(json.dumps(e.__dict__)))
-            logging.warning("CustomHTTPTransport generic traceback: {}".format(traceback.format_exc()))
+            if hasattr(e, 'code'):
+                logging.warning("CustomHTTPTransport error code: {}".format(str(e.code)))
+            if hasattr(e, 'msg'):
+                logging.warning("CustomHTTPTransport error msg: {} ".format(str(e.msg)))
+
+            logging.warning("CustomHTTPTransport traceback: {}".format(traceback.format_exc()))
 
 CONFIG = {}
 STATE = {}
