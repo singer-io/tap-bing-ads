@@ -4,10 +4,10 @@ This is a [Singer](https://singer.io) tap that produces JSON-formatted data foll
 
 This tap:
 - `tap-bing-ads` works together with any other [Singer Target](https://singer.io) to move data from BingAds API to any target destination.
-- Extracts the following resources from HubSpot
+- Extracts the following resources from BingAds
   - [Accounts](https://docs.microsoft.com/en-us/advertising/customer-management-service/getaccount?view=bingads-13)
   - [Campaigns](https://docs.microsoft.com/en-us/advertising/campaign-management-service/getcampaignsbyaccountid?view=bingads-13)
-  - [Adgroups](https://docs.microsoft.com/en-us/advertising/campaign-management-service/getadgroupsbycampaignid?view=bingads-13)
+  - [Ad Groups](https://docs.microsoft.com/en-us/advertising/campaign-management-service/getadgroupsbycampaignid?view=bingads-13)
   - [Ads](https://docs.microsoft.com/en-us/advertising/campaign-management-service/getadsbyadgroupid?view=bingads-13)
   - [Reporting](https://docs.microsoft.com/en-us/advertising/reporting-service/reporting-service-reference?view=bingads-13)
     - [Ad Extension Detail Report](https://docs.microsoft.com/en-us/advertising/reporting-service/adextensiondetailreportrequest?view=bingads-13)
