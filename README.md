@@ -21,6 +21,12 @@ This tap:
     - [Keyword Performance Report](https://docs.microsoft.com/en-us/advertising/reporting-service/keywordperformancereportrequest?view=bingads-13)
     - [Search Query Performance Report](https://docs.microsoft.com/en-us/advertising/reporting-service/searchqueryperformancereportrequest?view=bingads-13)
 
+## Bookmarking Strategy
+
+The BingAds API for report objects supports `date` parameter that limits the query to only return objects after the `date` period.
+
+Moreover, some apis do not support incremental search and supports full table. The accounts stream supports the `LastModifiedTime` parameter, which return account objects after the `LastModifiedTime`.
+
 ## Configuration
 
 This tap requires a `config.json` which specifies details regarding [OAuth 2.0](https://docs.microsoft.com/en-us/advertising/guides/authentication-oauth?view=bingads-13) authentication and a cutoff date for syncing historical data. See [config.sample.json](config.sample.json) for an example.
