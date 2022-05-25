@@ -415,6 +415,8 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
                 mdata = metadata.write(mdata, tuple(field.get('breadcrumb')), 'fieldExclusions', field.get('metadata').get('fieldExclusions'))
 
     stream_def['metadata'] = metadata.to_list(mdata)
+    print("STREAM DEF")
+    print(stream_def)
 
     return stream_def
 
