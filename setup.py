@@ -22,7 +22,7 @@ setup(
     ],
     extras_require={
         'test': [
-            'pylint'
+            'pylint==2.14.0'
         ],
         'dev': [
             'ipdb'
