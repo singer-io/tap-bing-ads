@@ -2,9 +2,7 @@
 Defines the field exclusion rules for Bing Ads/Microsoft Ads reports.
 The structure is for each report, there are groups of fields that cannot
 be selected with the associated group.
-
 Docs: https://docs.microsoft.com/en-us/advertising/guides/reports?view=bingads-13#columnrestrictions
-
 """
 
 EXCLUSIONS = {
@@ -18,8 +16,7 @@ EXCLUSIONS = {
             'ImpressionSharePerformanceStatistics': [
                 'AudienceImpressionLostToBudgetPercent',
                 'AudienceImpressionLostToRankPercent',
-                'AudienceImpressionSharePercent',
-                'RelativeCtr'
+                'AudienceImpressionSharePercent'
             ]
         },
         {
@@ -31,23 +28,22 @@ EXCLUSIONS = {
                 'TopVsOther'
             ],
             'ImpressionSharePerformanceStatistics': [
-                'AbsoluteTopImpressionRatePercent',
-                'AbsoluteTopImpressionShareLostToBudgetPercent',
-                'AbsoluteTopImpressionShareLostToRankPercent',
-                'AbsoluteTopImpressionSharePercent',
                 'AudienceImpressionLostToBudgetPercent',
                 'AudienceImpressionLostToRankPercent',
                 'AudienceImpressionSharePercent',
+                'AbsoluteTopImpressionSharePercent',
+                'AbsoluteTopImpressionRatePercent',
+                'AbsoluteTopImpressionShareLostToBudgetPercent',
+                'AbsoluteTopImpressionShareLostToRankPercent',
                 'ClickSharePercent',
                 'ExactMatchImpressionSharePercent',
                 'ImpressionLostToAdRelevancePercent',
                 'ImpressionLostToBidPercent',
                 'ImpressionLostToBudgetPercent',
                 'ImpressionLostToExpectedCtrPercent',
-                'ImpressionLostToRankAggPercent',
                 'ImpressionLostToRankPercent',
+                'ImpressionLostToRankAggPercent',
                 'ImpressionSharePercent',
-                'RelativeCtr',
                 'TopImpressionRatePercent',
                 'TopImpressionShareLostToBudgetPercent',
                 'TopImpressionShareLostToRankPercent',
@@ -64,22 +60,21 @@ EXCLUSIONS = {
             'ImpressionSharePerformanceStatistics': [
                 'AudienceImpressionLostToBudgetPercent',
                 'AudienceImpressionLostToRankPercent',
-                'AudienceImpressionSharePercent',
-                'RelativeCtr'
+                'AudienceImpressionSharePercent'
             ]
         },{
             'Attributes': [
                 'BidMatchType',
                 'DeviceOS',
+                'TopVsOther',
                 'Goal',
-                'GoalType',
-                'TopVsOther'
+                'GoalType'
             ],
             'ImpressionSharePerformanceStatistics': [
+                'AbsoluteTopImpressionSharePercent',
                 'AbsoluteTopImpressionRatePercent',
                 'AbsoluteTopImpressionShareLostToBudgetPercent',
                 'AbsoluteTopImpressionShareLostToRankPercent',
-                'AbsoluteTopImpressionSharePercent',
                 'AudienceImpressionLostToBudgetPercent',
                 'AudienceImpressionLostToRankPercent',
                 'AudienceImpressionSharePercent',
@@ -89,10 +84,9 @@ EXCLUSIONS = {
                 'ImpressionLostToBidPercent',
                 'ImpressionLostToBudgetPercent',
                 'ImpressionLostToExpectedCtrPercent',
-                'ImpressionLostToRankAggPercent',
                 'ImpressionLostToRankPercent',
+                'ImpressionLostToRankAggPercent',
                 'ImpressionSharePercent',
-                'RelativeCtr',
                 'TopImpressionRatePercent',
                 'TopImpressionShareLostToBudgetPercent',
                 'TopImpressionShareLostToRankPercent',
@@ -109,36 +103,32 @@ EXCLUSIONS = {
             'ImpressionSharePerformanceStatistics': [
                 'AudienceImpressionLostToBudgetPercent',
                 'AudienceImpressionLostToRankPercent',
-                'AudienceImpressionSharePercent',
-                'RelativeCtr'
+                'AudienceImpressionSharePercent'
             ]
         },{
             'Attributes': [
                 'BidMatchType',
-                'BudgetAssociationStatus',
-                'BudgetName',
-                'BudgetStatus',
                 'DeviceOS',
                 'Goal',
                 'GoalType',
-                'TopVsOther'
+                'TopVsOther',
+                'BudgetAssociationStatus',
+                'BudgetName',
+                'BudgetStatus'
             ],
             'ImpressionSharePerformanceStatistics': [
-                'AbsoluteTopImpressionRatePercent',
-                'AbsoluteTopImpressionShareLostToBudgetPercent',
-                'AbsoluteTopImpressionShareLostToRankPercent',
-                'AbsoluteTopImpressionSharePercent',
                 'AudienceImpressionLostToBudgetPercent',
                 'AudienceImpressionLostToRankPercent',
                 'AudienceImpressionSharePercent',
+                'AbsoluteTopImpressionSharePercent',
                 'ClickSharePercent',
                 'ExactMatchImpressionSharePercent',
                 'ImpressionLostToAdRelevancePercent',
                 'ImpressionLostToBidPercent',
                 'ImpressionLostToBudgetPercent',
                 'ImpressionLostToExpectedCtrPercent',
-                'ImpressionLostToRankAggPercent',
                 'ImpressionLostToRankPercent',
+                'ImpressionLostToRankAggPercent',
                 'ImpressionSharePercent',
                 'TopImpressionRatePercent',
                 'TopImpressionShareLostToBudgetPercent',
@@ -152,9 +142,6 @@ EXCLUSIONS = {
             'AdId',
             'AdStatus',
             'ClickType',
-            'ClickTypeId',
-            'Goal',
-            'GoalType',
             'Language',
             'LocalStoreCode',
             'Network',
@@ -162,19 +149,12 @@ EXCLUSIONS = {
         ],
         'ImpressionSharePerformanceStatistics': [
             'AbsoluteTopImpressionSharePercent',
-            'AbsoluteTopImpressionShareLostToBudgetPercent',
-            'AbsoluteTopImpressionShareLostToRankPercent',
-            'AbsoluteTopImpressionSharePercent',
             'BenchmarkBid',
             'BenchmarkCtr',
             'ClickSharePercent',
             'ImpressionLostToBudgetPercent',
             'ImpressionLostToRankPercent',
-            'ImpressionSharePercent',
-            'TopImpressionRatePercent',
-            'TopImpressionShareLostToBudgetPercent',
-            'TopImpressionShareLostToRankPercent',
-            'TopImpressionSharePercent'
+            'ImpressionSharePercent'
         ]
     }],
     'ProductPartitionPerformanceReport': [{
@@ -184,10 +164,7 @@ EXCLUSIONS = {
             'AdStatus',
             'BidMatchType',
             'ClickType',
-            'ClickTypeId',
             'DeliveredMatchType',
-            'Goal',
-            'GoalType',
             'Language',
             'LocalStoreCode',
             'Network',
