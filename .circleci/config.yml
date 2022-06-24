@@ -18,8 +18,7 @@ jobs:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
-            pylint tap_bing_ads -d missing-docstring,line-too-long,invalid-name,super-with-arguments,return-in-init,too-many-arguments,deprecated-method,consider-using-f-string,too-many-lines,unidiomatic-typecheck
-      - add_ssh_keys
+            pylint tap_bing_ads -d missing-docstring,line-too-long,invalid-name,super-with-arguments,return-in-init,too-many-arguments,deprecated-method,consider-using-f-string,too-many-lines,unidiomatic-typecheck,consider-using-generator
       - run:
           name: 'Unit Tests'
           command: |
