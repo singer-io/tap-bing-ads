@@ -1,42 +1,42 @@
 REPORT_WHITELIST = [
-    # 'KeywordPerformanceReport',
+    'KeywordPerformanceReport',
     'AdPerformanceReport',
-    # 'AdGroupPerformanceReport',
-    # 'GeographicPerformanceReport',
-    # 'AgeGenderAudienceReport',
-    # 'SearchQueryPerformanceReport',
-    # 'CampaignPerformanceReport',
-    # 'GoalsAndFunnelsReport',
-    # 'AudiencePerformanceReport',
-    # 'AdExtensionDetailReport'
+    'AdGroupPerformanceReport',
+    'GeographicPerformanceReport',
+    'AgeGenderAudienceReport',
+    'SearchQueryPerformanceReport',
+    'CampaignPerformanceReport',
+    'GoalsAndFunnelsReport',
+    'AudiencePerformanceReport',
+    'AdExtensionDetailReport'
 ]
 
 REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'TimePeriod']
 
 REPORT_SPECIFIC_REQUIRED_FIELDS = {
-    # 'GeographicPerformanceReport': ['AccountName'],
-    # 'AgeGenderDemographicReport': [
-    #     'AccountName',
-    #     'AdGroupName',
-    #     'AgeGroup',
-    #     'Gender'
-    # ],
-    # 'SearchQueryPerformanceReport': ['SearchQuery'],
-    # 'AudiencePerformanceReport': ['AudienceId'],
-    # 'AdExtensionDetailReport': [
-    #     'AdExtensionId',
-    #     'AdExtensionPropertyValue',
-    #     'AdExtensionType',
-    #     'AdExtensionTypeId' # removed `Impressions`, `Ctr,`, and `Clicks` from the required fields of `AdExtensionDetailReport`
-    # ],
-    # 'GoalsAndFunnelsReport': ['Goal'],
-    # # added required fields for `AgeGenderAudienceReport` as mentioned in the bing-ads docs
-    # 'AgeGenderAudienceReport': [
-    #     'AccountName',
-    #     'AdGroupName',
-    #     'AgeGroup',
-    #     'Gender'
-    # ],
+    'GeographicPerformanceReport': ['AccountName'],
+    'AgeGenderDemographicReport': [
+        'AccountName',
+        'AdGroupName',
+        'AgeGroup',
+        'Gender'
+    ],
+    'SearchQueryPerformanceReport': ['SearchQuery'],
+    'AudiencePerformanceReport': ['AudienceId'],
+    'AdExtensionDetailReport': [
+        'AdExtensionId',
+        'AdExtensionPropertyValue',
+        'AdExtensionType',
+        'AdExtensionTypeId' # removed `Impressions`, `Ctr,`, and `Clicks` from the required fields of `AdExtensionDetailReport`
+    ],
+    'GoalsAndFunnelsReport': ['Goal'],
+    # added required fields for `AgeGenderAudienceReport` as mentioned in the bing-ads docs
+    'AgeGenderAudienceReport': [
+        'AccountName',
+        'AdGroupName',
+        'AgeGroup',
+        'Gender'
+    ],
 }
 
 ## Any not listed here are strings

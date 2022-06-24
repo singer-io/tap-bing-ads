@@ -415,9 +415,6 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
                 mdata = metadata.write(mdata, tuple(field.get('breadcrumb')), 'fieldExclusions', field.get('metadata').get('fieldExclusions'))
 
     stream_def['metadata'] = metadata.to_list(mdata)
-    print("STREAM DEF")
-    print(stream_def)
-
     return stream_def
 
 def get_core_schema(client, obj):
@@ -611,7 +608,7 @@ def get_selected_fields(catalog_item, exclude=None):
 
     # Raise Exception if incompatible fields are selected
     if any(invalid_selections):
-        LOGGER.warn("Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{}".format(json.dumps(invalid_selections, indent=4)))
+        raise Exception("Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{}".format(json.dumps(invalid_selections, indent=4)))
     return selected_fields
 
 def filter_selected_fields(selected_fields, obj):
