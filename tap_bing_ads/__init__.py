@@ -716,7 +716,6 @@ def type_report_row(row):
 async def poll_report(client, account_id, report_name, start_date, end_date, state_key, report_stream):
     download_url = None
     request_id = get_report_request_id(client, account_id, report_stream, report_name, start_date, end_date, state_key, force_refresh=True)
-    request_id ="ascascfbkdpfkbdkfbkdfkbdklfbldklfb"
     with metrics.job_timer('generate_report'):
         for i in range(1, MAX_NUM_REPORT_POLLS + 1):
             logging.info('Polling report job {}/{} - {} - from {} to {}'.format(
