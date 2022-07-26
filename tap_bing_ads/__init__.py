@@ -642,9 +642,8 @@ def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
                     singer.write_records('ad_groups',
                                          filter_selected_fields_many(selected_fields, ad_groups))
                     counter.increment(len(ad_groups))
-
-            ad_group_ids += list(map(lambda x: x['Id'], ad_groups))
-    return ad_group_ids
+            for ad_group in ad_groups:
+                yield ad_group['Id']
 
 def sync_ads(client, selected_streams, ad_group_ids):
     for ad_group_id in ad_group_ids:
