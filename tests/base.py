@@ -2,7 +2,6 @@
 Setup expectations for test sub classes
 Run discovery for as a prerequisite for most tests
 """
-import unittest
 import backoff
 import copy
 import os
@@ -10,7 +9,8 @@ from datetime import timedelta
 from datetime import datetime as dt
 from datetime import timezone as tz
 
-from tap_tester import connections, menagerie, runner
+from tap_tester import connections, menagerie, runner, LOGGER
+from tap_tester.base_case import BaseCase
 
 def backoff_wait_times():
     """Create a generator of wait times as [30, 60, 120, 240, 480, ...]"""
@@ -22,7 +22,7 @@ class RetryableTapError(Exception):
         super().__init__(message)
 
 
-class BingAdsBaseTest(unittest.TestCase):
+class BingAdsBaseTest(BaseCase):
     """
     Setup expectations for test sub classes
     Run discovery for as a prerequisite for most tests
@@ -222,7 +222,7 @@ class BingAdsBaseTest(unittest.TestCase):
             menagerie.verify_check_exit_status(self, exit_status, check_job_name)
         except AssertionError as e:
             if exit_status['discovery_error_message']:
-                print("*******************RETRYING CHECK FOR DISCOVERY FAILURE*******************")
+                LOGGER.warn("*******************RETRYING CHECK FOR DISCOVERY FAILURE*******************")
                 raise RetryableTapError(e)
 
             raise
@@ -233,7 +233,7 @@ class BingAdsBaseTest(unittest.TestCase):
 
         found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
         self.assertSetEqual(self.expected_streams(), found_catalog_names, msg="discovered schemas do not match")
-        print("discovered schemas are OK")
+        LOGGER.info("discovered schemas are OK")
         return found_catalogs
 
     def run_and_verify_check_mode(self, conn_id):
@@ -267,7 +267,7 @@ class BingAdsBaseTest(unittest.TestCase):
             menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
         except AssertionError as e:
             if exit_status['discovery_error_message'] or exit_status['tap_error_message']:
-                print("*******************RETRYING SYNC FOR TAP/DISCOVERY FAILURE*******************")
+                LOGGER.warn("*******************RETRYING SYNC FOR TAP/DISCOVERY FAILURE*******************")
                 raise RetryableTapError(e)
 
             raise
@@ -279,7 +279,7 @@ class BingAdsBaseTest(unittest.TestCase):
             sum(sync_record_count.values()), 0,
             msg="failed to replicate any data: {}".format(sync_record_count)
         )
-        print("total replicated row count: {}".format(sum(sync_record_count.values())))
+        LOGGER.info("total replicated row count: %s", sum(sync_record_count.values()))
 
         return sync_record_count
 
@@ -372,7 +372,7 @@ class BingAdsBaseTest(unittest.TestCase):
 
             # Verify all testable streams are selected
             selected = catalog_entry.get('annotated-schema').get('selected')
-            print("Validating selection on {}: {}".format(cat['stream_name'], selected))
+            LOGGER.info("Validating selection on %s: %s", cat['stream_name'], selected)
             if cat['stream_name'] not in expected_selected:
                 self.assertFalse(selected, msg="Stream selected, but not testable.")
                 continue # Skip remaining assertions if we aren't selecting this stream
@@ -382,8 +382,7 @@ class BingAdsBaseTest(unittest.TestCase):
                 # Verify all fields within each selected stream are selected
                 for field, field_props in catalog_entry.get('annotated-schema').get('properties').items():
                     field_selected = field_props.get('selected')
-                    print("\tValidating selection on {}.{}: {}".format(
-                        cat['stream_name'], field, field_selected))
+                    LOGGER.info("\tValidating selection on %s.%s: %s", cat['stream_name'], field, field_selected)
                     self.assertTrue(field_selected, msg="Field not selected.")
             else:
                 # Verify only automatic fields are selected
@@ -397,7 +396,7 @@ class BingAdsBaseTest(unittest.TestCase):
         for field in metadata:
             is_field_metadata = len(field['breadcrumb']) > 1
             if field['metadata'].get('inclusion') is None and is_field_metadata:  # BUG_SRCE-4313 remove when addressed
-                print("Error {} has no inclusion key in metadata".format(field))  # BUG_SRCE-4313 remove when addressed
+                LOGGER.info("Error %s has no inclusion key in metadata", field)  # BUG_SRCE-4313 remove when addressed
                 continue  # BUG_SRCE-4313 remove when addressed
             inclusion_automatic_or_selected = (
                 field['metadata']['selected'] is True or \
@@ -503,7 +502,7 @@ class BingAdsBaseTest(unittest.TestCase):
 
                 # Verify intended streams are selected
                 selected = catalog_entry.get('annotated-schema').get('selected')
-                print("Validating selection on {}: {}".format(cat['tap_stream_id'], selected))
+                LOGGER.info("Validating selection on %s: %s", cat['tap_stream_id'], selected)
                 if cat['stream_name'] not in expected_selected:
                     continue  # Skip remaining assertions if we aren't selecting this stream
 
@@ -513,15 +512,13 @@ class BingAdsBaseTest(unittest.TestCase):
                     # Verify all fields within each selected stream are selected
                     for field, field_props in catalog_entry.get('annotated-schema').get('properties').items():
                         field_selected = field_props.get('selected')
-                        print("\tValidating selection on {}.{}: {}".format(
-                            cat['stream_name'], field, field_selected))
+                        LOGGER.info("\tValidating selection on %s.%s: %s", cat['stream_name'], field, field_selected)
                         self.assertTrue(field_selected, msg="Field not selected.")
                 else:
                     for field, field_props in catalog_entry.get('annotated-schema').get('properties').items():
                         field_selected = field_props.get('selected')
                         if field_selected:
-                            print("\tValidating selection on {}.{}: {}".format(
-                                cat['stream_name'], field, field_selected))
+                            LOGGER.info("\tValidating selection on %s.%s: %s", cat['stream_name'], field, field_selected)
 
                     # Verify only automatic fields are selected
                     # Uncomment lines below to reporduce BUG_SRCE-4313 from automatic fields tests

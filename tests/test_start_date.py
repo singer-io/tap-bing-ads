@@ -109,14 +109,14 @@ class BingAdsStartDateTest(BingAdsBaseTest):
 
         replicated_row_count_1 = sum(record_count_by_stream_1.values())
         self.assertGreater(replicated_row_count_1, 0, msg="failed to replicate any data: {}".format(record_count_by_stream_1))
-        print("total replicated row count: {}".format(replicated_row_count_1))
+        LOGGER.info("total replicated row count: %s", replicated_row_count_1)
         synced_records_1 = runner.get_records_from_target_output()
 
         ##########################################################################
         ### Update START DATE Between Syncs
         ##########################################################################
 
-        print("REPLICATION START DATE CHANGE: {} ===>>> {} ".format(self.start_date, self.start_date_2))
+        LOGGER.info("REPLICATION START DATE CHANGE: %s ===>>> %s ", self.start_date, self.start_date_2)
         self.start_date = self.start_date_2
 
         ##########################################################################
@@ -148,7 +148,7 @@ class BingAdsStartDateTest(BingAdsBaseTest):
 
         replicated_row_count_2 = sum(record_count_by_stream_2.values())
         self.assertGreater(replicated_row_count_2, 0, msg="failed to replicate any data")
-        print("total replicated row count: {}".format(replicated_row_count_2))
+        LOGGER.info("total replicated row count: %s", replicated_row_count_2)
         synced_records_2 = runner.get_records_from_target_output()
 
         for stream in self.expected_sync_streams():

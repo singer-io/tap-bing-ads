@@ -1,15 +1,12 @@
 import datetime
 import dateutil.parser
 import pytz
-import singer
 
 import tap_tester.connections as connections
 import tap_tester.menagerie   as menagerie
 import tap_tester.runner      as runner
 
 from base import BingAdsBaseTest
-
-LOGGER = singer.get_logger()
 
 
 class TestBingAdsBookmarksReports(BingAdsBaseTest):
