@@ -4,7 +4,7 @@ from datetime import timedelta
 import tap_tester.connections as connections
 import tap_tester.runner      as runner
 import tap_tester.menagerie   as menagerie
-
+from tap_tester import LOGGER
 
 from base import BingAdsBaseTest
 
