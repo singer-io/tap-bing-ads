@@ -1,0 +1,2246 @@
+{
+  "streams": [
+    {
+      "tap_stream_id": "ads",
+      "stream": "ads",
+      "schema": {
+        "type": [
+          "object"
+        ],
+        "properties": {
+          "AdFormatPreference": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "DevicePreference": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "EditorialStatus": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "FinalAppUrls": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "AppUrl": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": [
+                    "null",
+                    "object"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "OsType": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "Url": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "FinalMobileUrls": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "string": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "FinalUrlSuffix": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "FinalUrls": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "string": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "ForwardCompatibilityMap": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "KeyValuePairOfstringstring": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": [
+                    "null",
+                    "object"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "value": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "Id": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "Status": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "TrackingUrlTemplate": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "Type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "UrlCustomParameters": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "Parameters": {
+                "type": [
+                  "null",
+                  "object"
+                ],
+                "properties": {
+                  "CustomParameter": {
+                    "type": [
+                      "null",
+                      "array"
+                    ],
+                    "items": {
+                      "type": [
+                        "null",
+                        "object"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "Key": {
+                          "type": [
+                            "null",
+                            "string"
+                          ]
+                        },
+                        "Value": {
+                          "type": [
+                            "null",
+                            "string"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "BusinessName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "CallToAction": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "CallToActionLanguage": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "Descriptions": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "AssetLink": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": [
+                    "null",
+                    "object"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "Asset": {
+                      "anyOf": [
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Text": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "SubType": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "ThumbnailImage": {
+                              "type": [
+                                "null",
+                                "object"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "Id": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "Name": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                },
+                                "Type": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                },
+                                "CropHeight": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropWidth": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropX": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropY": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "SubType": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "CropHeight": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropWidth": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropX": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropY": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "SubType": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "AssetPerformanceLabel": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "EditorialStatus": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "PinnedField": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "Headline": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "Headlines": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "AssetLink": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": [
+                    "null",
+                    "object"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "Asset": {
+                      "anyOf": [
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Text": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "SubType": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "ThumbnailImage": {
+                              "type": [
+                                "null",
+                                "object"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "Id": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "Name": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                },
+                                "Type": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                },
+                                "CropHeight": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropWidth": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropX": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropY": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "SubType": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "CropHeight": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropWidth": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropX": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropY": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "SubType": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "AssetPerformanceLabel": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "EditorialStatus": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "PinnedField": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "Images": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "AssetLink": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": [
+                    "null",
+                    "object"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "Asset": {
+                      "anyOf": [
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Text": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "SubType": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "ThumbnailImage": {
+                              "type": [
+                                "null",
+                                "object"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "Id": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "Name": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                },
+                                "Type": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                },
+                                "CropHeight": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropWidth": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropX": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropY": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "SubType": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "CropHeight": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropWidth": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropX": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropY": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "SubType": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "AssetPerformanceLabel": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "EditorialStatus": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "PinnedField": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ImpressionTrackingUrls": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "string": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "LongHeadline": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "Asset": {
+                "anyOf": [
+                  {
+                    "type": [
+                      "null",
+                      "object"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "Id": {
+                        "type": [
+                          "null",
+                          "integer"
+                        ]
+                      },
+                      "Name": {
+                        "type": [
+                          "null",
+                          "string"
+                        ]
+                      },
+                      "Type": {
+                        "type": [
+                          "null",
+                          "string"
+                        ]
+                      },
+                      "Text": {
+                        "type": [
+                          "null",
+                          "string"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "type": [
+                      "null",
+                      "object"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "Id": {
+                        "type": [
+                          "null",
+                          "integer"
+                        ]
+                      },
+                      "Name": {
+                        "type": [
+                          "null",
+                          "string"
+                        ]
+                      },
+                      "Type": {
+                        "type": [
+                          "null",
+                          "string"
+                        ]
+                      },
+                      "SubType": {
+                        "type": [
+                          "null",
+                          "string"
+                        ]
+                      },
+                      "ThumbnailImage": {
+                        "type": [
+                          "null",
+                          "object"
+                        ],
+                        "additionalProperties": false,
+                        "properties": {
+                          "Id": {
+                            "type": [
+                              "null",
+                              "integer"
+                            ]
+                          },
+                          "Name": {
+                            "type": [
+                              "null",
+                              "string"
+                            ]
+                          },
+                          "Type": {
+                            "type": [
+                              "null",
+                              "string"
+                            ]
+                          },
+                          "CropHeight": {
+                            "type": [
+                              "null",
+                              "integer"
+                            ]
+                          },
+                          "CropWidth": {
+                            "type": [
+                              "null",
+                              "integer"
+                            ]
+                          },
+                          "CropX": {
+                            "type": [
+                              "null",
+                              "integer"
+                            ]
+                          },
+                          "CropY": {
+                            "type": [
+                              "null",
+                              "integer"
+                            ]
+                          },
+                          "SubType": {
+                            "type": [
+                              "null",
+                              "string"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": [
+                      "null",
+                      "object"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "Id": {
+                        "type": [
+                          "null",
+                          "integer"
+                        ]
+                      },
+                      "Name": {
+                        "type": [
+                          "null",
+                          "string"
+                        ]
+                      },
+                      "Type": {
+                        "type": [
+                          "null",
+                          "string"
+                        ]
+                      },
+                      "CropHeight": {
+                        "type": [
+                          "null",
+                          "integer"
+                        ]
+                      },
+                      "CropWidth": {
+                        "type": [
+                          "null",
+                          "integer"
+                        ]
+                      },
+                      "CropX": {
+                        "type": [
+                          "null",
+                          "integer"
+                        ]
+                      },
+                      "CropY": {
+                        "type": [
+                          "null",
+                          "integer"
+                        ]
+                      },
+                      "SubType": {
+                        "type": [
+                          "null",
+                          "string"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "type": [
+                      "null",
+                      "object"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "Id": {
+                        "type": [
+                          "null",
+                          "integer"
+                        ]
+                      },
+                      "Name": {
+                        "type": [
+                          "null",
+                          "string"
+                        ]
+                      },
+                      "Type": {
+                        "type": [
+                          "null",
+                          "string"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              "AssetPerformanceLabel": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "EditorialStatus": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "PinnedField": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          },
+          "LongHeadlineString": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "LongHeadlines": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "AssetLink": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": [
+                    "null",
+                    "object"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "Asset": {
+                      "anyOf": [
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Text": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "SubType": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "ThumbnailImage": {
+                              "type": [
+                                "null",
+                                "object"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "Id": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "Name": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                },
+                                "Type": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                },
+                                "CropHeight": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropWidth": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropX": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropY": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "SubType": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "CropHeight": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropWidth": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropX": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropY": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "SubType": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "AssetPerformanceLabel": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "EditorialStatus": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "PinnedField": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "Text": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "Videos": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "AssetLink": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": [
+                    "null",
+                    "object"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "Asset": {
+                      "anyOf": [
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Text": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "SubType": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "ThumbnailImage": {
+                              "type": [
+                                "null",
+                                "object"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "Id": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "Name": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                },
+                                "Type": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                },
+                                "CropHeight": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropWidth": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropX": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "CropY": {
+                                  "type": [
+                                    "null",
+                                    "integer"
+                                  ]
+                                },
+                                "SubType": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "CropHeight": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropWidth": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropX": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "CropY": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "SubType": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": [
+                            "null",
+                            "object"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "Id": {
+                              "type": [
+                                "null",
+                                "integer"
+                              ]
+                            },
+                            "Name": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            },
+                            "Type": {
+                              "type": [
+                                "null",
+                                "string"
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "AssetPerformanceLabel": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "EditorialStatus": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "PinnedField": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "Domain": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "Path1": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "Path2": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "DestinationUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "DisplayUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "Title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "TextPart2": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "TitlePart1": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "TitlePart2": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "TitlePart3": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "PromotionalText": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "AppPlatform": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "AppStoreId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "key_properties": [
+        "Id"
+      ],
+      "replication_method": "FULL_TABLE",
+      "metadata": [
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "Headlines"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "DisplayUrl"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "BusinessName"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "Domain"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "FinalUrlSuffix"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "AdFormatPreference"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "EditorialStatus"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "CallToAction"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "UrlCustomParameters"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "Title"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "PromotionalText"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "FinalMobileUrls"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "TitlePart1"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "DestinationUrl"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "TitlePart2"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "DevicePreference"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "TextPart2"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "CallToActionLanguage"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "Path1"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "TitlePart3"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "Text"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "LongHeadline"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "Videos"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "Path2"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "AppStoreId"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "Images"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "ImpressionTrackingUrls"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "Headline"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "Type"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "Status"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "LongHeadlineString"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "FinalUrls"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "TrackingUrlTemplate"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "FinalAppUrls"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "Id"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "LongHeadlines"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "ForwardCompatibilityMap"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "Descriptions"
+          ]
+        },
+        {
+          "metadata": {
+            "inclusion": "available",
+            "selected": true
+          },
+          "breadcrumb": [
+            "properties",
+            "AppPlatform"
+          ]
+        },
+        {
+          "breadcrumb": [],
+          "metadata": {
+            "table-key-properties": [
+              "Id"
+            ],
+            "selected": true,
+            "replication-method": "FULL_TABLE"
+          }
+        }
+      ]
+    }
+  ]
+}
