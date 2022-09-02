@@ -11,15 +11,12 @@ authors = ["y42 developers <info@y42.com>"]
 [tool.poetry.dependencies]
 python = "^3.9"
 arrow = "0.12.0"
-poetry-core = "1.0.4"
 bingads = "13.0.3"
 singer-python= "5.9.0"
 requests = "2.26.0"
 tenacity = "8.0.1"
 stringcase = "1.2.0"
 backoff = "1.8.0"
-
-
 
 [tool.poetry.dev-dependencies]
 integrations-testing-framework = {git = "git@github.com:goes-funky/integrations-testing-framework.git"}
@@ -35,3 +32,12 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 tap-bing_ads = "tap_bing_ads:main"
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests"
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
