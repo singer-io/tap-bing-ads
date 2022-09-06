@@ -4,7 +4,7 @@ coverage:
       default:
         target: 80%    # the required coverage value
         threshold: 1%  # the leniency in hitting the target
-        paths: tap_bing_ads*
+        paths: tap_bing_ads/*
     patch:
       default:
         target: 90% # New code should have a higher coverage
