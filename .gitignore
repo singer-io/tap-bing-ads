@@ -81,6 +81,7 @@ celerybeat-schedule
 # virtualenv
 venv/
 ENV/
+.venv
 
 # Spyder project settings
 .spyderproject
@@ -95,3 +96,6 @@ ENV/
 # Singer files
 *.config.json
 *.catalog.json
+
+# IDE
+.idea
