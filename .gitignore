@@ -99,3 +99,9 @@ ENV/
 
 # IDE
 .idea
+
+# Singer config
+config.json
+tap-*.json
+target-*.json
+*config.json
