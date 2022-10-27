@@ -38,6 +38,7 @@ REQUIRED_CONFIG_KEYS = [
     "oauth_client_secret",
     "refresh_token",
     "developer_token",
+    "refresh_token_ssm_param"
 ]
 
 # objects that are at the root level, with selectable fields in the Stitch UI
@@ -164,7 +165,8 @@ def get_authentication():
         authentication = OAuthWebAuthCodeGrant(
             CONFIG['oauth_client_id'],
             CONFIG['oauth_client_secret'],
-            '') ## redirect URL not needed for refresh token
+            '', ## redirect URL not needed for refresh token
+            token_refreshed_callback=save_refresh_token_to_ssm)
         # Retrieves OAuth access and refresh tokens from the Microsoft Account authorization service.
         authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
         return authentication
@@ -172,11 +174,26 @@ def get_authentication():
         authentication = OAuthWebAuthCodeGrant(
             CONFIG['oauth_client_id'],
             CONFIG['oauth_client_secret'],
-            '',
-            oauth_scope='bingads.manage') ## redirect URL not needed for refresh token
+            '',## redirect URL not needed for refresh token
+            oauth_scope='bingads.manage',
+            token_refreshed_callback=save_refresh_token_to_ssm)
         # Retrieves OAuth access and refresh tokens from the Microsoft Account authorization service.
         authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
         return authentication
+
+
+def save_refresh_token_to_ssm(oauth_tokens):
+    try:
+        import boto3
+        LOGGER.info(f"saving refresh token to SSM now at: {CONFIG['refresh_token_ssm_param']}")
+
+        _ssm = boto3.client("ssm")
+        put_param_output: dict = _ssm.put_parameter(Name=CONFIG['refresh_token_ssm_param'], Value=oauth_tokens.refresh_token, Overwrite=True)
+
+        LOGGER.info(f"put_param_output: {str(put_param_output)}")
+    except ImportError as e:
+        LOGGER.warning("SSM param not saved to SSM due to error starting boto3.  Eventually, your refresh token will expire.")
+
 
 @bing_ads_error_handling
 def create_sdk_client(service, account_id):
