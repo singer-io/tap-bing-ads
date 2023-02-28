@@ -1062,11 +1062,17 @@ async def do_sync_all_accounts(account_ids, catalog):
         LOGGER.info('Syncing Accounts')
         sync_accounts_stream(account_ids, selected_streams['accounts'])
 
-    sync_account_data_tasks = [
-        sync_account_data(account_id, catalog, selected_streams)
-        for account_id in account_ids
-    ]
-    await asyncio.gather(*sync_account_data_tasks)
+    for stream, catalog_entry in selected_streams.items():
+        LOGGER.info('Syncing %s', stream)
+
+        sync_account_data_tasks = [
+            sync_account_data(account_id,
+                              catalog,
+                              {stream: catalog_entry})
+            for account_id in account_ids
+        ]
+        await asyncio.gather(*sync_account_data_tasks)
+
 
 async def main_impl():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
