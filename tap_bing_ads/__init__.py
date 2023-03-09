@@ -63,7 +63,7 @@ ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z0-9]+)'
 def should_retry_httperror(exception):
     """ Return true if exception is required to retry otherwise return false """
     try:
-        if isinstance(exception, ConnectionError) or isinstance(exception, ssl.SSLError) or isinstance(exception, suds.transport.TransportError) or isinstance(exception, socket.timeout) or type(exception) == URLError: # pylint: disable=consider-merging-isinstance,no-else-return)
+        if isinstance(exception, ConnectionError) or isinstance(exception, ssl.SSLError) or isinstance(exception, suds.transport.TransportError) or isinstance(exception, socket.timeout) or type(exception) == URLError or isinstance(exception, InternalServerError): # pylint: disable=consider-merging-isinstance,no-else-return)
             return True
         elif (type(exception) == Exception and exception.args[0][0] == 408) or exception.code == 408:
             # A 408 Request Timeout is an HTTP response status code that indicates the server didn't receive a complete
@@ -96,6 +96,9 @@ def get_user_agent():
 class InvalidDateRangeEnd(Exception):
     pass
 
+class InternalServerError(Exception):
+    pass
+
 def log_service_call(service_method, account_id):
     def wrapper(*args, **kwargs): # pylint: disable=inconsistent-return-statements
         log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
@@ -116,9 +119,9 @@ def log_service_call(service_method, account_id):
                     if any(invalid_date_range_end_errors):
                         raise InvalidDateRangeEnd(invalid_date_range_end_errors) from e
                     LOGGER.info('Caught exception for account: %s', account_id)
-                    raise Exception(operation_errors) from e
+                    raise InternalServerError(operation_errors) from e
                 if hasattr(e.fault.detail, 'AdApiFaultDetail'):
-                    raise Exception(e.fault.detail.AdApiFaultDetail.Errors) from e
+                    raise InternalServerError(e.fault.detail.AdApiFaultDetail.Errors) from e
 
     return wrapper
 
