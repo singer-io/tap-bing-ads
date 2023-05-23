@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.2.2
+  * Dependabot update [#109](https://github.com/singer-io/tap-bing-ads/pull/109)
+
 ## 2.2.1
   * Prefer new authentication scope for the access_token request [#99](https://github.com/singer-io/tap-bing-ads/pull/99)
 
