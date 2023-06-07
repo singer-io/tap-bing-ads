@@ -23,18 +23,6 @@ class BingAdsBaseTest(BaseCase):
     Setup expectations for test sub classes
     Run discovery for as a prerequisite for most tests
     """
-    AUTOMATIC_FIELDS = "automatic"
-    REPLICATION_KEYS = "valid-replication-keys"
-    PRIMARY_KEYS = "table-key-properties"
-    FOREIGN_KEYS = "table-foreign-key-properties"
-    REPLICATION_METHOD = "forced-replication-method"
-    API_LIMIT = "max-row-limit"
-    INCREMENTAL = "INCREMENTAL"
-    FULL_TABLE = "FULL_TABLE"
-    START_DATE_FORMAT = "%Y-%m-%dT00:00:00Z"
-
-    BOOKMARK_COMPARISON_FORMAT = "%Y-%m-%dT00:00:00+00:00"
-    DEFAULT_CONVERSION_WINDOW = -30 # days
     REQUIRED_KEYS = "required_keys"
 
     @staticmethod
@@ -99,26 +87,26 @@ class BingAdsBaseTest(BaseCase):
         }
 
         goals_report = copy.deepcopy(default_report)
-        goals_report[BaseCase.REQUIRED_KEYS] = {'Goal', 'TimePeriod'}
+        goals_report[BingAdsBaseTest.REQUIRED_KEYS] = {'Goal', 'TimePeriod'}
 
         audience_report = copy.deepcopy(default_report)
-        audience_report[BaseCase.REQUIRED_KEYS] = {'AudienceId'}
+        audience_report[BingAdsBaseTest.REQUIRED_KEYS] = {'AudienceId'}
 
         geographic_report = copy.deepcopy(default_report)
-        geographic_report[BaseCase.REQUIRED_KEYS] = {'AccountName'}
+        geographic_report[BingAdsBaseTest.REQUIRED_KEYS] = {'AccountName'}
 
         search_report = copy.deepcopy(default_report)
-        search_report[BaseCase.REQUIRED_KEYS] = {'SearchQuery'}
+        search_report[BingAdsBaseTest.REQUIRED_KEYS] = {'SearchQuery'}
 
         # BUG_SRCE-4578 (https://stitchdata.atlassian.net/browse/SRCE-4578)
         #               'Impressions', 'Ctr', 'Clicks' shouldn't be automatic
         extension_report = copy.deepcopy(default_report)
-        extension_report[BaseCase.REQUIRED_KEYS] = {
+        extension_report[BingAdsBaseTest.REQUIRED_KEYS] = {
             'AdExtensionId', 'AdExtensionPropertyValue', 'AdExtensionType', 'AdExtensionTypeId'
         }
 
         age_gender_report = copy.deepcopy(default_report)
-        age_gender_report[BaseCase.REQUIRED_KEYS] = {'AccountName', 'AdGroupName', 'AgeGroup', 'Gender'}
+        age_gender_report[BingAdsBaseTest.REQUIRED_KEYS] = {'AccountName', 'AdGroupName', 'AgeGroup', 'Gender'}
 
         return {
             "accounts": accounts_meta,

@@ -11,7 +11,13 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
     def name():
         return "tap_tester_bing_ads_all_fields_test"
     def streams_to_test(self):
-        streams_to_exclude={'ad_group_performance_report','campaign_performance_report','goals_and_funnels_report'} 
+        streams_to_exclude={'ad_group_performance_report','campaign_performance_report','goals_and_funnels_report'}
+        """
+        TODO
+        Excluded the ad_group and campaign report streams, has the Exclusion's file doesn't have the latest exclusions,
+        to be removed after TDL-23223 is fixed
+        Goals stream has no active data
+        """
         return self.expected_stream_names().difference(streams_to_exclude)
 
     def missing_fields(self):
@@ -44,7 +50,7 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
                  },
             'ad_groups':{
                 'CpvBid',
-                'AdGroupType',
+                'AdGroupType',#Talend Data Loader TDL-23228 -- data present in fronend but not returned in synced records
                 'MultimediaAdsBidAdjustment',
                 'AdScheduleUseSearcherTimeZone',
                 'CpmBid'
