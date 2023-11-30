@@ -164,7 +164,8 @@ def get_authentication():
         authentication = OAuthWebAuthCodeGrant(
             CONFIG['oauth_client_id'],
             CONFIG['oauth_client_secret'],
-            '') ## redirect URL not needed for refresh token
+            '',
+            tenant=CONFIG.get('tenant', 'common')) ## redirect URL not needed for refresh token
         # Retrieves OAuth access and refresh tokens from the Microsoft Account authorization service.
         authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
         return authentication
@@ -173,7 +174,8 @@ def get_authentication():
             CONFIG['oauth_client_id'],
             CONFIG['oauth_client_secret'],
             '',
-            oauth_scope='bingads.manage') ## redirect URL not needed for refresh token
+            oauth_scope='bingads.manage',
+            tenant=CONFIG.get('tenant', 'common')) ## redirect URL not needed for refresh token
         # Retrieves OAuth access and refresh tokens from the Microsoft Account authorization service.
         authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
         return authentication
