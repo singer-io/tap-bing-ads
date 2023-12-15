@@ -1,10 +1,9 @@
+import base
 import datetime
 import dateutil.parser
 import pytz
 
-import tap_tester.connections as connections
-import tap_tester.menagerie   as menagerie
-import tap_tester.runner      as runner
+from tap_tester import connections, menagerie, runner
 
 from base import BingAdsBaseTest
 
@@ -178,6 +177,7 @@ class TestBingAdsBookmarksReports(BingAdsBaseTest):
 
         return stream_to_calculated_bookmark_value
 
+    @base.skipUntilDone("TDL-24648")
     def test_run(self):
         """
         Test is parametrized to account for the exclusions in some report streams.
