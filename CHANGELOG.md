@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.2.1
+## 2.3.0
   *Updates to run on python 3.11.7 [#113](https://github.com/singer-io/tap-bing-ads/pull/113)
 
 ## 2.2.1
