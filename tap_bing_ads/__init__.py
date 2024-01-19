@@ -159,7 +159,7 @@ def create_sdk_client(service, account_id):
                 service, account_id)
 
     if CONFIG.get('require_live_connect', 'True') == 'True':
-        oauth_scope = 'bingads.manage'
+        oauth_scope = 'msads.manage'#'bingads.manage'
     else:
         oauth_scope = 'msads.manage'
 
