@@ -8,10 +8,6 @@ import tap_tester.menagerie   as menagerie
 import tap_tester.runner      as runner
 from base import BingAdsBaseTest
 
-import singer
-from singer import metadata
-LOGGER = singer.get_logger()
-
 
 class BingAdsSyncRows(BingAdsBaseTest):
 
