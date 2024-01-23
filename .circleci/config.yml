@@ -4,7 +4,7 @@ orbs:
 jobs:
   build:
     docker:
-      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
+      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester-3-11-dev
     steps:
       - checkout
       - run:
@@ -12,20 +12,19 @@ jobs:
           command: |
             python3 -mvenv /usr/local/share/virtualenvs/tap-bing-ads
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
-            pip install -U 'pip<19.2' 'setuptools<51.0.0'
+            pip install -U pip 'setuptools<51.0.0'
             pip install .[test]
       - run:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
-            pylint tap_bing_ads -d missing-docstring,line-too-long,invalid-name,super-with-arguments,return-in-init,too-many-arguments,deprecated-method,consider-using-f-string,too-many-lines,unidiomatic-typecheck,consider-using-generator
+            pylint tap_bing_ads -d missing-docstring,line-too-long,invalid-name,super-with-arguments,return-in-init,too-many-arguments,deprecated-method,consider-using-f-string,too-many-lines,unidiomatic-typecheck,consider-using-generator,broad-exception-raised
       - run:
           name: 'Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
-            pip install nose coverage
-            nosetests --with-coverage --cover-erase --cover-package=tap_bing_ads --cover-html-dir=htmlcov tests/unittests
-            coverage html
+            pip install nose2 parameterized nose2[coverage_plugin]>=0.6.5
+            nose2 --with-coverage -v -s tests/unittests
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:

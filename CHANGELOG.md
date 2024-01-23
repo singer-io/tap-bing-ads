@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.3.0
+  *Updates to run on python 3.11.7 [#113](https://github.com/singer-io/tap-bing-ads/pull/113)
+
 ## 2.2.1
   * Prefer new authentication scope for the access_token request [#99](https://github.com/singer-io/tap-bing-ads/pull/99)
 
