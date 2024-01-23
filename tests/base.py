@@ -12,6 +12,19 @@ from datetime import timezone as tz
 from tap_tester import connections, menagerie, runner, LOGGER
 from tap_tester.base_case import BaseCase
 
+from tap_tester.jira_client import JiraClient as jira_client
+from tap_tester.jira_client import CONFIGURATION_ENVIRONMENT as jira_config
+
+JIRA_CLIENT = jira_client({**jira_config})
+
+def skipUntilDone(jira_ticket):
+
+    def wrap(test_method):
+        is_done = JIRA_CLIENT.get_status_category(jira_ticket) == "done"
+        return BaseCase.skipUnless(is_done, jira_ticket)(test_method)
+
+    return wrap
+
 def backoff_wait_times():
     """Create a generator of wait times as [30, 60, 120, 240, 480, ...]"""
     return backoff.expo(factor=30)
@@ -41,6 +54,9 @@ class BingAdsBaseTest(BaseCase):
     DEFAULT_CONVERSION_WINDOW = -30 # days
     REQUIRED_KEYS = "required_keys"
 
+    # respect tap-bing-ads data retention window by looking back a maximum of about 3 years
+    start_date = dt.strftime(dt.now() - timedelta(days=365*3), "%Y-%m-%dT00:00:00Z")
+
     @staticmethod
     def tap_name():
         """The name of the tap"""
@@ -54,7 +70,8 @@ class BingAdsBaseTest(BaseCase):
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
-            'start_date': '2020-10-01T00:00:00Z',
+            # 'start_date': '2020-10-01T00:00:00Z',  # original start_date
+            'start_date': self.start_date,
             'customer_id': '163875182',
             'account_ids': '163078754,140168565,71086605',
             # 'conversion_window': '-15',  # advanced option
@@ -63,13 +80,6 @@ class BingAdsBaseTest(BaseCase):
         # cid=42183085 aid=163078754 uid=71069166 (Stitch)
         # cid=42183085 aid=140168565 uid=71069166 (TestAccount)
 
-        if original:
-            return return_value
-
-        # This test needs the new connections start date to be larger than the default
-        assert self.start_date > return_value["start_date"]
-
-        return_value["start_date"] = self.start_date
         return return_value
 
     @staticmethod

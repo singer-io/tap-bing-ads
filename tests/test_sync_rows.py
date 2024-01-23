@@ -44,7 +44,8 @@ class BingAdsSyncRows(BingAdsBaseTest):
     def test_run(self):
         # Select our catalogs
         # found_catalogs = menagerie.get_catalogs(conn_id)
-        # our_catalogs = [c for c in found_catalogs if c.get('tap_stream_id') in self.expected_sync_streams()]
+        # our_catalogs = [c for c in found_catalogs
+        #                 if c.get('tap_stream_id') in self.expected_sync_streams()]
         # for c in our_catalogs:
         #     c_annotated = menagerie.get_annotated_schema(conn_id, c['stream_id'])
         #     c_metadata = metadata.to_map(c_annotated['metadata'])
@@ -56,7 +57,8 @@ class BingAdsSyncRows(BingAdsBaseTest):
         menagerie.set_state(conn_id, {})
         # Select a stream
         found_catalogs = menagerie.get_catalogs(conn_id)
-        our_catalogs = [catalog for catalog in found_catalogs if catalog.get('tap_stream_id') in self.expected_sync_streams()]
+        our_catalogs = [catalog for catalog in found_catalogs
+                        if catalog.get('tap_stream_id') in self.expected_sync_streams()]
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=False)
 
         # Run a sync job using orchestrator
@@ -86,6 +88,6 @@ class BingAdsSyncRows(BingAdsBaseTest):
                     self.assertTrue(stream not in bookmarks)
 
                 else:
-                    raise NotImplementedError(
-                        "stream {} has an invalid replication method {}".format(stream, replication_method)
+                    raise NotImplementedError("stream {} has an invalid replication "
+                                              "method {}".format(stream, replication_method)
                     )
