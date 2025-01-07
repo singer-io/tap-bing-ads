@@ -535,11 +535,8 @@ def snakecase(string):
         return string
     return (string[0]).lower() + re.sub(r"[A-Z]", lambda matched: '_' + (matched.group(0)).lower(), string[1:])
 
-def snakecase_to_pascalcase(string):
-    string = str(string)
-    if not string:
-        return string
-
+def pascalcase(string):
+    string = snakecase(string)
     return ''.join(word.title() for word in string.split('_'))
 
 
@@ -908,7 +905,7 @@ async def sync_report(client, account_id, report_stream):
 async def sync_report_interval(client, account_id, report_stream,
                                start_date, end_date):
     state_key = '{}_{}'.format(account_id, report_stream.stream)
-    report_name = snakecase_to_pascalcase(report_stream.stream)
+    report_name = pascalcase(report_stream.stream)
 
     report_schema = get_report_schema(client, report_name)
     singer.write_schema(report_stream.stream, report_schema, [])
