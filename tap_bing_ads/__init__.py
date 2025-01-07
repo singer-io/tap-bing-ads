@@ -533,7 +533,7 @@ def snakecase(string):
     string = re.sub(r"[\-\.\s]", '_', str(string))
     if not string:
         return string
-    return lowercase(string[0]) + re.sub(r"[A-Z]", lambda matched: '_' + lowercase(matched.group(0)), string[1:])
+    return (string[0]).lower() + re.sub(r"[A-Z]", lambda matched: '_' + (matched.group(0)).lower(), string[1:])
 
 def snakecase_to_pascalcase(string):
     string = str(string)
@@ -877,7 +877,7 @@ def get_report_interval(state_key):
 
 async def sync_report(client, account_id, report_stream):
     report_max_days = int(CONFIG.get('report_max_days', 30)) # Date window size
-
+    import ipdb; ipdb.set_trace()
     state_key = '{}_{}'.format(account_id, report_stream.stream)
 
     start_date, end_date = get_report_interval(state_key)
@@ -908,8 +908,6 @@ async def sync_report(client, account_id, report_stream):
 async def sync_report_interval(client, account_id, report_stream,
                                start_date, end_date):
     state_key = '{}_{}'.format(account_id, report_stream.stream)
-    import ipdb; ipdb.set_trace()
-    1+1
     report_name = snakecase_to_pascalcase(report_stream.stream)
 
     report_schema = get_report_schema(client, report_name)
