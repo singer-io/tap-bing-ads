@@ -877,7 +877,7 @@ def get_report_interval(state_key):
 
 async def sync_report(client, account_id, report_stream):
     report_max_days = int(CONFIG.get('report_max_days', 30)) # Date window size
-    import ipdb; ipdb.set_trace()
+
     state_key = '{}_{}'.format(account_id, report_stream.stream)
 
     start_date, end_date = get_report_interval(state_key)
