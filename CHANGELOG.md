@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.3.1
+  * Remove stringcase dependency [#114](https://github.com/singer-io/tap-bing-ads/pull/114)
+
 ## 2.3.0
   *Updates to run on python 3.11.7 [#113](https://github.com/singer-io/tap-bing-ads/pull/113)
 
