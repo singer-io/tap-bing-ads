@@ -8,11 +8,11 @@ class TestStringCase(unittest.TestCase):
         self.assertEqual("clicks", snakecase("Clicks"))
         self.assertEqual("account_id", snakecase("accountId"))
         self.assertEqual("", snakecase(""))
-        self.assertEqual("none", snakecase(None))
+        self.assertEqual(None, snakecase(None))
 
     def test_pascal_case(self):
         self.assertEqual("AdGroupPerformanceReport", pascalcase("ad_group_performance_report"))
         self.assertEqual("Clicks", pascalcase("clicks"))
         self.assertEqual("AccountId", pascalcase("account_id"))
         self.assertEqual("", pascalcase(""))
-        self.assertEqual("None", pascalcase(None))
+        self.assertEqual(None, pascalcase(None))

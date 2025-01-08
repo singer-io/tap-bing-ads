@@ -531,17 +531,15 @@ def get_report_metadata(report_name, report_schema):
 
 def snakecase(camelstring):
     """Takes a CamelCase string and returns a snake_case string"""
-    string = str(camelstring)
-    if not string:
-        return string
-    return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', string).lower()
+    if not camelstring:
+        return camelstring
+    return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', camelstring).lower()
 
-def pascalcase(string):
+def pascalcase(snake_string):
     """Takes a snake_case string and returns a PascalCase string"""
-    string = str(string)
-    if not string:
-        return string
-    return ''.join(word.title() for word in string.split('_'))
+    if not snake_string:
+        return snake_string
+    return ''.join(word.title() for word in snake_string.split('_'))
 
 def discover_reports():
     # Discover mode for report streams
