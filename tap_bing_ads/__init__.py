@@ -529,16 +529,19 @@ def get_report_metadata(report_name, report_schema):
         lambda field: metadata_fn(report_name, field, required_fields),
         report_schema['properties']))
 
-def snakecase(string):
-    string = re.sub(r"[\-\.\s]", '_', str(string))
+def snakecase(camelstring):
+    """Takes a CamelCase string and returns a snake_case string"""
+    string = str(camelstring)
     if not string:
         return string
-    return (string[0]).lower() + re.sub(r"[A-Z]", lambda matched: '_' + (matched.group(0)).lower(), string[1:])
+    return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', string).lower()
 
 def pascalcase(string):
-    string = snakecase(string)
+    """Takes a snake_case string and returns a PascalCase string"""
+    string = str(string)
+    if not string:
+        return string
     return ''.join(word.title() for word in string.split('_'))
-
 
 def discover_reports():
     # Discover mode for report streams
