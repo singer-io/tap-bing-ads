@@ -19,7 +19,6 @@ import bingads
 from bingads import AuthorizationData, OAuthWebAuthCodeGrant, ServiceClient
 import suds
 from suds.sudsobject import asdict
-import stringcase
 import requests
 import arrow
 import backoff
@@ -530,6 +529,18 @@ def get_report_metadata(report_name, report_schema):
         lambda field: metadata_fn(report_name, field, required_fields),
         report_schema['properties']))
 
+def snakecase(camelstring):
+    """Takes a CamelCase string and returns a snake_case string"""
+    if not camelstring:
+        return camelstring
+    return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', camelstring).lower()
+
+def pascalcase(snake_string):
+    """Takes a snake_case string and returns a PascalCase string"""
+    if not snake_string:
+        return snake_string
+    return ''.join(word.title() for word in snake_string.split('_'))
+
 def discover_reports():
     # Discover mode for report streams
     report_streams = []
@@ -542,7 +553,7 @@ def discover_reports():
         match = re.match(report_column_regex, type_name)
         if match and match.groups()[0] in reports.REPORT_WHITELIST:
             report_name = match.groups()[0]
-            stream_name = stringcase.snakecase(report_name)
+            stream_name = snakecase(report_name)
             report_schema = get_report_schema(client, report_name)
             report_metadata = get_report_metadata(report_name, report_schema)
             report_stream_def = get_stream_def(
@@ -895,7 +906,7 @@ async def sync_report(client, account_id, report_stream):
 async def sync_report_interval(client, account_id, report_stream,
                                start_date, end_date):
     state_key = '{}_{}'.format(account_id, report_stream.stream)
-    report_name = stringcase.pascalcase(report_stream.stream)
+    report_name = pascalcase(report_stream.stream)
 
     report_schema = get_report_schema(client, report_name)
     singer.write_schema(report_stream.stream, report_schema, [])
@@ -1036,10 +1047,10 @@ async def sync_reports(account_id, catalog):
 
 async def sync_account_data(account_id, catalog, selected_streams):
     all_core_streams = {
-        stringcase.snakecase(o) + 's' for o in TOP_LEVEL_CORE_OBJECTS
+        snakecase(o) + 's' for o in TOP_LEVEL_CORE_OBJECTS
     }
     all_report_streams = {
-        stringcase.snakecase(r) for r in reports.REPORT_WHITELIST
+        snakecase(r) for r in reports.REPORT_WHITELIST
     }
 
     if len(all_core_streams & set(selected_streams)):
