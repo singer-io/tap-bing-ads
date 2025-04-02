@@ -33,8 +33,8 @@ REQUIRED_CONFIG_KEYS = [
     "start_date",
     "customer_id",
     "account_ids",
-    "oauth_client_id",
-    "oauth_client_secret",
+    "client_id",
+    "client_secret",
     "refresh_token",
     "developer_token",
 ]
@@ -161,16 +161,16 @@ def get_authentication():
     # Represents an OAuth authorization object implementing the authorization code grant flow for use in a web application.
     try:
         authentication = OAuthWebAuthCodeGrant(
-            CONFIG['oauth_client_id'],
-            CONFIG['oauth_client_secret'],
+            CONFIG['client_id'],
+            CONFIG['client_secret'],
             '') ## redirect URL not needed for refresh token
         # Retrieves OAuth access and refresh tokens from the Microsoft Account authorization service.
         authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
         return authentication
     except bingads.exceptions.OAuthTokenRequestException:
         authentication = OAuthWebAuthCodeGrant(
-            CONFIG['oauth_client_id'],
-            CONFIG['oauth_client_secret'],
+            CONFIG['client_id'],
+            CONFIG['client_secret'],
             '',
             oauth_scope='bingads.manage') ## redirect URL not needed for refresh token
         # Retrieves OAuth access and refresh tokens from the Microsoft Account authorization service.
