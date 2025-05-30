@@ -8,6 +8,7 @@ import re
 import io
 from datetime import datetime
 from zipfile import ZipFile
+import time
 
 import socket
 import ssl
@@ -29,6 +30,9 @@ from tap_bing_ads.exclusions import EXCLUSIONS
 LOGGER = singer.get_logger()
 REQUEST_TIMEOUT = 300
 
+# Generate run_id as Unix timestamp at tap startup
+RUN_ID = int(time.time())
+
 REQUIRED_CONFIG_KEYS = [
     "start_date",
     "customer_id",
@@ -44,7 +48,8 @@ TOP_LEVEL_CORE_OBJECTS = [
     'AdvertiserAccount',
     'Campaign',
     'AdGroup',
-    'Ad'
+    'Ad',
+    'Keyword'
 ]
 
 CONFIG = {}
@@ -381,6 +386,12 @@ def get_type_map(client):
 def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replication_keys=None):
     '''Generate schema with metadata for the given stream.'''
 
+    # Add run_id to schema properties
+    schema['properties']['run_id'] = {
+        'type': 'integer',
+        'description': 'Unix timestamp of when this tap run started'
+    }
+
     stream_def = {
         'tap_stream_id': stream_name,
         'stream': stream_name,
@@ -404,6 +415,9 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
     if replication_keys:
         for replication_key in replication_keys:
             mdata = metadata.write(mdata, ('properties', replication_key), 'inclusion', 'automatic')
+
+    # Mark run_id as automatic
+    mdata = metadata.write(mdata, ('properties', 'run_id'), 'inclusion', 'automatic')
 
     # For the report streams, we have some stream_metadata which have list fields to make automatic and a list of file exclusions.
     if stream_metadata:
@@ -451,6 +465,10 @@ def discover_core_objects():
     # Load Ad's schemas
     ad_schema = get_core_schema(client, 'Ad')
     core_object_streams.append(get_stream_def('ads', ad_schema, pks=['Id']))
+
+    # Load Keyword's schemas
+    keyword_schema = get_core_schema(client, 'Keyword')
+    core_object_streams.append(get_stream_def('keywords', keyword_schema, pks=['Id']))
 
     return core_object_streams
 
@@ -626,8 +644,13 @@ def get_selected_fields(catalog_item, exclude=None):
 def filter_selected_fields(selected_fields, obj):
     # Return only selected fields
     if selected_fields:
-        return {key:value for key, value in obj.items() if key in selected_fields}
-    return obj
+        filtered = {key:value for key, value in obj.items() if key in selected_fields}
+    else:
+        filtered = obj
+    
+    # Add run_id to every record
+    filtered['run_id'] = RUN_ID
+    return filtered
 
 def filter_selected_fields_many(selected_fields, objs):
     if selected_fields:
@@ -733,17 +756,34 @@ def sync_ads(client, selected_streams, ad_group_ids):
                 singer.write_records('ads', filter_selected_fields_many(selected_fields, ads))
                 counter.increment(len(ads))
 
+@bing_ads_error_handling
+def sync_keywords(client, selected_streams, ad_group_ids):
+    for ad_group_id in ad_group_ids:
+        response = client.GetKeywordsByAdGroupId(AdGroupId=ad_group_id)
+        response_dict = sobject_to_dict(response)
+
+        if 'Keyword' in response_dict:
+            selected_fields = get_selected_fields(selected_streams['keywords'])
+            singer.write_schema('keywords', get_core_schema(client, 'Keyword'), ['Id'])
+            with metrics.record_counter('keywords') as counter:
+                keywords = response_dict['Keyword']
+                singer.write_records('keywords', filter_selected_fields_many(selected_fields, keywords))
+                counter.increment(len(keywords))
+
 def sync_core_objects(account_id, selected_streams):
     client = create_sdk_client('CampaignManagementService', account_id)
 
     LOGGER.info('Syncing Campaigns for Account: %s', account_id)
     campaign_ids = sync_campaigns(client, account_id, selected_streams)
 
-    if campaign_ids and ('ad_groups' in selected_streams or 'ads' in selected_streams):
+    if campaign_ids and ('ad_groups' in selected_streams or 'ads' in selected_streams or 'keywords' in selected_streams):
         ad_group_ids = sync_ad_groups(client, account_id, campaign_ids, selected_streams)
         if 'ads' in selected_streams:
             LOGGER.info('Syncing Ads for Account: %s', account_id)
             sync_ads(client, selected_streams, ad_group_ids)
+        if 'keywords' in selected_streams:
+            LOGGER.info('Syncing Keywords for Account: %s', account_id)
+            sync_keywords(client, selected_streams, ad_group_ids)
 
 def type_report_row(row):
     # Check and convert report's field to valid type
