@@ -392,6 +392,13 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
         'description': 'Unix timestamp of when this tap run started'
     }
 
+    # Add AdGroupId to keywords schema
+    if stream_name == 'keywords':
+        schema['properties']['AdGroupId'] = {
+            'type': ['null', 'integer'],
+            'description': 'The ID of the ad group that contains the keyword'
+        }
+
     stream_def = {
         'tap_stream_id': stream_name,
         'stream': stream_name,
@@ -505,6 +512,11 @@ def get_report_schema(client, report_name):
         'format': 'date-time'
     }
 
+    properties['run_id'] = {
+        'type': 'integer',
+        'description': 'Unix timestamp of when this tap run started'
+    }
+
     return {
         'properties': properties,
         'additionalProperties': False,
@@ -539,9 +551,10 @@ def get_report_metadata(report_name, report_schema):
     if report_name in reports.REPORT_SPECIFIC_REQUIRED_FIELDS:
         required_fields = (
             reports.REPORT_REQUIRED_FIELDS +
-            reports.REPORT_SPECIFIC_REQUIRED_FIELDS[report_name])
+            reports.REPORT_SPECIFIC_REQUIRED_FIELDS[report_name] +
+            ['run_id'])
     else:
-        required_fields = reports.REPORT_REQUIRED_FIELDS
+        required_fields = reports.REPORT_REQUIRED_FIELDS + ['run_id']
 
     return list(map(
         lambda field: metadata_fn(report_name, field, required_fields),
@@ -767,6 +780,9 @@ def sync_keywords(client, selected_streams, ad_group_ids):
             singer.write_schema('keywords', get_core_schema(client, 'Keyword'), ['Id'])
             with metrics.record_counter('keywords') as counter:
                 keywords = response_dict['Keyword']
+                # Add AdGroupId to each keyword record
+                for keyword in keywords:
+                    keyword['AdGroupId'] = ad_group_id
                 singer.write_records('keywords', filter_selected_fields_many(selected_fields, keywords))
                 counter.increment(len(keywords))
 
@@ -886,6 +902,7 @@ def stream_report(stream_name, report_name, url, report_time):
                     for row in reader:
                         type_report_row(row)
                         row['_sdc_report_datetime'] = report_time
+                        row['run_id'] = RUN_ID
                         singer.write_record(stream_name, row)
                         counter.increment()
 
@@ -1038,7 +1055,7 @@ def build_report_request(client, account_id, report_stream, report_name,
     scope.AccountIds = {'long': [account_id]}
     report_request.Scope = scope
 
-    excluded_fields = ['_sdc_report_datetime']
+    excluded_fields = ['_sdc_report_datetime', 'run_id']
 
     selected_fields = get_selected_fields(report_stream,
                                           exclude=excluded_fields)
