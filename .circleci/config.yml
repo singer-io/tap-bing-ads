@@ -26,6 +26,7 @@ jobs:
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
             uv pip install pytest coverage parameterized
             coverage run -m pytest tests/unittests
+            coverage html
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:
