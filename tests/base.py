@@ -221,7 +221,7 @@ class BingAdsBaseTest(BaseCase):
 
     @backoff.on_exception(backoff_wait_times,
                           RetryableTapError,
-                          max_tries=3)
+                          max_tries=4)
     def run_check_mode(self, conn_id):
         # Run a check job using orchestrator (discovery)
         check_job_name = runner.run_check_mode(self, conn_id)
@@ -258,7 +258,7 @@ class BingAdsBaseTest(BaseCase):
 
     @backoff.on_exception(backoff_wait_times,
                           RetryableTapError,
-                          max_tries=3)
+                          max_tries=4)
     def run_and_verify_sync(self, conn_id, state):
         """
         Run a sync job and make sure it exited properly.
