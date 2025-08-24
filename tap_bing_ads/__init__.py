@@ -909,7 +909,8 @@ async def sync_report_interval(client, account_id, report_stream,
     report_name = pascalcase(report_stream.stream)
 
     report_schema = get_report_schema(client, report_name)
-    singer.write_schema(report_stream.stream, report_schema, [])
+    singer.write_schema(report_stream.stream, report_schema,
+                        metadata.get(metadata.to_map(report_stream.metadata), (), 'table-key-properties') or [])
 
     report_time = arrow.get().isoformat()
 
