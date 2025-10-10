@@ -59,6 +59,13 @@ DEFAULT_USER_AGENT = 'Singer.io Bing Ads Tap'
 
 ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z0-9]+)'
 
+PARENT_MAP = {
+    'campaigns': 'accounts',
+    'ad_groups': 'campaigns',
+    'ads': 'ad_groups',
+    'reports': 'accounts'
+}
+
 def should_retry_httperror(exception):
     """ Return true if exception is required to retry otherwise return false """
     try:
@@ -378,7 +385,14 @@ def get_type_map(client):
 
     return type_map
 
-def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replication_keys=None):
+def get_stream_def(
+        stream_name,
+        schema,
+        stream_metadata=None,
+        pks=None,
+        replication_keys=None,
+        parent_stream_id=None
+    ): # pylint: disable=too-many-positional-arguments
     '''Generate schema with metadata for the given stream.'''
 
     stream_def = {
@@ -399,6 +413,9 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
                 replication_method = 'INCREMENTAL' if replication_keys else 'FULL_TABLE'
             )
         )
+
+    if parent_stream_id:
+        mdata = metadata.write(mdata, (), 'parent-tap-stream-id', parent_stream_id)
 
     # Marking replication key as automatic
     if replication_keys:
@@ -430,27 +447,35 @@ def discover_core_objects():
 
     # Load Account's schemas
     account_schema = get_core_schema(client, 'AdvertiserAccount')
-    core_object_streams.append(
-        # After new standard metadata changes we are getting Id as primary key only
-        # while earlier we were getting Id and LastModifiedTime both because of the coding mistake
-        # but we are writing Id only while writing the schema (func: sync_accounts_stream) in sync mode,
-        # Hence we are keeping ID only in pks.
-        get_stream_def('accounts', account_schema, pks=['Id'], replication_keys=['LastModifiedTime']))
 
     LOGGER.info('Initializing CampaignManagementService client - Loading WSDL')
     client = CustomServiceClient('CampaignManagementService')
 
     # Load Campaign's schemas
     campaign_schema = get_core_schema(client, 'Campaign')
-    core_object_streams.append(get_stream_def('campaigns', campaign_schema, pks=['Id']))
 
     # Load AdGroup's schemas
     ad_group_schema = get_core_schema(client, 'AdGroup')
-    core_object_streams.append(get_stream_def('ad_groups', ad_group_schema, pks=['Id']))
 
     # Load Ad's schemas
     ad_schema = get_core_schema(client, 'Ad')
-    core_object_streams.append(get_stream_def('ads', ad_schema, pks=['Id']))
+
+    # After new standard metadata changes we are getting Id as primary key only
+    # while earlier we were getting Id and LastModifiedTime both because of the coding mistake
+    # but we are writing Id only while writing the schema (func: sync_accounts_stream) in sync mode,
+    # Hence we are keeping ID only in pks.
+    for stream_name, schema, pks, replication_keys in [
+        ('accounts', account_schema, ['Id'], ['LastModifiedTime']),
+        ('campaigns', campaign_schema, ['Id'], None),
+        ('ad_groups', ad_group_schema, ['Id'], None),
+        ('ads', ad_schema, ['Id'], None),
+    ]:
+        parent_stream_id = PARENT_MAP.get(stream_name)
+        core_object_streams.append(
+            get_stream_def(
+                stream_name, schema, pks=pks, replication_keys=replication_keys, parent_stream_id=parent_stream_id
+            )
+        )
 
     return core_object_streams
 
@@ -548,6 +573,7 @@ def discover_reports():
     client = CustomServiceClient('ReportingService')
     type_map = get_type_map(client)
     report_column_regex = r'^(?!ArrayOf)(.+Report)Column$'
+    parent_stream_id = PARENT_MAP.get("reports")
 
     for type_name in type_map:
         match = re.match(report_column_regex, type_name)
@@ -559,7 +585,8 @@ def discover_reports():
             report_stream_def = get_stream_def(
                 stream_name,
                 report_schema,
-                stream_metadata=report_metadata)
+                stream_metadata=report_metadata,
+                parent_stream_id=parent_stream_id)
             report_streams.append(report_stream_def)
 
     return report_streams
@@ -779,6 +806,7 @@ def generate_poll_report(client, request_id):
     return client.PollGenerateReport(request_id)
 
 async def poll_report(client, account_id, report_name, start_date, end_date, request_id):
+    # pylint: disable=too-many-positional-arguments
     # Get download_url of generated report
     download_url = None
     with metrics.job_timer('generate_report'):
@@ -970,6 +998,7 @@ async def sync_report_interval(client, account_id, report_stream,
 @bing_ads_error_handling
 def get_report_request_id(client, account_id, report_stream, report_name,
                           start_date, end_date, state_key, force_refresh=False):
+    # pylint: disable=too-many-positional-arguments
     saved_request_id = singer.get_bookmark(STATE, state_key, 'request_id')
     if not force_refresh and saved_request_id is not None:
         LOGGER.info('Resuming polling for account %s: %s',
@@ -985,6 +1014,7 @@ def get_report_request_id(client, account_id, report_stream, report_name,
 @bing_ads_error_handling
 def build_report_request(client, account_id, report_stream, report_name,
                          start_date, end_date):
+    # pylint: disable=too-many-positional-arguments
     LOGGER.info('Syncing report for account %s: %s - from %s to %s',
                 account_id, report_name, start_date, end_date)
 
