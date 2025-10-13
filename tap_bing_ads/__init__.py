@@ -392,7 +392,7 @@ def get_stream_def(
         pks=None,
         replication_keys=None,
         parent_stream_id=None
-    ): # pylint: disable=too-many-positional-arguments
+    ):
     '''Generate schema with metadata for the given stream.'''
 
     stream_def = {
@@ -806,7 +806,6 @@ def generate_poll_report(client, request_id):
     return client.PollGenerateReport(request_id)
 
 async def poll_report(client, account_id, report_name, start_date, end_date, request_id):
-    # pylint: disable=too-many-positional-arguments
     # Get download_url of generated report
     download_url = None
     with metrics.job_timer('generate_report'):
@@ -998,7 +997,6 @@ async def sync_report_interval(client, account_id, report_stream,
 @bing_ads_error_handling
 def get_report_request_id(client, account_id, report_stream, report_name,
                           start_date, end_date, state_key, force_refresh=False):
-    # pylint: disable=too-many-positional-arguments
     saved_request_id = singer.get_bookmark(STATE, state_key, 'request_id')
     if not force_refresh and saved_request_id is not None:
         LOGGER.info('Resuming polling for account %s: %s',
@@ -1014,7 +1012,6 @@ def get_report_request_id(client, account_id, report_stream, report_name,
 @bing_ads_error_handling
 def build_report_request(client, account_id, report_stream, report_name,
                          start_date, end_date):
-    # pylint: disable=too-many-positional-arguments
     LOGGER.info('Syncing report for account %s: %s - from %s to %s',
                 account_id, report_name, start_date, end_date)
 
