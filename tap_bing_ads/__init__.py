@@ -443,39 +443,53 @@ def discover_core_objects():
     core_object_streams = []
 
     LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
-    client = CustomServiceClient('CustomerManagementService')
-
-    # Load Account's schemas
-    account_schema = get_core_schema(client, 'AdvertiserAccount')
+    customer_client = CustomServiceClient('CustomerManagementService')
 
     LOGGER.info('Initializing CampaignManagementService client - Loading WSDL')
-    client = CustomServiceClient('CampaignManagementService')
+    campaign_client = CustomServiceClient('CampaignManagementService')
 
-    # Load Campaign's schemas
-    campaign_schema = get_core_schema(client, 'Campaign')
-
-    # Load AdGroup's schemas
-    ad_group_schema = get_core_schema(client, 'AdGroup')
-
-    # Load Ad's schemas
-    ad_schema = get_core_schema(client, 'Ad')
+    stream_configs = [
+        {
+            'name': 'accounts',
+            'client': customer_client,
+            'object_type': 'AdvertiserAccount',
+            'pks': ['Id'],
+            'replication_keys': ['LastModifiedTime']
+        },
+        {
+            'name': 'campaigns',
+            'client': campaign_client,
+            'object_type': 'Campaign',
+            'pks': ['Id'],
+        },
+        {
+            'name': 'ad_groups',
+            'client': campaign_client,
+            'object_type': 'AdGroup',
+            'pks': ['Id'],
+        },
+        {
+            'name': 'ads',
+            'client': campaign_client,
+            'object_type': 'Ad',
+            'pks': ['Id'],
+        }
+    ]
 
     # After new standard metadata changes we are getting Id as primary key only
     # while earlier we were getting Id and LastModifiedTime both because of the coding mistake
     # but we are writing Id only while writing the schema (func: sync_accounts_stream) in sync mode,
     # Hence we are keeping ID only in pks.
-    for stream_name, schema, pks, replication_keys in [
-        ('accounts', account_schema, ['Id'], ['LastModifiedTime']),
-        ('campaigns', campaign_schema, ['Id'], None),
-        ('ad_groups', ad_group_schema, ['Id'], None),
-        ('ads', ad_schema, ['Id'], None),
-    ]:
-        parent_stream_id = PARENT_MAP.get(stream_name)
-        core_object_streams.append(
-            get_stream_def(
-                stream_name, schema, pks=pks, replication_keys=replication_keys, parent_stream_id=parent_stream_id
-            )
+    for config in stream_configs:
+        schema = get_core_schema(config['client'], config['object_type'])
+        stream_def = get_stream_def(
+            config['name'],
+            schema,
+            pks=config['pks'],
+            replication_keys=config.get('replication_keys'),
+            parent_stream_id=PARENT_MAP.get(config['name'])
         )
+        core_object_streams.append(stream_def)
 
     return core_object_streams
 
