@@ -23,6 +23,7 @@ class BingAdsBaseTest(BaseCase):
     Run discovery for as a prerequisite for most tests
     """
     REQUIRED_KEYS = "required_keys"
+    PARENT_TAP_STREAM_ID = "parent-tap-stream-id"
 
     # respect tap-bing-ads data retention window by looking back a maximum of about 3 years
     start_date = dt.strftime(dt.now() - timedelta(days=365*3), "%Y-%m-%dT00:00:00Z")
@@ -73,7 +74,8 @@ class BingAdsBaseTest(BaseCase):
             BaseCase.PRIMARY_KEYS: set(), # "_sdc_report_datetime" is added by tap
             BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
             BaseCase.REPLICATION_KEYS: {"TimePeriod"}, # in sync but not in catalog TDL-15816
-            BaseCase.FOREIGN_KEYS: {"AccountId"}
+            BaseCase.FOREIGN_KEYS: {"AccountId"},
+            BingAdsBaseTest.PARENT_TAP_STREAM_ID: "accounts"
         }
         accounts_meta = {
             BaseCase.PRIMARY_KEYS: {"Id"},
@@ -106,18 +108,27 @@ class BingAdsBaseTest(BaseCase):
                                                             'AgeGroup',
                                                             'Gender'}
 
+        campaigns_meta = copy.deepcopy(default)
+        campaigns_meta[BingAdsBaseTest.PARENT_TAP_STREAM_ID] = "accounts"
+
+        adgroups_meta = copy.deepcopy(default)
+        adgroups_meta[BingAdsBaseTest.PARENT_TAP_STREAM_ID] = "campaigns"
+
+        ads_meta = copy.deepcopy(default)
+        ads_meta[BingAdsBaseTest.PARENT_TAP_STREAM_ID] = "ad_groups"
+
         return {
             "accounts": accounts_meta,
             "ad_extension_detail_report": extension_report, # BUG_DOC-1504
             # https://stitchdata.atlassian.net/browse/DOC-1504
             "ad_group_performance_report": default_report, # BUG_DOC-1567
-            "ad_groups": default,
+            "ad_groups": adgroups_meta,
             "ad_performance_report": default_report,
-            "ads": default,
+            "ads": ads_meta,
             "age_gender_audience_report": age_gender_report, # BUG_DOC-1567
             "audience_performance_report": audience_report, # BUG_DOC-1504
             "campaign_performance_report": default_report,
-            "campaigns": default,
+            "campaigns": campaigns_meta,
             "geographic_performance_report": geographic_report,
             "goals_and_funnels_report": goals_report,
             "keyword_performance_report": default_report,
@@ -196,3 +207,12 @@ class BingAdsBaseTest(BaseCase):
         if not stream:
             return auto_fields
         return auto_fields[stream]
+
+    def expected_parent_tap_stream(self, stream=None):
+        """return a dictionary with key of table name and value of parent stream"""
+        parent_stream = {
+            table: properties.get(self.PARENT_TAP_STREAM_ID, None)
+            for table, properties in self.expected_metadata().items()}
+        if not stream:
+            return parent_stream
+        return parent_stream[stream]
