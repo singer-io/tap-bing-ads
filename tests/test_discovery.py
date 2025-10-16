@@ -52,7 +52,7 @@ class DiscoveryTest(DiscoveryTest, BingAdsBaseTest):
                     self.assertIn(self.PARENT_TAP_STREAM_ID, stream_metadata)
                     self.assertTrue(isinstance(actual_parent_tap_stream_id, str))
 
-                # verify actual replication key(s) match expected
+                # verify actual parent stream key(s) match expected
                 with self.subTest(msg="validating parent tap stream id"):
                     self.assertEqual(expected_parent_tap_stream_id, actual_parent_tap_stream_id,
                                         logging=f"verify {expected_parent_tap_stream_id} "
