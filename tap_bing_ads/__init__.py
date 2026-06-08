@@ -59,6 +59,13 @@ DEFAULT_USER_AGENT = 'Singer.io Bing Ads Tap'
 
 ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z0-9]+)'
 
+PARENT_MAP = {
+    'campaigns': 'accounts',
+    'ad_groups': 'campaigns',
+    'ads': 'ad_groups',
+    'reports': 'accounts'
+}
+
 def should_retry_httperror(exception):
     """ Return true if exception is required to retry otherwise return false """
     try:
@@ -378,7 +385,14 @@ def get_type_map(client):
 
     return type_map
 
-def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replication_keys=None):
+def get_stream_def(
+        stream_name,
+        schema,
+        stream_metadata=None,
+        pks=None,
+        replication_keys=None,
+        parent_stream_id=None
+    ):
     '''Generate schema with metadata for the given stream.'''
 
     stream_def = {
@@ -399,6 +413,9 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
                 replication_method = 'INCREMENTAL' if replication_keys else 'FULL_TABLE'
             )
         )
+
+    if parent_stream_id:
+        mdata = metadata.write(mdata, (), 'parent-tap-stream-id', parent_stream_id)
 
     # Marking replication key as automatic
     if replication_keys:
@@ -426,31 +443,53 @@ def discover_core_objects():
     core_object_streams = []
 
     LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
-    client = CustomServiceClient('CustomerManagementService')
-
-    # Load Account's schemas
-    account_schema = get_core_schema(client, 'AdvertiserAccount')
-    core_object_streams.append(
-        # After new standard metadata changes we are getting Id as primary key only
-        # while earlier we were getting Id and LastModifiedTime both because of the coding mistake
-        # but we are writing Id only while writing the schema (func: sync_accounts_stream) in sync mode,
-        # Hence we are keeping ID only in pks.
-        get_stream_def('accounts', account_schema, pks=['Id'], replication_keys=['LastModifiedTime']))
+    customer_client = CustomServiceClient('CustomerManagementService')
 
     LOGGER.info('Initializing CampaignManagementService client - Loading WSDL')
-    client = CustomServiceClient('CampaignManagementService')
+    campaign_client = CustomServiceClient('CampaignManagementService')
 
-    # Load Campaign's schemas
-    campaign_schema = get_core_schema(client, 'Campaign')
-    core_object_streams.append(get_stream_def('campaigns', campaign_schema, pks=['Id']))
+    stream_configs = [
+        {
+            'name': 'accounts',
+            'client': customer_client,
+            'object_type': 'AdvertiserAccount',
+            'pks': ['Id'],
+            'replication_keys': ['LastModifiedTime']
+        },
+        {
+            'name': 'campaigns',
+            'client': campaign_client,
+            'object_type': 'Campaign',
+            'pks': ['Id'],
+        },
+        {
+            'name': 'ad_groups',
+            'client': campaign_client,
+            'object_type': 'AdGroup',
+            'pks': ['Id'],
+        },
+        {
+            'name': 'ads',
+            'client': campaign_client,
+            'object_type': 'Ad',
+            'pks': ['Id'],
+        }
+    ]
 
-    # Load AdGroup's schemas
-    ad_group_schema = get_core_schema(client, 'AdGroup')
-    core_object_streams.append(get_stream_def('ad_groups', ad_group_schema, pks=['Id']))
-
-    # Load Ad's schemas
-    ad_schema = get_core_schema(client, 'Ad')
-    core_object_streams.append(get_stream_def('ads', ad_schema, pks=['Id']))
+    # After new standard metadata changes we are getting Id as primary key only
+    # while earlier we were getting Id and LastModifiedTime both because of the coding mistake
+    # but we are writing Id only while writing the schema (func: sync_accounts_stream) in sync mode,
+    # Hence we are keeping ID only in pks.
+    for config in stream_configs:
+        schema = get_core_schema(config['client'], config['object_type'])
+        stream_def = get_stream_def(
+            config['name'],
+            schema,
+            pks=config['pks'],
+            replication_keys=config.get('replication_keys'),
+            parent_stream_id=PARENT_MAP.get(config['name'])
+        )
+        core_object_streams.append(stream_def)
 
     return core_object_streams
 
@@ -548,6 +587,7 @@ def discover_reports():
     client = CustomServiceClient('ReportingService')
     type_map = get_type_map(client)
     report_column_regex = r'^(?!ArrayOf)(.+Report)Column$'
+    parent_stream_id = PARENT_MAP.get("reports")
 
     for type_name in type_map:
         match = re.match(report_column_regex, type_name)
@@ -559,7 +599,8 @@ def discover_reports():
             report_stream_def = get_stream_def(
                 stream_name,
                 report_schema,
-                stream_metadata=report_metadata)
+                stream_metadata=report_metadata,
+                parent_stream_id=parent_stream_id)
             report_streams.append(report_stream_def)
 
     return report_streams
