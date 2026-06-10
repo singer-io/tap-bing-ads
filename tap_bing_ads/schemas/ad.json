@@ -1,0 +1,725 @@
+{
+    "type": "object",
+    "properties": {
+        "Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Ad Group": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Business Name": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Call To Action": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Call To Action Langauge": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Campaign": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Client Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Custom Parameter": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Descriptions": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Editorial Appeal Status": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Editorial Location": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Editorial Reason Code": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Editorial Status": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Editorial Term": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Final Url": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Final Url Suffix": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Headline": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Headlines": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Images": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Impression Tracking Urls": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Landscape Image Media Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Landscape Logo Media Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Long Headline": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Long Headlines": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Long Headline String": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Mobile Final Url": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Modified Time": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Parent Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Publisher Countries": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Status": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Square Image Media Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Square Logo Media Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Text": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Tracking Template": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "App Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "App Store": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Auto Generated Image Assets Opt Out": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Auto Generated Text Assets Opt Out": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Automated Call To Action Opt Out": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Ad Schedule Use Searcher Time Zone": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Adjustment": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy Commission": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy ManualCpc": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy MaxCpc": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy Name": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy PercentCpc": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy TargetAdPosition": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy TargetCostPerSale": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy TargetCpa": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy TargetImpressionShare": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy TargetRoas": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Budget": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Budget Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Budget Name": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Budget Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Campaign Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Country Code": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Destination Channel": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Domain Language": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Disclaimer Ads Enabled": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Dynamic Description Enabled": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Experiment Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Feed Label": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Is Multi Channel Campaign": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Keyword Relevance": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Landing Page Relevance": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Landing Page User Experience": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Language": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Local Inventory Ads Enabled": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Page Feed Ids": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Priority": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Quality Score": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "RSA Auto Generated Assets Enabled": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Sales Country Code": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Shoppable Ads Enabled": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Source": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Store Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Sub Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Target Setting": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Vanity Pharma Display Url Mode": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Vanity Pharma Website Description": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "URL Expansion Opt Out": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Website": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Ad Group Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Ad Rotation": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Boost Value": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Option": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Cpc Bid": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "End Date": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Frequency Cap Settings": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Inherited Bid Strategy Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Maximum Bid": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Network Distribution": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Privacy Status": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Start Date": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Use Optimized Targeting": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Use Predictive Targeting": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Description": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Domain": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Path 1": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Path 2": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Ad Format Preference": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Device Preference": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Display Url": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Title": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "App Platform": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Text Part 2": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Title Part 1": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Title Part 2": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Title Part 3": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Destination Url": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Keyword": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Match Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Param1": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Param2": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Param3": {
+            "type": [
+                "null",
+                "string"
+            ]
+        }
+    }
+}

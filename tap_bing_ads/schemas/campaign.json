@@ -1,0 +1,365 @@
+{
+    "type": "object",
+    "properties": {
+        "App Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "App Store": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Auto Generated Image Assets Opt Out": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Auto Generated Text Assets Opt Out": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Automated Call To Action Opt Out": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Ad Schedule Use Searcher Time Zone": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Adjustment": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy Commission": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy ManualCpc": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy MaxCpc": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy Name": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy PercentCpc": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy TargetAdPosition": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy TargetCostPerSale": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy TargetCpa": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy TargetImpressionShare": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy TargetRoas": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Budget": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Budget Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Budget Name": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Budget Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Campaign": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Campaign Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Client Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Country Code": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Custom Parameter": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Destination Channel": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Domain Language": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Disclaimer Ads Enabled": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Dynamic Description Enabled": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Experiment Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Feed Label": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Final Url Suffix": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Is Multi Channel Campaign": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Keyword Relevance": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Landing Page Relevance": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Landing Page User Experience": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Language": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Local Inventory Ads Enabled": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Modified Time": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Page Feed Ids": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Parent Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Priority": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Quality Score": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "RSA Auto Generated Assets Enabled": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Sales Country Code": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Shoppable Ads Enabled": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Source": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Status": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Store Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Sub Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Target Setting": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Tracking Template": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Vanity Pharma Display Url Mode": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Vanity Pharma Website Description": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "URL Expansion Opt Out": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Website": {
+            "type": [
+                "null",
+                "string"
+            ]
+        }
+    }
+}

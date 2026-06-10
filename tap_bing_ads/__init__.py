@@ -6,8 +6,13 @@ import csv
 import sys
 import re
 import io
+import time
+import glob
 from datetime import datetime
 from zipfile import ZipFile
+from functools import lru_cache
+from pathlib import Path
+from importlib import resources
 
 import socket
 import ssl
@@ -32,7 +37,6 @@ REQUEST_TIMEOUT = 300
 REQUIRED_CONFIG_KEYS = [
     "start_date",
     "customer_id",
-    "account_ids",
     "oauth_client_id",
     "oauth_client_secret",
     "refresh_token",
@@ -44,11 +48,16 @@ TOP_LEVEL_CORE_OBJECTS = [
     'AdvertiserAccount',
     'Campaign',
     'AdGroup',
-    'Ad'
+    'Ad',
+    'Keyword',
 ]
 
 CONFIG = {}
 STATE = {}
+
+# ~5 minute polling timeout
+MAX_NUM_BULK_POLLS = 150
+BULK_POLL_SLEEP = 2
 
 # ~2 hour polling timeout
 MAX_NUM_REPORT_POLLS = 1440
@@ -152,6 +161,9 @@ class CustomServiceClient(ServiceClient):
         kwargs['timeout'] = get_request_timeout()
         self._soap_client.set_options(**kwargs)
 
+    def set_account(self, account_id):
+        self._authorization_data = get_authorization_data(account_id)
+
 def get_authentication():
     """
     Authenticate using the new method (no scope specified) and
@@ -177,22 +189,37 @@ def get_authentication():
         authentication.request_oauth_tokens_by_refresh_token(CONFIG['refresh_token'])
         return authentication
 
-@bing_ads_error_handling
-def create_sdk_client(service, account_id):
-    # Creates SOAP client with OAuth refresh credentials for services
-    LOGGER.info('Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s',
-                service, account_id)
-
+def get_authorization_data(account_id=None):
     authentication = get_authentication()
 
     # Instance require to authenticate with Bing Ads
-    authorization_data = AuthorizationData(
+    return AuthorizationData(
         account_id=account_id,
-        customer_id=CONFIG['customer_id'],
-        developer_token=CONFIG['developer_token'],
-        authentication=authentication)
+        customer_id=CONFIG["customer_id"],
+        developer_token=CONFIG["developer_token"],
+        authentication=authentication,
+    )
 
-    return CustomServiceClient(service, authorization_data=authorization_data)
+@bing_ads_error_handling
+def create_sdk_client(service, account_id=None):
+    # Creates SOAP client with OAuth refresh credentials for services
+    LOGGER.info(
+        "Creating SOAP client with OAuth refresh credentials for service: %s, account_id %s",
+        service,
+        account_id,
+    )
+
+    return CustomServiceClient(service, authorization_data=get_authorization_data(account_id))
+
+@lru_cache
+def customer_management_service_client(account_id=None):
+    LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
+    return create_sdk_client("CustomerManagementService", account_id)
+
+@lru_cache
+def reporting_service_client(account_id=None):
+    LOGGER.info("Initializing ReportingService client - Loading WSDL")
+    return create_sdk_client("ReportingService", account_id)
 
 def sobject_to_dict(obj):
     # Convert response of soap to dictionary
@@ -425,8 +452,7 @@ def get_core_schema(client, obj):
 def discover_core_objects():
     core_object_streams = []
 
-    LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
-    client = CustomServiceClient('CustomerManagementService')
+    client = customer_management_service_client()
 
     # Load Account's schemas
     account_schema = get_core_schema(client, 'AdvertiserAccount')
@@ -437,20 +463,19 @@ def discover_core_objects():
         # Hence we are keeping ID only in pks.
         get_stream_def('accounts', account_schema, pks=['Id'], replication_keys=['LastModifiedTime']))
 
-    LOGGER.info('Initializing CampaignManagementService client - Loading WSDL')
-    client = CustomServiceClient('CampaignManagementService')
+    account_info_schema = get_core_schema(client, 'AccountInfo')
+    core_object_streams.append(get_stream_def('accounts_info', account_info_schema, pks=['Id']))
 
-    # Load Campaign's schemas
-    campaign_schema = get_core_schema(client, 'Campaign')
-    core_object_streams.append(get_stream_def('campaigns', campaign_schema, pks=['Id']))
+    schemas_dir = resources.files(__package__) / "schemas"
+    for filepath in glob.glob(str(schemas_dir / "*.json")):
+        filepath = Path(filepath)
+        stream_name = filepath.stem
 
-    # Load AdGroup's schemas
-    ad_group_schema = get_core_schema(client, 'AdGroup')
-    core_object_streams.append(get_stream_def('ad_groups', ad_group_schema, pks=['Id']))
+        if not stream_name.endswith("s"):
+            stream_name += "s"
 
-    # Load Ad's schemas
-    ad_schema = get_core_schema(client, 'Ad')
-    core_object_streams.append(get_stream_def('ads', ad_schema, pks=['Id']))
+        schema = json.loads(filepath.read_text())
+        core_object_streams.append(get_stream_def(stream_name, schema, pks=["Id"]))
 
     return core_object_streams
 
@@ -548,6 +573,7 @@ def discover_reports():
     client = CustomServiceClient('ReportingService')
     type_map = get_type_map(client)
     report_column_regex = r'^(?!ArrayOf)(.+Report)Column$'
+    reports_config = CONFIG.get("reports", {})
 
     for type_name in type_map:
         match = re.match(report_column_regex, type_name)
@@ -556,10 +582,13 @@ def discover_reports():
             stream_name = snakecase(report_name)
             report_schema = get_report_schema(client, report_name)
             report_metadata = get_report_metadata(report_name, report_schema)
+            stream_config = reports_config.get(stream_name, {})
+            primary_keys = stream_config.get("primary_keys", [])
             report_stream_def = get_stream_def(
                 stream_name,
                 report_schema,
-                stream_metadata=report_metadata)
+                stream_metadata=report_metadata,
+                pks=primary_keys)
             report_streams.append(report_stream_def)
 
     return report_streams
@@ -568,7 +597,7 @@ def test_credentials(account_ids):
     if not account_ids:
         raise Exception('At least one id in account_ids is required to test authentication')
 
-    create_sdk_client('CustomerManagementService', account_ids[0]) # Create bingads sdk client
+    customer_management_service_client(account_ids[0]) # Create bingads sdk client
 
 def do_discover(account_ids):
     # Discover schemas and dump in STDOUT
@@ -606,7 +635,7 @@ def get_selected_fields(catalog_item, exclude=None):
 
     if not exclude:
         exclude = []
-
+        
     mdata = metadata.to_map(catalog_item.metadata)
     selected_fields = []
     invalid_selections = {}
@@ -639,14 +668,12 @@ def sync_accounts_stream(account_ids, catalog_item):
     selected_fields = get_selected_fields(catalog_item)
     accounts = []
 
-    LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
-    client = CustomServiceClient('CustomerManagementService')
+    client = customer_management_service_client()
     account_schema = get_core_schema(client, 'AdvertiserAccount')
     singer.write_schema('accounts', account_schema, ['Id'])
 
+    # Loop over the multiple account_ids
     for account_id in account_ids:
-        # Loop over the multiple account_ids
-        client = create_sdk_client('CustomerManagementService', account_id)
         # Get account data
         response = client.GetAccount(AccountId=account_id)
         accounts.append(sobject_to_dict(response))
@@ -657,7 +684,10 @@ def sync_accounts_stream(account_ids, catalog_item):
             filter(lambda x: x is not None and x['LastModifiedTime'] >= accounts_bookmark,
                    accounts))
 
-    max_accounts_last_modified = max([x['LastModifiedTime'] for x in accounts])
+    if accounts:
+        max_accounts_last_modified = max(x['LastModifiedTime'] for x in accounts)
+    else:
+        max_accounts_last_modified = accounts_bookmark
 
     with metrics.record_counter('accounts') as counter:
         # Write only selected fields
@@ -668,99 +698,164 @@ def sync_accounts_stream(account_ids, catalog_item):
     singer.write_state(STATE)
 
 @bing_ads_error_handling
-def sync_campaigns(client, account_id, selected_streams): # pylint: disable=inconsistent-return-statements
-    # CampaignType defaults to 'Search', but there are other types of campaigns
-    response = client.GetCampaignsByAccountId(AccountId=account_id, CampaignType='Search Shopping DynamicSearchAds')
-    response_dict = sobject_to_dict(response)
-    if 'Campaign' in response_dict:
-        campaigns = response_dict['Campaign']
+def sync_accounts_info():
+    # Get accounts info for the supplied credentials
+    client = customer_management_service_client()
+    account_schema = get_core_schema(client, 'AccountInfo')
+    singer.write_schema('accounts_info', account_schema, ['Id'])
+    response = client.GetAccountsInfo()
+    account_list = response.AccountInfo
+    for acct in account_list:
+        acct_dict = sobject_to_dict(acct)
+        singer.write_record('accounts_info', acct_dict)
 
-        if 'campaigns' in selected_streams:
-            selected_fields = get_selected_fields(selected_streams['campaigns'])
-            singer.write_schema('campaigns', get_core_schema(client, 'Campaign'), ['Id'])
-            with metrics.record_counter('campaigns') as counter:
-                singer.write_records('campaigns',
-                                     filter_selected_fields_many(selected_fields, campaigns))
-                counter.increment(len(campaigns))
 
-        return map(lambda x: x['Id'], campaigns)
 
 @bing_ads_error_handling
-def sync_ad_groups(client, account_id, campaign_ids, selected_streams):
-    ad_group_ids = []
-    for campaign_id in campaign_ids:
-        response = client.GetAdGroupsByCampaignId(CampaignId=campaign_id)
-        response_dict = sobject_to_dict(response)
-
-        if 'AdGroup' in response_dict:
-            ad_groups = sobject_to_dict(response)['AdGroup']
-
-            if 'ad_groups' in selected_streams:
-                LOGGER.info('Syncing AdGroups for Account: %s, Campaign: %s',
-                    account_id, campaign_id)
-                selected_fields = get_selected_fields(selected_streams['ad_groups'])
-                singer.write_schema('ad_groups', get_core_schema(client, 'AdGroup'), ['Id'])
-                with metrics.record_counter('ad_groups') as counter:
-                    singer.write_records('ad_groups',
-                                         filter_selected_fields_many(selected_fields, ad_groups))
-                    counter.increment(len(ad_groups))
-
-            ad_group_ids += list(map(lambda x: x['Id'], ad_groups))
-    return ad_group_ids
-
-@bing_ads_error_handling
-def sync_ads(client, selected_streams, ad_group_ids):
-    for ad_group_id in ad_group_ids:
-        response = client.GetAdsByAdGroupId(
-            AdGroupId=ad_group_id,
-            AdTypes={
-                'AdType': [
-                    'AppInstall',
-                    'DynamicSearch',
-                    'ExpandedText',
-                    'Product',
-                    'Text',
-                    'Image'
-                ]
-            })
-        response_dict = sobject_to_dict(response)
-
-        if 'Ad' in response_dict:
-            selected_fields = get_selected_fields(selected_streams['ads'])
-            singer.write_schema('ads', get_core_schema(client, 'Ad'), ['Id'])
-            with metrics.record_counter('ads') as counter:
-                ads = response_dict['Ad']
-                singer.write_records('ads', filter_selected_fields_many(selected_fields, ads))
-                counter.increment(len(ads))
-
 def sync_core_objects(account_id, selected_streams):
-    client = create_sdk_client('CampaignManagementService', account_id)
+    LOGGER.info("Syncing core objects for Account: %s", account_id)
 
-    LOGGER.info('Syncing Campaigns for Account: %s', account_id)
-    campaign_ids = sync_campaigns(client, account_id, selected_streams)
+    client = create_sdk_client("BulkService", account_id)
 
-    if campaign_ids and ('ad_groups' in selected_streams or 'ads' in selected_streams):
-        ad_group_ids = sync_ad_groups(client, account_id, campaign_ids, selected_streams)
-        if 'ads' in selected_streams:
-            LOGGER.info('Syncing Ads for Account: %s', account_id)
-            sync_ads(client, selected_streams, ad_group_ids)
+    AccountIds = client.factory.create(
+        r"{http://schemas.microsoft.com/2003/10/Serialization/Arrays}ArrayOflong"
+    )
+    AccountIds.long = [account_id]
+
+    DownloadEntities = client.factory.create(
+        r"{https://bingads.microsoft.com/CampaignManagement/v13}ArrayOfDownloadEntity"
+    )
+    DownloadEntities.DownloadEntity = [
+        e
+        for e in ["Campaigns", "AdGroups", "Ads", "Keywords"]
+        if snakecase(e) in selected_streams
+    ]
+
+    DownloadRequestId = client.DownloadCampaignsByAccountIds(
+        AccountIds=AccountIds,
+        DownloadEntities=DownloadEntities,
+        FormatVersion="6.0",
+    )
+
+    attempts = 0
+
+    while True:
+        response = client.GetBulkDownloadStatus(RequestId=DownloadRequestId)
+        attempts += 1
+
+        status = sobject_to_dict(response)
+
+        RequestStatus = status["RequestStatus"]
+
+        LOGGER.info(
+            "Download %d%% completed (%s)", status["PercentComplete"], RequestStatus
+        )
+
+        if RequestStatus == "InProgress":
+            if attempts > MAX_NUM_BULK_POLLS:
+                raise RuntimeError(
+                    "Download incomplete (%s) after checking %d time(s)",
+                    RequestStatus,
+                    attempts,
+                )
+
+            time.sleep(BULK_POLL_SLEEP)
+            continue
+
+        elif RequestStatus == "Completed":
+            break
+
+        raise RuntimeError("Download failed (%s): %s", RequestStatus, status["Errors"])
+
+    response = requests.get(status["ResultFileUrl"])
+    response.raise_for_status()
+
+    with (
+        ZipFile(io.BytesIO(response.content)) as zip_file,
+        zip_file.open(zip_file.namelist()[0]) as binary_file,
+        io.TextIOWrapper(binary_file, encoding="utf-8-sig") as csv_file,
+    ):
+        LOGGER.info("Processing file '%s' for account: %s", csv_file.name, account_id)
+
+        reader = csv.DictReader(csv_file)
+
+        tap_stream_id = None
+        record_counts = {}
+
+        for i, row in enumerate(reader, start=2):
+            type_ = row["Type"]
+            entity_name = (
+                "Ads" if type_.endswith(" Ad") else type_.replace(" ", "") + "s"
+            )
+
+            if entity_name not in DownloadEntities.DownloadEntity:
+                continue
+
+            next_tap_stream_id = snakecase(entity_name)
+
+            if tap_stream_id != next_tap_stream_id:
+                if next_tap_stream_id not in selected_streams:
+                    LOGGER.debug(
+                        "Ignoring records for deselected stream '%s' from line: %d",
+                        tap_stream_id,
+                        i,
+                    )
+                    continue
+
+                tap_stream_id = next_tap_stream_id
+
+                LOGGER.info(
+                    "Processing records for stream '%s' from line: %d", tap_stream_id, i
+                )
+
+                catalog_entry = selected_streams[tap_stream_id]
+                selected_fields = get_selected_fields(catalog_entry)
+                field_types = {
+                    k: v.type and v.type[-1]
+                    for k, v in catalog_entry.schema.properties.items()
+                    if k in selected_fields
+                }
+
+                singer.write_schema(
+                    tap_stream_id,
+                    catalog_entry.schema.to_dict(),
+                    ["Id"],
+                )
+
+                record_counts.setdefault(tap_stream_id, 0)
+
+            row = filter_selected_fields(selected_fields, row)
+            type_row(row, field_types)
+
+            singer.write_record(tap_stream_id, row)
+
+            record_counts[tap_stream_id] += 1
+
+        for tap_stream_id, count in record_counts.items():
+            with metrics.record_counter(tap_stream_id) as counter:
+                counter.increment(count)
+
 
 def type_report_row(row):
     # Check and convert report's field to valid type
+    type_row(row, reports.REPORTING_FIELD_TYPES)
+
+
+def type_row(row, field_types):
     for field_name, value in row.items():
         value = value.strip()
         if value == '':
             value = None
 
-        if value is not None and field_name in reports.REPORTING_FIELD_TYPES:
-            _type = reports.REPORTING_FIELD_TYPES[field_name]
+        if value is not None and field_name in field_types:
+            _type = field_types[field_name]
             if _type == 'integer':
-                if value == '--':
+                if value in ["--", "All"]:
                     value = 0
                 else:
                     value = int(value.replace(',', ''))
             elif _type == 'number':
-                if value == '--':
+                if value in ["--", "All"]:
                     value = 0.0
                 else:
                     value = float(value.replace('%', '').replace(',', ''))
@@ -895,7 +990,7 @@ async def sync_report(client, account_id, report_stream):
                                                  report_stream,
                                                  current_start_date,
                                                  current_end_date)
-        except InvalidDateRangeEnd as ex: # pylint: disable=unused-variable
+        except InvalidDateRangeEnd: # pylint: disable=unused-variable
             LOGGER.warn("Bing reported that the requested report date range ended outside of "
                         "their data retention period. Skipping to next range...")
             success = True
@@ -907,9 +1002,12 @@ async def sync_report_interval(client, account_id, report_stream,
                                start_date, end_date):
     state_key = '{}_{}'.format(account_id, report_stream.stream)
     report_name = pascalcase(report_stream.stream)
+    reports_config = CONFIG.get("reports", {})
+    stream_config = reports_config.get(report_stream.stream, {})
+    primary_keys = stream_config.get("primary_keys", [])
 
     report_schema = get_report_schema(client, report_name)
-    singer.write_schema(report_stream.stream, report_schema, [])
+    singer.write_schema(report_stream.stream, report_schema, primary_keys)
 
     report_time = arrow.get().isoformat()
 
@@ -926,7 +1024,7 @@ async def sync_report_interval(client, account_id, report_stream,
         success, download_url = await poll_report(client, account_id, report_name,
                                                   start_date, end_date, request_id)
 
-    except Exception as some_error: # pylint: disable=broad-except,unused-variable
+    except Exception: # pylint: disable=broad-except,unused-variable
         LOGGER.info('The request_id %s for %s is invalid, generating a new one',
                     request_id,
                     state_key)
@@ -1034,7 +1132,8 @@ def build_report_request(client, account_id, report_stream, report_name,
 
 async def sync_reports(account_id, catalog):
     # Sync report stream
-    client = create_sdk_client('ReportingService', account_id)
+    client = reporting_service_client()
+    client.set_account(account_id)
 
     reports_to_sync = filter(lambda x: x.is_selected() and x.stream[-6:] == 'report',
                              catalog.streams)
@@ -1072,6 +1171,10 @@ async def do_sync_all_accounts(account_ids, catalog):
     if 'accounts' in selected_streams:
         LOGGER.info('Syncing Accounts')
         sync_accounts_stream(account_ids, selected_streams['accounts'])
+    
+    if 'accounts_info' in selected_streams:
+        LOGGER.info('Syncing Accounts Info')
+        sync_accounts_info()
 
     sync_account_data_tasks = [
         sync_account_data(account_id, catalog, selected_streams)
@@ -1079,12 +1182,22 @@ async def do_sync_all_accounts(account_ids, catalog):
     ]
     await asyncio.gather(*sync_account_data_tasks)
 
+def get_account_ids():
+    client = customer_management_service_client()
+    response = client.GetAccountsInfo()
+
+    account_list = response.AccountInfo if hasattr(response, "AccountInfo") else []
+    account_ids = [acct.Id for acct in account_list]
+    return account_ids
+
 async def main_impl():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
 
     CONFIG.update(args.config)
     STATE.update(args.state)
-    account_ids = CONFIG['account_ids'].split(",")
+
+    config_account_ids: str = CONFIG.get("account_ids")
+    account_ids = config_account_ids.split(",") if config_account_ids else get_account_ids()
 
     if args.discover: # Discover mode
         do_discover(account_ids)

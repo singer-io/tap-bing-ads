@@ -108,5 +108,15 @@ REPORTING_FIELD_TYPES = {
     'RevenuePerConversion': 'number',
     'SidebarBid': 'number',
     'Spend': 'number',
-    'TimePeriod': 'datetime'
+    'TimePeriod': 'datetime',
+    'AllConversions': 'number',
+    'AllRevenue': 'number',
+    'AllConversionRate': 'number',
+    'AllCostPerConversion': 'number',
+    'AllReturnOnAdSpend': 'number',
+    'AllRevenuePerConversion': 'number',
+    'ViewThroughConversions': 'number',
+    'AbsoluteTopImpressionRatePercent': 'number',
+    'TopImpressionRatePercent': 'number',
+    'AverageCpm': 'number'
 }

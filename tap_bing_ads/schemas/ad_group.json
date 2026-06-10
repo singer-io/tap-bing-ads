@@ -1,0 +1,203 @@
+{
+    "type": "object",
+    "properties": {
+        "Ad Group": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Ad Group Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Ad Rotation": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Ad Schedule Use Searcher Time Zone": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Adjustment": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Boost Value": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Option": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Bid Strategy Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Campaign": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Client Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Cpc Bid": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Custom Parameter": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "End Date": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Final Url Suffix": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Frequency Cap Settings": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Inherited Bid Strategy Type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Keyword Relevance": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Landing Page Relevance": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Landing Page User Experience": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Language": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Maximum Bid": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Modified Time": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Network Distribution": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Parent Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Privacy Status": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Quality Score": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Start Date": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Status": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Target Setting": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Tracking Template": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Use Optimized Targeting": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Use Predictive Targeting": {
+            "type": [
+                "null",
+                "string"
+            ]
+        }
+    }
+}
