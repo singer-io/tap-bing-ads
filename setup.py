@@ -18,6 +18,11 @@ setup(
         'requests==2.34.2',
         'singer-python==6.8.0',
         'backoff==2.2.1',
+        # bingads 13.0.11.1 imports pkg_resources at module load to locate bundled WSDL files.
+        # pkg_resources was removed from setuptools in v82, so pin to a specific version below
+        # that threshold to keep it available until the SDK is upgraded to a version that no
+        # longer needs it.
+        'setuptools==75.8.2',
     ],
     extras_require={
         'test': [
