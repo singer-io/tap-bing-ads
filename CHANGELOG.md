@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.3.4
+  * Pin setuptools to `<82` so `pkg_resources` is available for `bingads==13.0.11.1` import-time WSDL loading
+
 # 2.3.3
   * Bump requests to 2.33.0 for security updates [#127](https://github.com/singer-io/tap-bing-ads/pull/127)
 
