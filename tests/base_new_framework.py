@@ -41,8 +41,9 @@ class BingAdsBaseTest(BaseCase):
         """Configuration properties required for the tap."""
         return_value = {
             'start_date': self.start_date,
-            'customer_id': '163875182',
-            'account_ids': '163078754,140168565,71086605',
+            'customer_id': '254943312',
+            #'account_ids': '163078754,140168565,71086605',
+            'account_ids': '188412305',
             # 'conversion_window': '-15',  # advanced option
         }
         # cid=42183085 aid=71086605  uid=71069166 (RJMetrics)
