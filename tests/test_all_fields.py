@@ -17,11 +17,12 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
     def name():
         return "tap_tester_bing_ads_all_fields_test"
 
-    # # update all tests in repo when JIRA cards are complete
-    # TDL_23223_is_done = JIRA_CLIENT.get_status_category("TDL-23223") == "done"
-    # assert TDL_23223_is_done == False, "TDL-23223 is done, Re-add streams with fixed exclusions"
-    # TDL_24648_is_done = JIRA_CLIENT.get_status_category("TDL-24648") == "done"
-    # assert TDL_24648_is_done == False, "TDL-24648 is done, Re-add streams that have data"
+    # When both TDL-23223 (exclusions file fixes) and TDL-24648 (stream data availability)
+    # are resolved, report streams may be re-added to streams_to_test().
+    TDL_23223_is_done = JIRA_CLIENT.get_status_category("TDL-23223") == "done"
+    TDL_24648_is_done = JIRA_CLIENT.get_status_category("TDL-24648") == "done"
+    assert not (TDL_23223_is_done and TDL_24648_is_done), \
+        "TDL-23223 and TDL-24648 are both done — re-add report streams to streams_to_test()"
 
     def streams_to_test(self):
         # Keep this test pinned to core object streams only.
@@ -39,24 +40,46 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
         unexpected_streams = synced_stream_names.difference(self.test_streams)
         self.assertSetEqual(unexpected_streams, set())
 
-    def test_all_streams_sync_records(self):
-        # Core object streams may legitimately sync zero rows for a given account
-        # and date window. Require at least one selected stream to have data.
-        record_count_by_stream = {
-            stream: self.record_count_by_stream.get(stream, 0)
-            for stream in self.test_streams
+    def test_core_streams_sync_records(self):
+        """
+        FULL_TABLE streams (ads, ad_groups, campaigns) are not bounded by start_date and
+        should always replicate records if data exists in the account — assert these strictly.
+
+        INCREMENTAL streams (accounts) are bounded by LastModifiedTime relative to start_date,
+        so zero rows is acceptable; we skip the hard assertion for those.
+        """
+        full_table_streams = {
+            stream for stream in self.test_streams
+            if self.expected_replication_method(stream) == self.FULL_TABLE
         }
-        non_empty_streams = {
-            stream for stream, count in record_count_by_stream.items() if count > 0
-        }
-        self.assertGreater(
-            len(non_empty_streams),
-            0,
-            msg=f"No selected streams synced rows. Counts: {record_count_by_stream}"
-        )
+        incremental_streams = self.test_streams - full_table_streams
+
+        for stream in full_table_streams:
+            with self.subTest(stream=stream):
+                record_count = self.record_count_by_stream.get(stream, 0)
+                self.assertGreater(
+                    record_count, 0,
+                    msg=f"FULL_TABLE stream '{stream}' returned 0 records — "
+                        "expected data regardless of start_date. "
+                        "Populate data via the UI for this account."
+                )
+
+        for stream in incremental_streams:
+            with self.subTest(stream=stream):
+                record_count = self.record_count_by_stream.get(stream, 0)
+                if record_count == 0:
+                    self.logger.warning(
+                        f"INCREMENTAL stream '{stream}' returned 0 records for "
+                        f"start_date={self.start_date}. Skipping count assertion — "
+                        "adjust start_date or generate records to strengthen this check."
+                    )
 
     def test_all_fields_for_streams_are_replicated(self):
         # Validate all-fields behavior only for streams that actually produced rows.
+        # Track whether at least one stream was asserted so we don't silently pass
+        # a test where every stream was skipped due to zero records.
+        streams_asserted = []
+
         for stream in self.test_streams:
             with self.subTest(stream=stream):
                 if self.record_count_by_stream.get(stream, 0) <= 0:
@@ -73,6 +96,14 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
 
                 self.assertSetEqual(self.fields_replicated, expected_all_keys,
                                     logging=f"verify all fields are replicated for stream {stream}")
+                streams_asserted.append(stream)
+
+        self.assertGreater(
+            len(streams_asserted),
+            0,
+            msg=f"No field assertions were made — every stream in {self.test_streams} "
+                "returned 0 records. Populate data via the UI or adjust start_date."
+        )
 
     MISSING_FIELDS = {
         'accounts':{
