@@ -11,6 +11,11 @@ JIRA_CLIENT = jira_client({**jira_config})
 class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
     """ Test the tap all_fields """
 
+    # Incremental streams can be harder to populate predictably. Keep this set
+    # empty by default and add stream names (for example: {'accounts'}) once
+    # data setup is stable enough to enforce field-assert coverage.
+    EXPECTED_INCREMENTAL_STREAMS_ASSERTED = set()
+
     start_date = '2021-01-01T00:00:00Z'
 
     @staticmethod
@@ -97,6 +102,27 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
                 self.assertSetEqual(self.fields_replicated, expected_all_keys,
                                     logging=f"verify all fields are replicated for stream {stream}")
                 streams_asserted.append(stream)
+
+        streams_asserted = set(streams_asserted)
+        full_table_streams = {
+            stream for stream in self.test_streams
+            if self.expected_replication_method(stream) == self.FULL_TABLE
+        }
+        expected_incremental_streams = self.EXPECTED_INCREMENTAL_STREAMS_ASSERTED.intersection(
+            self.test_streams.difference(full_table_streams)
+        )
+
+        self.assertTrue(
+            full_table_streams.issubset(streams_asserted),
+            msg=f"FULL_TABLE stream field assertions missing. Expected: {full_table_streams}, "
+                f"asserted: {streams_asserted}"
+        )
+
+        self.assertTrue(
+            expected_incremental_streams.issubset(streams_asserted),
+            msg=f"Expected incremental stream field assertions missing. "
+                f"Expected: {expected_incremental_streams}, asserted: {streams_asserted}"
+        )
 
         self.assertGreater(
             len(streams_asserted),
