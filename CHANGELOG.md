@@ -3,6 +3,9 @@
 ## 2.4.0
   * Metadata fields updated for parent streams [#123](https://github.com/singer-io/tap-bing-ads/pull/123)
 
+# 2.3.3
+  * Bump requests to 2.33.0 for security updates [#127](https://github.com/singer-io/tap-bing-ads/pull/127)
+
 ## 2.3.2
   * Dependency upgrades [#119](https://github.com/singer-io/tap-bing-ads/pull/119)
 
