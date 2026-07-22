@@ -715,20 +715,21 @@ def sync_accounts_stream(account_ids, catalog_item):
         accounts.append(sobject_to_dict(response))
 
     accounts_bookmark = singer.get_bookmark(STATE, 'accounts', 'last_record')
-    if accounts_bookmark:
-        accounts = list(
-            filter(lambda x: x is not None and x['LastModifiedTime'] >= accounts_bookmark,
-                   accounts))
+    accounts = [
+        acc for acc in accounts
+        if acc is not None and (not accounts_bookmark or acc['LastModifiedTime'] >= accounts_bookmark)
+    ]
 
-    max_accounts_last_modified = max([x['LastModifiedTime'] for x in accounts])
+    max_accounts_last_modified = max([x['LastModifiedTime'] for x in accounts]) if accounts else None
 
     with metrics.record_counter('accounts') as counter:
         # Write only selected fields
         singer.write_records('accounts', filter_selected_fields_many(selected_fields, accounts))
         counter.increment(len(accounts))
 
-    singer.write_bookmark(STATE, 'accounts', 'last_record', max_accounts_last_modified)
-    singer.write_state(STATE)
+    if max_accounts_last_modified:
+        singer.write_bookmark(STATE, 'accounts', 'last_record', max_accounts_last_modified)
+        singer.write_state(STATE)
 
 @bing_ads_error_handling
 def sync_campaigns(client, account_id, selected_streams): # pylint: disable=inconsistent-return-statements
