@@ -1,4 +1,5 @@
 import unittest
+import asyncio
 import socket
 from datetime import datetime
 from unittest import mock
@@ -1174,7 +1175,7 @@ class TestBackoffError(unittest.TestCase):
            tap_bing_ads.get_type_map(mock_client)
         mock_sleep.assert_called()
 
-    async def test_connection_reset_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
+    def test_connection_reset_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
@@ -1185,10 +1186,10 @@ class TestBackoffError(unittest.TestCase):
         '''
         mock_client = MockClient(ConnectionResetError('Connection reset by peer'))
         with self.assertRaises(OSError):
-            await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
+            asyncio.run(tap_bing_ads.poll_report(mock_client, '', '', '', '', ''))
         mock_sleep.assert_called()
 
-    async def test_socket_timeout_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
+    def test_socket_timeout_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
@@ -1199,10 +1200,10 @@ class TestBackoffError(unittest.TestCase):
         '''
         mock_client = MockClient(socket.timeout())
         with self.assertRaises(socket.timeout):
-           await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
+           asyncio.run(tap_bing_ads.poll_report(mock_client, '', '', '', '', ''))
         mock_sleep.assert_called()
 
-    async def test_http_timeout_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
+    def test_http_timeout_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
@@ -1214,10 +1215,10 @@ class TestBackoffError(unittest.TestCase):
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 408, 'Request Timeout', {}, f))
         with self.assertRaises(HTTPError):
-            await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
+            asyncio.run(tap_bing_ads.poll_report(mock_client, '', '', '', '', ''))
         mock_sleep.assert_called()
 
-    async def test_internal_server_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
+    def test_internal_server_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
@@ -1229,10 +1230,10 @@ class TestBackoffError(unittest.TestCase):
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 500, 'Internal Server Error', {}, f))
         with self.assertRaises(HTTPError):
-            await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
+            asyncio.run(tap_bing_ads.poll_report(mock_client, '', '', '', '', ''))
         mock_sleep.assert_called()
 
-    async def test_transport_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
+    def test_transport_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
@@ -1243,10 +1244,10 @@ class TestBackoffError(unittest.TestCase):
         '''
         mock_client = MockClient(TransportError('url', 500, 'Internal Server Error'))
         with self.assertRaises(TransportError):
-            await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
+            asyncio.run(tap_bing_ads.poll_report(mock_client, '', '', '', '', ''))
         mock_sleep.assert_called()
 
-    async def test_400_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
+    def test_400_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
@@ -1258,10 +1259,10 @@ class TestBackoffError(unittest.TestCase):
         with open('tests/base.py') as f:
             mock_client = MockClient(HTTPError('url', 400, 'Bad Request', {}, f))
         with self.assertRaises(HTTPError):
-            await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
+            asyncio.run(tap_bing_ads.poll_report(mock_client, '', '', '', '', ''))
         mock_sleep.assert_not_called()
 
-    async def test_url_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
+    def test_url_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
@@ -1273,10 +1274,10 @@ class TestBackoffError(unittest.TestCase):
         mock_client = MockClient(URLError("<urlopen error [Errno 104] Connection reset by peer>"))
 
         with self.assertRaises(URLError):
-            await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
+            asyncio.run(tap_bing_ads.poll_report(mock_client, '', '', '', '', ''))
         mock_sleep.assert_called()
 
-    async def test_ssl_eof_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
+    def test_ssl_eof_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
@@ -1288,10 +1289,10 @@ class TestBackoffError(unittest.TestCase):
         with open('tests/base.py') as f:
             mock_client = MockClient(ssl.SSLEOFError('EOF occurred in violation of protocol'))
         with self.assertRaises(ssl.SSLEOFError):
-            s = await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
+            asyncio.run(tap_bing_ads.poll_report(mock_client, '', '', '', '', ''))
         mock_sleep.assert_called()
 
-    async def test_exception_408_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
+    def test_exception_408_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
@@ -1303,7 +1304,7 @@ class TestBackoffError(unittest.TestCase):
         mock_client = MockClient(Exception((408, 'Request Timeout')))
 
         with self.assertRaises(Exception):
-            await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
+            asyncio.run(tap_bing_ads.poll_report(mock_client, '', '', '', '', ''))
         mock_sleep.assert_called()
 
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            

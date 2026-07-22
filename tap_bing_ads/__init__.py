@@ -114,6 +114,10 @@ class InvalidFieldSelection(Exception):
     (e.g. ImpressionSharePercent). The conflicting field pairs are included in
     the exception message."""
 
+class BingApiError(Exception):
+    """Raised when the Bing Ads API returns an unrecognised OperationError
+    (e.g. InternalError) that does not map to a more specific exception type."""
+
 def log_service_call(service_method, account_id):
     def wrapper(*args, **kwargs): # pylint: disable=inconsistent-return-statements
         log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
@@ -138,9 +142,9 @@ def log_service_call(service_method, account_id):
                     if any(no_measure_errors):
                         raise NoMeasureSelected(no_measure_errors) from e
                     LOGGER.info('Caught exception for account: %s', account_id)
-                    raise Exception(operation_errors) from e
+                    raise BingApiError(operation_errors) from e
                 if hasattr(e.fault.detail, 'AdApiFaultDetail'):
-                    raise Exception(e.fault.detail.AdApiFaultDetail.Errors) from e
+                    raise BingApiError(e.fault.detail.AdApiFaultDetail.Errors) from e
 
     return wrapper
 
@@ -301,6 +305,8 @@ def get_array_type(array_type):
 
 def get_complex_type_elements(inherited_types, wsdl_type):
     ## inherited type
+    if not wsdl_type.rawchildren or not wsdl_type.rawchildren[0].rawchildren:
+        return []
     if isinstance(wsdl_type.rawchildren[0].rawchildren[0], suds.xsd.sxbasic.Extension): # pylint: disable=no-else-return
         abstract_base = wsdl_type.rawchildren[0].rawchildren[0].ref[0]
         if abstract_base not in inherited_types:
@@ -849,7 +855,7 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
             # As in the async method backoff does not work directly we created a separate method to handle it.
             response = generate_poll_report(client, request_id)
             if response.Status == 'Error':
-                LOGGER.warn('Error polling %s for account %s with request id %s',
+                LOGGER.warning('Error polling %s for account %s with request id %s',
                             report_name, account_id, request_id)
                 return False, None
             if response.Status == 'Success':
@@ -953,19 +959,24 @@ async def sync_report(client, account_id, report_stream):
                                                  current_start_date,
                                                  current_end_date)
         except InvalidDateRangeEnd as ex: # pylint: disable=unused-variable
-            LOGGER.warn("Bing reported that the requested report date range ended outside of "
+            LOGGER.warning("Bing reported that the requested report date range ended outside of "
                         "their data retention period. Skipping to next range...")
             success = True
         except NoMeasureSelected as ex: # pylint: disable=unused-variable
-            LOGGER.warn("Bing reported that the report request does not include any measure "
+            LOGGER.warning("Bing reported that the report request does not include any measure "
                         "columns. Please select at least one metric field for stream '%s'. "
                         "Skipping report...", report_stream.stream)
             break
         except InvalidFieldSelection as ex: # pylint: disable=unused-variable
-            LOGGER.warn("Stream '%s' has incompatible field selections. "
+            LOGGER.warning("Stream '%s' has incompatible field selections. "
                         "Please deselect conflicting fields. Skipping report...", report_stream.stream)
-            LOGGER.warn(str(ex))
+            LOGGER.warning(str(ex))
             break
+        except BingApiError as ex:
+            LOGGER.warning("Bing API returned an error for stream '%s' between %s and %s. "
+                        "Skipping interval...", report_stream.stream, current_start_date, current_end_date)
+            LOGGER.warning(str(ex))
+            success = True
 
         if success:
             current_start_date = current_end_date.shift(days=1)

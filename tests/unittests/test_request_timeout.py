@@ -1,4 +1,5 @@
 import unittest
+import asyncio
 from datetime import datetime
 from unittest import mock
 
@@ -212,7 +213,7 @@ class TestBackoffError(unittest.TestCase):
             tap_bing_ads.get_report_schema(mock_client, '')
         mock_sleep.assert_called()
 
-    async def test_url_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
+    def test_url_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
@@ -223,7 +224,7 @@ class TestBackoffError(unittest.TestCase):
         '''
         mock_client = MockClient(URLError('_ssl.c:1059: The handshake operation timed out'))
         with self.assertRaises(URLError):
-            await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
+            asyncio.run(tap_bing_ads.poll_report(mock_client, '', '', '', '', ''))
         mock_sleep.assert_called()
 
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
