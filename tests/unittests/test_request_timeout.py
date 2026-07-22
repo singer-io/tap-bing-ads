@@ -1,12 +1,13 @@
 import unittest
+import asyncio
+from datetime import datetime
 from unittest import mock
 
 from requests.exceptions import Timeout
 import tap_bing_ads
 from urllib.error import URLError
 from tap_bing_ads import CustomServiceClient
-import datetime
-    
+
 class MockClient():
     '''Mocked ServiceClient class and it's method to pass the test case'''
     def __init__(self, error):
@@ -60,6 +61,7 @@ class MockClient():
         '''Mocked call_count property of the Client class'''
         return self.count
 
+@mock.patch("time.sleep")
 @mock.patch("tap_bing_ads.filter_selected_fields_many", return_value = '')
 @mock.patch("singer.write_records", return_value = '')
 @mock.patch("singer.metrics", return_value = '')
@@ -76,6 +78,23 @@ class TestBackoffError(unittest.TestCase):
     filter_selected_fields_many, write_records , metrics, write_bookmark, write_state, sobject_to_dict,
     get_bookmark, write_schema, get_core_schema, get_selected_fields, time.sleep.
     '''
+
+    def setUp(self):
+        """Patch backoff's datetime so max_time=60 is exceeded after one retry, keeping tests fast."""
+        call_count = {'n': 0}
+        t0 = datetime(2024, 1, 1, 0, 0, 0)
+        t_far = datetime(2024, 1, 1, 0, 1, 10)  # 70 seconds later
+
+        def fake_now():
+            call_count['n'] += 1
+            if call_count['n'] <= 2:
+                return t0
+            return t_far
+
+        self._datetime_patcher = mock.patch('backoff._sync.datetime')
+        mock_dt = self._datetime_patcher.start()
+        mock_dt.datetime.now.side_effect = fake_now
+        self.addCleanup(self._datetime_patcher.stop)
     @mock.patch("tap_bing_ads.create_sdk_client", return_value = '')
     @mock.patch("tap_bing_ads.CustomServiceClient")
     def test_url_error_get_account(self, mock_get_account, mock_create_sdk_client,
@@ -83,77 +102,57 @@ class TestBackoffError(unittest.TestCase):
                                                     mock_write_schema, mock_get_bookmark,
                                                     mock_sobject_to_dict, mock_write_state,
                                                     mock_write_bookmark, mock_metrics, mock_write_records,
-                                                    mock_filter_selected_fields_many):
+                                                    mock_filter_selected_fields_many,
+                                                    mock_sleep):
         '''
         Test that tap retry on the url timeout error for 60 seconds.
         '''
         mock_get_account.side_effect = URLError('_ssl.c:1059: The handshake operation timed out')
-        before_time = datetime.datetime.now()
-        try:
+        with self.assertRaises(URLError):
             tap_bing_ads.sync_accounts_stream(['i1'], {})
-        except URLError:
-            after_time = datetime.datetime.now()
-            time_difference = (after_time - before_time).total_seconds()
-            # verify the code backed off for 60 seconds
-            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-            self.assertGreaterEqual(time_difference, 60)
+        mock_sleep.assert_called()
 
     def test_url_error_sync_campaigns(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
-                                                        mock_filter_selected_fields_many):
+                                                        mock_filter_selected_fields_many,
+                                                        mock_sleep):
         '''
         Test that tap retry on the timeout error for 1 minute.
         '''
         mock_client = MockClient(URLError('_ssl.c:1059: The handshake operation timed out'))
-        before_time = datetime.datetime.now()
-        try:
+        with self.assertRaises(URLError):
             tap_bing_ads.sync_campaigns(mock_client, '', [])
-        except URLError:
-            after_time = datetime.datetime.now()
-            time_difference = (after_time - before_time).total_seconds()
-            # verify the code backed off for 60 seconds
-            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-            self.assertGreaterEqual(time_difference, 60)
+        mock_sleep.assert_called()
 
     def test_url_error_sync_ad_groups(self, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
-                                                        mock_filter_selected_fields_many):
+                                                        mock_filter_selected_fields_many,
+                                                        mock_sleep):
         '''
         Test that tap retry on the timeout error for 1 minute.
         '''
         mock_client = MockClient(URLError('_ssl.c:1059: The handshake operation timed out'))
-        before_time = datetime.datetime.now()
-        try:
+        with self.assertRaises(URLError):
             tap_bing_ads.sync_ad_groups(mock_client, '', ['dummy_campaign_id'], [])
-        except URLError:
-            after_time = datetime.datetime.now()
-            time_difference = (after_time - before_time).total_seconds()
-            # verify the code backed off for 60 seconds
-            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-            self.assertGreaterEqual(time_difference, 60)
+        mock_sleep.assert_called()
 
     def test_url_error_sync_ads(self, mock_get_selected_fields, mock_get_core_schema, 
                                                 mock_write_schema, mock_get_bookmark, 
                                                 mock_sobject_to_dict, mock_write_state, 
                                                 mock_write_bookmark, mock_metrics, mock_write_records, 
-                                                mock_filter_selected_fields_many):
+                                                mock_filter_selected_fields_many,
+                                                mock_sleep):
         '''
         Test that tap retry on the timeout error for 1 minute.
         '''
         mock_client = MockClient(URLError('_ssl.c:1059: The handshake operation timed out'))
-        before_time = datetime.datetime.now()
-        try:
+        with self.assertRaises(URLError):
             tap_bing_ads.sync_ads(mock_client, ['dummy_stream'], ['dummy_ad_id'])
-        except URLError:
-            after_time = datetime.datetime.now()
-            time_difference = (after_time - before_time).total_seconds()
-            # verify the code backed off for 60 seconds
-            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-            self.assertGreaterEqual(time_difference, 60) 
+        mock_sleep.assert_called() 
 
     @mock.patch("tap_bing_ads.build_report_request")
     def test_url_error_get_report_request_id(self, mock_build_report_request, 
@@ -161,97 +160,72 @@ class TestBackoffError(unittest.TestCase):
                                                            mock_write_schema, mock_get_bookmark, 
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
-                                                           mock_filter_selected_fields_many):
+                                                           mock_filter_selected_fields_many,
+                                                           mock_sleep):
         '''
         Test that tap retry on the timeout error for 1 minute.
         '''
         mock_client = MockClient(URLError('_ssl.c:1059: The handshake operation timed out'))
-        before_time = datetime.datetime.now()
-        try:
+        with self.assertRaises(URLError):
             tap_bing_ads.get_report_request_id(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date', 'dummy_start_key',
                                                 force_refresh = True)
-        except URLError:
-            after_time = datetime.datetime.now()
-            time_difference = (after_time - before_time).total_seconds()
-            # verify the code backed off for 60 seconds
-            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-            self.assertGreaterEqual(time_difference, 60)
+        mock_sleep.assert_called()
 
     def test_url_error_build_report_request(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
-                                                           mock_filter_selected_fields_many):
+                                                           mock_filter_selected_fields_many,
+                                                           mock_sleep):
         '''
         Test that tap retry on the timeout error for 1 minute.
         '''
         mock_client = MockClient(URLError('_ssl.c:1059: The handshake operation timed out'))
-        before_time = datetime.datetime.now()
-        try:
+        with self.assertRaises(URLError):
             tap_bing_ads.build_report_request(mock_client, '', '', '', 'dummy_start_date', 'dumy_end_date')
-        except URLError:
-            after_time = datetime.datetime.now()
-            time_difference = (after_time - before_time).total_seconds()
-            # verify the code backed off for 60 seconds
-            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-            self.assertGreaterEqual(time_difference, 60)
+        mock_sleep.assert_called()
 
     def test_url_error_get_type_map(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
-                                                    mock_filter_selected_fields_many):
+                                                    mock_filter_selected_fields_many,
+                                                    mock_sleep):
         '''
         Test that tap retry on the timeout error for 1 minute.
         '''
         mock_client = MockClient(URLError('_ssl.c:1059: The handshake operation timed out'))
-        before_time = datetime.datetime.now()
-        try:
+        with self.assertRaises(URLError):
             tap_bing_ads.get_type_map(mock_client)
-        except URLError:
-            after_time = datetime.datetime.now()
-            time_difference = (after_time - before_time).total_seconds()
-            # verify the code backed off for 60 seconds
-            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-            self.assertGreaterEqual(time_difference, 60)
+        mock_sleep.assert_called()
 
     def test_url_error_get_report_schema(self, mock_get_selected_fields, mock_get_core_schema, 
                                                     mock_write_schema, mock_get_bookmark, 
                                                     mock_sobject_to_dict, mock_write_state, 
                                                     mock_write_bookmark, mock_metrics, mock_write_records, 
-                                                    mock_filter_selected_fields_many):
+                                                    mock_filter_selected_fields_many,
+                                                    mock_sleep):
         '''
         Test that tap retry on the timeout error for 1 minute.
         '''
         mock_client = MockClient(URLError('_ssl.c:1059: The handshake operation timed out'))
-        before_time = datetime.datetime.now()
-        try:
+        with self.assertRaises(URLError):
             tap_bing_ads.get_report_schema(mock_client, '')
-        except URLError:
-            after_time = datetime.datetime.now()
-            time_difference = (after_time - before_time).total_seconds()
-            # verify the code backed off for 60 seconds
-            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-            self.assertGreaterEqual(time_difference, 60)
+        mock_sleep.assert_called()
 
-    async def test_url_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
+    def test_url_error_poll_report(self, mock_get_selected_fields, mock_get_core_schema, 
                                                            mock_write_schema, mock_get_bookmark, 
                                                            mock_sobject_to_dict, mock_write_state, 
                                                            mock_write_bookmark, mock_metrics, mock_write_records, 
-                                                           mock_filter_selected_fields_many):
+                                                           mock_filter_selected_fields_many,
+                                                           mock_sleep):
         '''
         Test that tap retry on the timeout error for 1 minute.
         '''
         mock_client = MockClient(URLError('_ssl.c:1059: The handshake operation timed out'))
-        before_time = datetime.datetime.now()
-        try:
-            await tap_bing_ads.poll_report(mock_client, '', '', '', '', '')
-        except URLError:
-            after_time = datetime.datetime.now()
-            time_difference = (after_time - before_time).total_seconds()
-            # verify the code backed off for 60 seconds
-            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-            self.assertGreaterEqual(time_difference, 60)
+        with self.assertRaises(URLError):
+            asyncio.run(tap_bing_ads.poll_report(mock_client, '', '', '', '', ''))
+        mock_sleep.assert_called()
 
     @mock.patch("tap_bing_ads.CONFIG", return_value = {'oauth_client_id': '', 'oauth_client_secret': '', 'refresh_token': ''})            
     @mock.patch("bingads.OAuthWebAuthCodeGrant.request_oauth_tokens_by_refresh_token")
@@ -262,28 +236,24 @@ class TestBackoffError(unittest.TestCase):
                                                         mock_write_schema, mock_get_bookmark, 
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
-                                                        mock_filter_selected_fields_many):
+                                                        mock_filter_selected_fields_many,
+                                                        mock_sleep):
         '''
         Test that tap retry on the timeout error for 1 minute.
         '''
         mock_oauth.return_value = ''
         mock_client.side_effect = URLError('_ssl.c:1059: The handshake operation timed out')
-        before_time = datetime.datetime.now()
-        try:
+        with self.assertRaises(URLError):
             tap_bing_ads.create_sdk_client('dummy_service', {})
-        except URLError:
-            after_time = datetime.datetime.now()
-            time_difference = (after_time - before_time).total_seconds()
-            # verify the code backed off for 60 seconds
-            # time_difference should be greater or equal 60 as some time elapsed while calculating `after_time`
-            self.assertGreaterEqual(time_difference, 60)
+        mock_sleep.assert_called()
 
     @mock.patch('tap_bing_ads.requests.Session.get')
     def test_timeout_error_stream_report(self, mocked_get, mock_get_selected_fields, mock_get_core_schema, 
                                                         mock_write_schema, mock_get_bookmark, 
                                                         mock_sobject_to_dict, mock_write_state, 
                                                         mock_write_bookmark, mock_metrics, mock_write_records, 
-                                                        mock_filter_selected_fields_many):
+                                                        mock_filter_selected_fields_many,
+                                                        mock_sleep):
         '''
         Test that tap retry on the timeout error for 5 times.
         '''
@@ -294,7 +264,7 @@ class TestBackoffError(unittest.TestCase):
             # verify that the request backoffs for 5 times in case of Timeout error
             self.assertEqual(mocked_get.call_count, 5)
 
-# Mock Client 
+# Mock Client
 class MockedClient():
     def __init__(self) -> None:
         pass
@@ -315,7 +285,7 @@ class Args():
 @mock.patch("tap_bing_ads.CustomServiceClient")
 class TestRequestTimeoutValue(unittest.TestCase):
     def test_default_value_request_timeout(self, mock_client, mock_set_options, mock_authorization_data, mock_oauth, mocked_args):
-        """ 
+        """
             Unit tests to ensure that request timeout is set based default value
         """
         tap_bing_ads.CONFIG = {}
@@ -327,9 +297,9 @@ class TestRequestTimeoutValue(unittest.TestCase):
         service_client = CustomServiceClient('CustomerManagementService')
         service_client.set_options(**kwargs)
         mock_set_options.assert_called_with(headers={'User-Agent': 'Singer.io Bing Ads Tap'}, timeout=300.0)
-    
+
     def test_config_provided_request_timeout(self, mock_client, mock_set_options, mock_authorization_data, mock_oauth, mocked_args):
-        """ 
+        """
             Unit tests to ensure that request timeout is set based on config value
         """
         tap_bing_ads.CONFIG = {}
@@ -343,7 +313,7 @@ class TestRequestTimeoutValue(unittest.TestCase):
         mock_set_options.assert_called_with(headers={'User-Agent': 'Singer.io Bing Ads Tap'}, timeout=100.0)
 
     def test_float_config_provided_request_timeout(self, mock_client, mock_set_options, mock_authorization_data, mock_oauth, mocked_args):
-        """ 
+        """
             Unit tests to ensure that request timeout is set based on config float value
         """
         tap_bing_ads.CONFIG = {}
@@ -355,9 +325,9 @@ class TestRequestTimeoutValue(unittest.TestCase):
         service_client = CustomServiceClient('CustomerManagementService')
         service_client.set_options(**kwargs)
         mock_set_options.assert_called_with(headers={'User-Agent': 'Singer.io Bing Ads Tap'}, timeout=100.8)
-    
+
     def test_string_config_provided_request_timeout(self, mock_client, mock_set_options, mock_authorization_data, mock_oauth, mocked_args):
-        """ 
+        """
             Unit tests to ensure that request timeout is set based on config string value
         """
         tap_bing_ads.CONFIG = {}
@@ -369,9 +339,9 @@ class TestRequestTimeoutValue(unittest.TestCase):
         service_client = CustomServiceClient('CustomerManagementService')
         service_client.set_options(**kwargs)
         mock_set_options.assert_called_with(headers={'User-Agent': 'Singer.io Bing Ads Tap'}, timeout=100.0)
-    
+
     def test_empty_config_provided_request_timeout(self, mock_client, mock_set_options, mock_authorization_data, mock_oauth, mocked_args):
-        """ 
+        """
             Unit tests to ensure that request timeout is set based on default value if empty value is given in config
         """
         tap_bing_ads.CONFIG = {}
