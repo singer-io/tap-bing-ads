@@ -855,7 +855,7 @@ def get_report_interval(state_key):
     conversion_window = int(CONFIG.get('conversion_window', -30))
 
     config_start_date = arrow.get(CONFIG.get('start_date'))
-    config_end_date = arrow.get(CONFIG.get('end_date')).floor('day')
+    config_end_date = arrow.get(CONFIG['end_date']).floor('day') if CONFIG.get('end_date') else arrow.get().floor('day')
 
     bookmark_end_date = singer.get_bookmark(STATE, state_key, 'date')
     conversion_min_date = arrow.get().floor('day').shift(days=conversion_window) # 30 days before the current date
