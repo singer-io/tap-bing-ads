@@ -95,6 +95,16 @@ def get_user_agent():
 class InvalidDateRangeEnd(Exception):
     pass
 
+def fault_messages_or_default(errors, default):
+    """
+    Extract the human-readable Message(s) from a SOAP fault's error object(s),
+    falling back to the raw error object when no Message is present.
+    """
+    if not isinstance(errors, list):
+        errors = [errors]
+    messages = [error.Message for error in errors if getattr(error, 'Message', None)]
+    return ', '.join(messages) if messages else default
+
 def log_service_call(service_method, account_id):
     def wrapper(*args, **kwargs): # pylint: disable=inconsistent-return-statements
         log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
@@ -115,9 +125,17 @@ def log_service_call(service_method, account_id):
                     if any(invalid_date_range_end_errors):
                         raise InvalidDateRangeEnd(invalid_date_range_end_errors) from e
                     LOGGER.info('Caught exception for account: %s', account_id)
-                    raise Exception(operation_errors) from e
+                    raise Exception(fault_messages_or_default(
+                        [oe for (_, oe) in operation_errors], operation_errors)) from e
                 if hasattr(e.fault.detail, 'AdApiFaultDetail'):
-                    raise Exception(e.fault.detail.AdApiFaultDetail.Errors) from e
+                    errors = e.fault.detail.AdApiFaultDetail.Errors
+                    raise Exception(fault_messages_or_default(
+                        errors.AdApiError, errors)) from e
+                if hasattr(e.fault.detail, 'ApiFault'):
+                    operation_errors = e.fault.detail.ApiFault.OperationErrors
+                    raise Exception(fault_messages_or_default(
+                        operation_errors.OperationError, operation_errors)) from e
+                raise
 
     return wrapper
 
@@ -277,20 +295,24 @@ def get_array_type(array_type):
     return array_obj
 
 def get_complex_type_elements(inherited_types, wsdl_type):
+    content = wsdl_type.rawchildren[0].rawchildren
+    ## complexType with no child elements (e.g. empty *ReportFilter types)
+    if not content:
+        return []
     ## inherited type
-    if isinstance(wsdl_type.rawchildren[0].rawchildren[0], suds.xsd.sxbasic.Extension): # pylint: disable=no-else-return
-        abstract_base = wsdl_type.rawchildren[0].rawchildren[0].ref[0]
+    if isinstance(content[0], suds.xsd.sxbasic.Extension): # pylint: disable=no-else-return
+        abstract_base = content[0].ref[0]
         if abstract_base not in inherited_types:
             inherited_types[abstract_base] = set()
         inherited_types[abstract_base].add(wsdl_type.name)
 
         elements = []
-        for element_group in wsdl_type.rawchildren[0].rawchildren[0].rawchildren:
+        for element_group in content[0].rawchildren:
             for element in element_group:
                 elements.append(element[0])
         return elements
     else:
-        return wsdl_type.rawchildren[0].rawchildren
+        return content
 
 def wsdl_type_to_schema(inherited_types, wsdl_type):
     #Prepare schema from wsdl file
