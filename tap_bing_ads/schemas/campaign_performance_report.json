@@ -1,0 +1,806 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "_sdc_report_datetime": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "TimePeriod": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "AccountId": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "AccountName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AccountNumber": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AccountStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CurrencyCode": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CustomerId": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CustomerName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CampaignId": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "CampaignName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CampaignStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CampaignType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CampaignLabels": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BaseCampaignId": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BudgetName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BudgetStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BudgetAssociationStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AdDistribution": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Network": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "TopVsOther": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BidMatchType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "DeliveredMatchType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "DeviceType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "DeviceOS": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "TrackingTemplate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CustomParameters": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "FinalUrlSuffix": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Goal": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "GoalType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Impressions": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "Clicks": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "Ctr": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Spend": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AverageCpc": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AverageCpm": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AverageCPV": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AveragePosition": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AverageWatchTimePerVideoView": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AverageWatchTimePerImpression": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "PhoneImpressions": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "PhoneCalls": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "Ptr": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Assists": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "CostPerAssist": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Conversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ConversionsQualified": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ConversionRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "CostPerConversion": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ConversionDelay": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Revenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "RevenuePerConversion": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "RevenuePerAssist": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ReturnOnAdSpend": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllConversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllConversionsQualified": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllConversionRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllCostPerConversion": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllRevenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllRevenuePerConversion": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllReturnOnAdSpend": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughConversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughConversionsQualified": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughRevenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "LowQualityClicks": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "LowQualityClicksPercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "LowQualityImpressions": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "LowQualityImpressionsPercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "LowQualityConversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "LowQualityConversionsQualified": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "LowQualityConversionRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "LowQualityGeneralClicks": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "LowQualitySophisticatedClicks": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "QualityScore": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ExpectedCtr": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AdRelevance": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "LandingPageExperience": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "HistoricalQualityScore": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "HistoricalExpectedCtr": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "HistoricalAdRelevance": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "HistoricalLandingPageExperience": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ImpressionSharePercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ImpressionLostToBudgetPercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ImpressionLostToRankAggPercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ExactMatchImpressionSharePercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ClickSharePercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AbsoluteTopImpressionSharePercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AbsoluteTopImpressionRatePercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AbsoluteTopImpressionShareLostToRankPercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AbsoluteTopImpressionShareLostToBudgetPercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "TopImpressionSharePercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "TopImpressionRatePercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "TopImpressionShareLostToRankPercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "TopImpressionShareLostToBudgetPercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AudienceImpressionSharePercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AudienceImpressionLostToRankPercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AudienceImpressionLostToBudgetPercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "RelativeCtr": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "VideoViews": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "VideoViewsAt25Percent": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "VideoViewsAt50Percent": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "VideoViewsAt75Percent": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "CompletedVideoViews": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "VideoCompletionRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "TotalWatchTimeInMS": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "Sales": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "CostPerSale": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "RevenuePerSale": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Installs": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "CostPerInstall": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "RevenuePerInstall": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Downloads": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "PostClickDownloadRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "CostPerDownload": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AppInstalls": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "PostClickInstallRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "CPI": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Purchases": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "PostInstallPurchaseRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "CPP": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Subscriptions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "PostInstallSubscriptionRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "CPS": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "NewCustomerConversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "NewCustomerRevenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "NewCustomerConversionRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "NewCustomerCPA": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "NewCustomerReturnOnAdSpend": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "NewCustomerCount": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "NewCustomerSpend": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "UnknownCustomerConversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "UnknownCustomerRevenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    }
+  }
+}

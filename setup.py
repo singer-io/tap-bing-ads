@@ -4,32 +4,38 @@ from setuptools import setup, find_packages
 
 setup(
     name='tap-bing-ads',
-    version="2.4.0",
-    description='Singer.io tap for extracting data from the Bing Ads API',
+    version="3.0.0",
+    description='Singer.io tap for extracting data from the Microsoft Advertising (Bing Ads) REST API',
     author='Stitch',
     url='http://singer.io',
     classifiers=['Programming Language :: Python :: 3 :: Only'],
-    py_modules=['tap_bingads'],
+    py_modules=['tap_bing_ads'],
     install_requires=[
-        'arrow==0.17.0',
-        # Seems that suds-community is now the reference for 13.0.11.1 so we can install it now with the removal of use_2to3
-        # https://github.com/BingAds/BingAds-Python-SDK/pull/192
-        'bingads==13.0.28',
-        'requests==2.34.2',
+        'arrow>=1.4.0',
+        'requests>=2.34.2',
         'singer-python==6.8.0',
         'backoff==2.2.1',
     ],
     extras_require={
         'test': [
-            'pylint==3.0.3'
+            'pytest>=7.0.0',
+            'pytest-cov>=4.0.0',
+            'parameterized>=0.9.0',
+            'freezegun>=1.2.0',
+            'responses>=0.23.0',
         ],
         'dev': [
-            'ipdb'
+            'ipdb',
         ]
     },
     entry_points='''
       [console_scripts]
       tap-bing-ads=tap_bing_ads:main
     ''',
-    packages=find_packages()
+    packages=find_packages(),
+    package_data={
+        'tap_bing_ads': ['schemas/*.json'],
+    },
+    include_package_data=True,
 )
+

@@ -53,7 +53,8 @@ EXCLUSIONS = {
                 'TopImpressionShareLostToRankPercent',
                 'TopImpressionSharePercent'
             ]
-        }],
+        }
+    ],
     'AdGroupPerformanceReport': [
         {
             'Attributes': [
@@ -67,7 +68,8 @@ EXCLUSIONS = {
                 'AudienceImpressionSharePercent',
                 'RelativeCtr'
             ]
-        },{
+        },
+        {
             'Attributes': [
                 'BidMatchType',
                 'DeviceOS',
@@ -98,7 +100,8 @@ EXCLUSIONS = {
                 'TopImpressionShareLostToRankPercent',
                 'TopImpressionSharePercent'
             ]
-        }],
+        }
+    ],
     'CampaignPerformanceReport': [
         {
             'Attributes': [
@@ -112,7 +115,8 @@ EXCLUSIONS = {
                 'AudienceImpressionSharePercent',
                 'RelativeCtr'
             ]
-        },{
+        },
+        {
             'Attributes': [
                 'BidMatchType',
                 'BudgetAssociationStatus',
@@ -145,7 +149,8 @@ EXCLUSIONS = {
                 'TopImpressionShareLostToRankPercent',
                 'TopImpressionSharePercent'
             ]
-        }],
+        }
+    ],
     'ProductDimensionPerformanceReport': [{
         'Attributes': [
             'AdDistribution',

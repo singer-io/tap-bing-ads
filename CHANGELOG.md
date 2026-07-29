@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.0
+  * Migrated Microsoft Advertising (Bing Ads) from SOAP SDK to REST API, removing SDK dependency.
+  * Refactored the Microsoft Advertising integration.
+  * bump versions for arrow to 1.4.0, requests to 2.34.2 and singer-pytho to 6.8.0
+
 ## 2.4.0
   * Metadata fields updated for parent streams [#123](https://github.com/singer-io/tap-bing-ads/pull/123)
   * Python version upgrade to version 3.12 in circleci

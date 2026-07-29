@@ -1,3 +1,20 @@
+"""
+Report column metadata for Microsoft Advertising reporting streams.
+
+REPORTING_FIELD_TYPES maps column names to their JSON Schema types.
+Columns not listed here default to 'string'.
+
+METRIC_COLUMNS is the set of columns that count as measure/metric fields.
+Microsoft Advertising requires at least one metric column per report request.
+
+REPORT_REQUIRED_COLUMNS are always added to every report request regardless
+of user selection (needed for bookmarking and record identification).
+
+REPORT_SPECIFIC_REQUIRED_COLUMNS maps report names to their additional
+required columns.
+"""
+
+# Backwards-compatibility aliases (used by existing integration tests)
 REPORT_WHITELIST = [
     'KeywordPerformanceReport',
     'AdPerformanceReport',
@@ -8,10 +25,11 @@ REPORT_WHITELIST = [
     'CampaignPerformanceReport',
     'GoalsAndFunnelsReport',
     'AudiencePerformanceReport',
-    'AdExtensionDetailReport'
+    'AdExtensionDetailReport',
 ]
 
 REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'TimePeriod']
+REPORT_REQUIRED_COLUMNS = REPORT_REQUIRED_FIELDS
 
 REPORT_SPECIFIC_REQUIRED_FIELDS = {
     'GeographicPerformanceReport': ['AccountName'],
@@ -108,5 +126,36 @@ REPORTING_FIELD_TYPES = {
     'RevenuePerConversion': 'number',
     'SidebarBid': 'number',
     'Spend': 'number',
-    'TimePeriod': 'datetime'
+    'TimePeriod': 'datetime',
+    'AbsoluteTopImpressionRatePercent': 'number',
+    'AbsoluteTopImpressionShareLostToBudgetPercent': 'number',
+    'AbsoluteTopImpressionShareLostToRankPercent': 'number',
+    'AbsoluteTopImpressionSharePercent': 'number',
+    'AudienceImpressionLostToBudgetPercent': 'number',
+    'AudienceImpressionLostToRankPercent': 'number',
+    'AudienceImpressionSharePercent': 'number',
+    'ClickSharePercent': 'number',
+    'ImpressionLostToRankAggPercent': 'number',
+    'RelativeCtr': 'number',
+    'ViewThroughConversions': 'number',
+    'AllConversions': 'number',
+    'AllConversionRate': 'number',
+    'AllCostPerConversion': 'number',
+    'AllReturnOnAdSpend': 'number',
+    'AllRevenue': 'number',
+    'AllRevenuePerConversion': 'number',
+    'AudienceId': 'integer',
+    'ConversionsQualified': 'number',
+    'ViewThroughConversionsQualified': 'number',
 }
+
+# Columns considered metrics/measures — at least one must be selected per report request.
+METRIC_COLUMNS = {
+    'Clicks', 'Impressions', 'Ctr', 'Spend', 'Conversions', 'ConversionRate',
+    'Revenue', 'Assists', 'ReturnOnAdSpend', 'AverageCpc', 'AverageCpm',
+    'AverageCpp', 'LowQualityClicks', 'PhoneCalls', 'AllConversions',
+    'AllRevenue', 'ViewThroughConversions',
+}
+
+# Alias used by BaseReport._check_required_metrics
+REPORT_SPECIFIC_REQUIRED_COLUMNS = REPORT_SPECIFIC_REQUIRED_FIELDS

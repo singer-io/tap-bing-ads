@@ -1,0 +1,242 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "_sdc_report_datetime": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "TimePeriod": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "AccountId": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "AccountName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AccountNumber": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AccountStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CampaignId": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "CampaignName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CampaignStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CampaignType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BaseCampaignId": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AdGroupId": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "AdGroupName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AdGroupStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AssetGroupId": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AssetGroupName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AssetGroupStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AdDistribution": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Language": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AgeGroup": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Gender": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Goal": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "GoalType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Impressions": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "Clicks": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "Spend": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ExtendedCost": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Assists": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "Conversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ConversionsQualified": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Revenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllConversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllConversionsQualified": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllRevenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughConversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughConversionsQualified": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughRevenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AbsoluteTopImpressionRatePercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "TopImpressionRatePercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    }
+  }
+}
