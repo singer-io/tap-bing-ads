@@ -12,7 +12,7 @@ class AdExtensionDetailReport(BaseReport):
         "AdExtensionVersion",
         "DeviceType",
         "Network",
-        "TopVsOther",
+        "TopVsOther"
     ]
     replication_method = "INCREMENTAL"
     replication_keys = ["TimePeriod"]

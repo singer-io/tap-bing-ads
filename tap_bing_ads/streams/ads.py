@@ -25,6 +25,15 @@ class Ads(IncrementalStream):
         self.url_endpoint = f"{CAMPAIGN_BASE_URL}/{self.path}"
         return super().get_url_endpoint(parent_obj)
 
+    def check_access(self) -> bool:
+        """
+        Ads require an AdGroupId in the request which is only known at sync time —
+        not at discovery.  Return True and rely on cascade: if the parent ``ad_groups``
+        stream is inaccessible, ads will be pruned automatically by
+        ``_prune_inaccessible_children()`` in discover.py.
+        """
+        return True
+
     def update_data_payload(self, parent_obj: Dict = None, **kwargs) -> Dict:
         """Constructs the JSON body payload for the API request."""
         ad_group_id = str(parent_obj.get("Id", "")) if parent_obj else ""

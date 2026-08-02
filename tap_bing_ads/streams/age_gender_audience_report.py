@@ -10,7 +10,7 @@ class AgeGenderAudienceReport(BaseReport):
         "AccountId",
         "AdGroupId",
         "AgeGroup",
-        "Gender",
+        "Gender"
     ]
     replication_method = "INCREMENTAL"
     replication_keys = ["TimePeriod"]

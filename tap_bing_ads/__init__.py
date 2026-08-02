@@ -5,9 +5,6 @@ tap-bing-ads — Singer tap for Microsoft Advertising (Bing Ads) REST API.
 Replaces the legacy SOAP/SDK implementation with direct REST API calls
 using OAuth 2.0 refresh-token authentication.
 """
-import sys
-import json
-
 import singer
 from singer import utils
 
@@ -42,7 +39,7 @@ def main() -> None:
 
     with Client(config, config_path=config_path) as client:
         if parsed_args.discover:
-            do_discover()
+            do_discover(client)
         elif parsed_args.catalog:
             state = parsed_args.state or {}
             sync(
@@ -57,5 +54,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

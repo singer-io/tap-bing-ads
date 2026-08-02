@@ -6,8 +6,6 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 from zipfile import ZipFile
 
 import arrow
-import backoff
-import singer
 from singer import (
     Transformer,
     get_bookmark,
@@ -26,6 +24,7 @@ from tap_bing_ads.exceptions import (
     BingAdsNoMeasureSelected,
     BingAdsInvalidFieldSelection,
     BingAdsReportError,
+    BingAdsForbiddenError
 )
 
 LOGGER = get_logger()
@@ -173,6 +172,37 @@ class BaseStream(ABC):
         else:
             yield raw_data
 
+    def check_access(self) -> bool:
+        """
+        Verify that the configured API credentials have read access to this stream.
+
+        Uses the first ``account_id`` from config when probing the endpoint so the
+        request is valid.  Returns False only on HTTP 403; all other errors propagate.
+
+        Concrete subclasses that require a parent ID in their payload (e.g. campaigns
+        needs AccountId, ad_groups needs CampaignId) must override this method.
+        """
+
+        account_id = self.client.config.get("account_ids", "").split(",")[0].strip()
+        url = self.get_url_endpoint()
+        self.update_data_payload()
+
+        try:
+            self.client.make_request(
+                method=self.http_method,
+                url=url,
+                json_body=self.data_payload if self.http_method == "POST" else None,
+                account_id=account_id or None,
+            )
+            return True
+        except BingAdsForbiddenError as exc:
+            LOGGER.warning(
+                "Unauthorized stream: %s — excluding from catalog. Error: '%s'",
+                self.tap_stream_id,
+                str(exc),
+            )
+            return False
+
 
 class IncrementalStream(BaseStream):
     """
@@ -244,7 +274,6 @@ class IncrementalStream(BaseStream):
 
         return count
 
-
 class FullTableStream(BaseStream):
     """
     Base class for FULL_TABLE streams (campaigns, ad_groups, ads).
@@ -272,7 +301,6 @@ class FullTableStream(BaseStream):
 
         return count
 
-
 class BaseReport(ABC):
     """
     Abstract base class for asynchronous report streams.
@@ -294,6 +322,8 @@ class BaseReport(ABC):
 
     # Required columns (always included regardless of selection)
     required_columns: List[str] = ["TimePeriod", "AccountId"]
+    # Measure columns required for a valid probe request (at least one measure is mandatory)
+    required_measure_columns: List[str] = ["Clicks"]
     # Extra columns required for this specific report (overridden by subclass)
     report_specific_columns: List[str] = []
 
@@ -312,6 +342,40 @@ class BaseReport(ABC):
 
     def write_schema(self) -> None:
         write_schema(self.tap_stream_id, self.schema, self.key_properties)
+
+    def check_access(self) -> bool:
+        """
+        Probe the report submit endpoint to verify the credentials have access.
+
+        Builds a fully-formed request body using the stream's own ``report_name``,
+        ``required_columns``, ``report_specific_columns``, and the first
+        ``account_id`` from config, so the API validates both credentials and the
+        report type.  Only HTTP 403 means genuinely unauthorised.
+        """
+        import arrow
+
+        account_id = self.client.config.get("account_ids", "").split(",")[0].strip()
+        url = f"{REPORTING_BASE_URL}/{self.report_submit_path}"
+
+        # Use yesterday as a minimal 1-day window so the Time fields are valid.
+        end_date = arrow.utcnow().shift(days=-1)
+        start_date = end_date
+        columns = list(dict.fromkeys(
+            self.required_columns + self.report_specific_columns + self.required_measure_columns
+        ))
+        body = self._build_report_request(account_id, columns, start_date, end_date)
+
+        try:
+            self.client.make_request("POST", url, json_body=body,
+                                     account_id=account_id or None)
+            return True
+        except BingAdsForbiddenError as exc:
+            LOGGER.warning(
+                "Unauthorized report stream: %s — excluding from catalog. Error: '%s'",
+                self.tap_stream_id,
+                str(exc),
+            )
+            return False
 
     def get_selected_columns(self) -> List[str]:
         """Return selected columns for the report (excludes SDC metadata fields)."""

@@ -10,8 +10,10 @@ class GoalsAndFunnelsReport(BaseReport):
         "AccountId",
         "AdGroupId",
         "GoalId",
-        "DeviceType",
+        "DeviceType"
     ]
     replication_method = "INCREMENTAL"
     replication_keys = ["TimePeriod"]
     report_specific_columns = ["Goal"]
+    # GoalsAndFunnelsReport has no Clicks column; use AllConversions as the measure probe
+    required_measure_columns = ["AllConversions"]

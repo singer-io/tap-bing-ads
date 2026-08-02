@@ -12,7 +12,7 @@ class CampaignPerformanceReport(BaseReport):
         "Network",
         "TopVsOther",
         "DeviceType",
-        "DeliveredMatchType",
+        "DeliveredMatchType"
     ]
     replication_method = "INCREMENTAL"
     replication_keys = ["TimePeriod"]

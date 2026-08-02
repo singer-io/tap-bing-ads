@@ -1,78 +1,110 @@
+from tap_tester import connections, menagerie, runner
 from tap_tester.base_suite_tests.all_fields_test import AllFieldsTest
-from base_new_framework import BingAdsBaseTest
 
-from tap_tester.base_case import BaseCase as base
-from tap_tester.jira_client import JiraClient as jira_client
-from tap_tester.jira_client import CONFIGURATION_ENVIRONMENT as jira_config
-
-JIRA_CLIENT = jira_client({**jira_config})
+from base import BingAdsBaseTest
 
 
-class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
+class BingAdsAllFields(AllFieldsTest, BingAdsBaseTest):
     """ Test the tap all_fields """
-
-    start_date = '2021-01-01T00:00:00Z'
 
     @staticmethod
     def name():
         return "tap_tester_bing_ads_all_fields_test"
 
-    # update all tests in repo when JIRA cards are complete
-    TDL_23223_is_done = JIRA_CLIENT.get_status_category("TDL-23223") == "done"
-    assert TDL_23223_is_done == False, "TDL-23223 is done, Re-add streams with fixed exclusions"
-    TDL_24648_is_done = JIRA_CLIENT.get_status_category("TDL-24648") == "done"
-    assert TDL_24648_is_done == False, "TDL-24648 is done, Re-add streams that have data"
-
     def streams_to_test(self):
-        # TODO Excluded ad_group and campaign report streams due to errors exclusions file errors
-        #   current file doesn't appear to have the latest exclusions, to be removed after TDL-23223
-        #   is fixed. Data has aged out of the 3 year retention window for other report streams.
-        #   Work with marketing / dev to see if new data can be generated.
-        streams_to_exclude = {'ad_extension_detail_report',
-                              'ad_performance_report',
-                              'ad_group_performance_report', # TDL-23223
-                              'age_gender_audience_report',
-                              'audience_performance_report',
-                              'campaign_performance_report', # TDL-23223
-                              'geographic_performance_report',
-                              'goals_and_funnels_report',
-                              'keyword_performance_report',
-                              'search_query_performance_report'}
+        """ Streams to test for all_fields test."""
+        # Exclude streams that have no data in the test account.
+        streams_to_exclude = {
+            'ad_extension_detail_report',
+            'audience_performance_report',
+            'goals_and_funnels_report',
+            'keyword_performance_report',
+            'search_query_performance_report'
+        }
 
         return self.expected_stream_names().difference(streams_to_exclude)
 
-    MISSING_FIELDS = {
-        'accounts':{
-            'TaxCertificate',
-            'AccountMode'
-        },
-        'ads':{
-            'Descriptions',
-            'LongHeadlineString',
-            'BusinessName',
-            'Videos',
-            'LongHeadlines',
-            'Images',
-            'LongHeadline',
-            'PromotionalText',
-            'CallToAction',
-            'AppStoreId',
-            'Headlines',
-            'ImpressionTrackingUrls',
-            'CallToActionLanguage',
-            'Headline',
-            'AppPlatform'
-        },
-        'campaigns':{
-            'MultimediaAdsBidAdjustment',
-            'AdScheduleUseSearcherTimeZone',
-            'BidStrategyId'
-        },
-        'ad_groups':{
-            'CpvBid',
-            'AdGroupType',  # TDL-23228 -- data present in fronend but not returned in synced records
-            'MultimediaAdsBidAdjustment',
-            'AdScheduleUseSearcherTimeZone',
-            'CpmBid'
-        }
+    # Union of all ImpressionSharePerformanceStatistics fields from the Bing Ads exclusion rules
+    # for campaign_performance_report and ad_group_performance_report.
+    #
+    # These fields are mutually exclusive with Attribute columns (BudgetName, BudgetStatus,
+    # BudgetAssociationStatus, BidMatchType, TopVsOther, DeviceOS, Goal, GoalType, CustomerId,
+    # CustomerName, DeliveredMatchType).  Selecting both groups triggers
+    # BingAdsInvalidFieldSelection.  We keep the Attributes and drop all ImpressionShare
+    # statistics so the maximum valid field set is selected.
+    #
+    # Source: tap_bing_ads/exclusions.py — CampaignPerformanceReport / AdGroupPerformanceReport
+    _IMPRESSION_SHARE_FIELDS = {
+        'AbsoluteTopImpressionRatePercent',
+        'AbsoluteTopImpressionShareLostToBudgetPercent',
+        'AbsoluteTopImpressionShareLostToRankPercent',
+        'AbsoluteTopImpressionSharePercent',
+        'AudienceImpressionLostToBudgetPercent',
+        'AudienceImpressionLostToRankPercent',
+        'AudienceImpressionSharePercent',
+        'ClickSharePercent',
+        'ExactMatchImpressionSharePercent',
+        'ImpressionLostToAdRelevancePercent',
+        'ImpressionLostToBidPercent',
+        'ImpressionLostToBudgetPercent',
+        'ImpressionLostToExpectedCtrPercent',
+        'ImpressionLostToRankAggPercent',
+        'ImpressionLostToRankPercent',
+        'ImpressionSharePercent',
+        'RelativeCtr',
+        'TopImpressionRatePercent',
+        'TopImpressionShareLostToBudgetPercent',
+        'TopImpressionShareLostToRankPercent',
+        'TopImpressionSharePercent',
     }
+    _EXCLUSION_STREAMS = {'campaign_performance_report', 'ad_group_performance_report'}
+
+    def setUp(self):
+        """
+        Override setUp to build streams_to_selected_fields dynamically from the live catalog.
+
+        The framework's default behaviour (streams_to_selected_fields = {}) selects ALL fields
+        for ALL streams.  For campaign_performance_report and ad_group_performance_report the
+        Bing Ads API enforces a mutual-exclusion constraint that makes a full-field sync fail.
+        We build a complete per-stream "fields to keep" dict here so that:
+          - every other stream still gets all its fields selected, and
+          - the two exclusion streams get everything except the four conflicting fields.
+        """
+        _cache = BingAdsAllFields
+
+        if all([_cache.synced_records, _cache.record_count_by_stream,
+                _cache.selected_fields, _cache.actual_fields]):
+            return
+
+        _cache.conn_id = conn_id = connections.ensure_connection(self)
+        _cache.found_catalogs = found_catalogs = self.run_and_verify_check_mode(conn_id)
+        _cache.test_streams = self.streams_to_test()
+
+        test_catalogs = [catalog for catalog in found_catalogs
+                         if catalog.get('stream_name') in _cache.test_streams]
+
+        # Build a complete streams_to_selected_fields dict from the live catalog metadata.
+        # "fields to keep" = all non-unsupported schema fields, minus the exclusions for the
+        # two report streams that have a mutual-exclusion constraint.
+        streams_to_selected = {}
+        for catalog in test_catalogs:
+            schema = menagerie.get_annotated_schema(conn_id, catalog['stream_id'])
+            all_props = {
+                item['breadcrumb'][-1] for item in schema['metadata']
+                if item['breadcrumb'] != []
+                and item['metadata'].get('inclusion') != 'unsupported'
+            }
+            stream = catalog['stream_name']
+            if stream in self._EXCLUSION_STREAMS:
+                streams_to_selected[stream] = all_props - self._IMPRESSION_SHARE_FIELDS
+            else:
+                streams_to_selected[stream] = all_props
+
+        # select_streams_and_fields computes non_selected = all_props - streams_to_selected[stream]
+        # so passing all_props for a stream means nothing is deselected (all fields kept).
+        self.select_streams_and_fields(conn_id, test_catalogs, streams_to_selected)
+        _cache.selected_fields = streams_to_selected
+
+        _cache.record_count_by_stream = self.run_and_verify_sync_mode(conn_id)
+        _cache.synced_records = runner.get_records_from_target_output()
+        _cache.actual_fields = runner.examine_target_output_for_fields()

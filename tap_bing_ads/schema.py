@@ -14,6 +14,11 @@ from singer import metadata
 
 from tap_bing_ads.exclusions import EXCLUSIONS
 from tap_bing_ads.streams import STREAMS
+from tap_bing_ads.reports import (
+    REPORT_REQUIRED_FIELDS,
+    REPORT_SPECIFIC_REQUIRED_FIELDS,
+    METRIC_COLUMNS
+)
 
 LOGGER = singer.get_logger()
 
@@ -43,10 +48,10 @@ def load_schema_references() -> Dict:
     return refs
 
 def get_report_required_fields(report_name: str):
-    from tap_bing_ads.reports import REPORT_REQUIRED_FIELDS, REPORT_SPECIFIC_REQUIRED_FIELDS
     base = list(REPORT_REQUIRED_FIELDS)
     extra = REPORT_SPECIFIC_REQUIRED_FIELDS.get(report_name, [])
-    return base + extra
+    metric_fields = list(METRIC_COLUMNS)
+    return base + extra + metric_fields
 
 def _build_report_metadata(stream_cls, schema: Dict) -> list:
     """Build Singer metadata for a report stream with fieldExclusions."""

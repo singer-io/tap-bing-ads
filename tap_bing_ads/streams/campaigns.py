@@ -24,6 +24,31 @@ class Campaigns(IncrementalStream):
         self.url_endpoint = f"{CAMPAIGN_BASE_URL}/{self.path}"
         return super().get_url_endpoint(parent_obj)
 
+    def check_access(self) -> bool:
+        """
+        Probe the campaigns endpoint using the first account_id from config as the
+        parent AccountId.  A real account_id is required for a valid request.
+        """
+        from tap_bing_ads.exceptions import BingAdsForbiddenError
+        account_id = self.client.config.get("account_ids", "").split(",")[0].strip()
+        url = self.get_url_endpoint()
+        # update_data_payload for Campaigns reads parent_obj.get("Id") as AccountId
+        self.update_data_payload(parent_obj={"Id": account_id})
+        try:
+            self.client.make_request(
+                method=self.http_method,
+                url=url,
+                json_body=self.data_payload,
+                account_id=account_id or None,
+            )
+            return True
+        except BingAdsForbiddenError as exc:
+            LOGGER.warning(
+                "Unauthorized stream: %s — excluding from catalog. Error: '%s'",
+                self.tap_stream_id, str(exc),
+            )
+            return False
+
     def update_data_payload(self, parent_obj: Dict = None, **kwargs) -> Dict:
         """
         Constructs the JSON body payload for the API request.

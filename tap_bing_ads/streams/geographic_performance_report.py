@@ -12,7 +12,7 @@ class GeographicPerformanceReport(BaseReport):
         "LocationId",
         "Network",
         "TopVsOther",
-        "DeviceType",
+        "DeviceType"
     ]
     replication_method = "INCREMENTAL"
     replication_keys = ["TimePeriod"]

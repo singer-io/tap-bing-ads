@@ -9,7 +9,7 @@ class AudiencePerformanceReport(BaseReport):
         "TimePeriod",
         "AccountId",
         "AssociationId",
-        "AssociationLevel",
+        "AssociationLevel"
     ]
     replication_method = "INCREMENTAL"
     replication_keys = ["TimePeriod"]
