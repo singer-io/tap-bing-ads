@@ -1,10 +1,10 @@
 # Changelog
 
 ## 3.0.0
-  * Migrated Microsoft Advertising (Bing Ads) from SOAP SDK to REST API, removing SDK dependency.
+  * Migrated Microsoft Advertising (Bing Ads) from SOAP SDK to REST API, removing SDK dependency.[#133](https://github.com/singer-io/tap-bing-ads/pull/133)
   * Refactored the Microsoft Advertising integration.
   * Unauthorized streams (HTTP 403) are silently excluded from the catalog during discovery.
-  * bump versions for arrow to 1.4.0, requests to 2.34.2 and singer-pytho to 6.8.0.
+  * bump versions for arrow to 1.4.0, requests to 2.34.2 and singer-python to 6.8.0.
 
 ## 2.4.0
   * Metadata fields updated for parent streams [#123](https://github.com/singer-io/tap-bing-ads/pull/123)

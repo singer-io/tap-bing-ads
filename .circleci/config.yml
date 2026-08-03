@@ -27,8 +27,12 @@ jobs:
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
             uv pip install pytest coverage parameterized
             mkdir -p htmlcov
-            coverage run --source=tap_bing_ads -m pytest tests/unittests --junitxml=htmlcov/report.xml
+            coverage run --source=tap_bing_ads -m pytest tests/unittests
             coverage html
+      - store_test_results:
+          path: test_output/report.xml
+      - store_artifacts:
+          path: htmlcov
       - run:
           name: 'Coverage Report'
           command: |
@@ -36,9 +40,11 @@ jobs:
             coverage report -m | tee coverage.txt
             coverage html
       - store_test_results:
-          path: htmlcov/report.xml
+          path: test_output/report.xml
       - store_artifacts:
           path: htmlcov
+      - store_artifacts:
+          path: coverage.txt
       - run:
           name: 'Integration Tests'
           command: |

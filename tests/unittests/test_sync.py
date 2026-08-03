@@ -91,6 +91,7 @@ class TestSyncOrchestration(unittest.TestCase):
         catalog = Catalog([_make_entry("accounts", selected=True, replication_method="INCREMENTAL")])
 
         mock_accounts_obj = MagicMock()
+        mock_accounts_obj.parent = None
         mock_accounts_obj.is_selected.return_value = True
         mock_accounts_obj.children = []
         mock_accounts_obj.child_to_sync = []
@@ -112,15 +113,20 @@ class TestSyncOrchestration(unittest.TestCase):
         catalog = Catalog([_make_entry("keyword_performance_report", selected=True)])
 
         mock_report_obj = MagicMock()
+        mock_report_obj.parent = None
+        mock_report_obj.children = []
+        mock_report_obj.child_to_sync = []
         mock_report_obj.sync.return_value = 10
         mock_report_cls = MagicMock(return_value=mock_report_obj)
+        mock_report_cls.parent = None
 
         with patch("tap_bing_ads.sync.STREAMS", {"keyword_performance_report": mock_report_cls}):
             with patch("tap_bing_ads.sync.REPORT_STREAMS", {"keyword_performance_report": mock_report_cls}):
                 sync(self.client, DEFAULT_CONFIG, catalog, self.state)
 
-        # 2 account IDs in DEFAULT_CONFIG â†’ should be called twice
-        self.assertEqual(mock_report_obj.sync.call_count, 2)
+        # 2 account IDs in DEFAULT_CONFIG → should be called twice from report loop
+        report_calls = [c for c in mock_report_obj.sync.call_args_list if c.kwargs.get("account_id")]
+        self.assertEqual(len(report_calls), 2)
 
     @patch("singer.write_state")
     def test_account_ids_are_parsed_from_config(self, mock_ws):
@@ -128,8 +134,10 @@ class TestSyncOrchestration(unittest.TestCase):
         catalog = Catalog([_make_entry("keyword_performance_report", selected=True)])
 
         mock_report_obj = MagicMock()
+        mock_report_obj.parent = None
         mock_report_obj.sync.return_value = 0
         mock_report_cls = MagicMock(return_value=mock_report_obj)
+        mock_report_cls.parent = None
 
         with patch("tap_bing_ads.sync.STREAMS", {"keyword_performance_report": mock_report_cls}):
             with patch("tap_bing_ads.sync.REPORT_STREAMS", {"keyword_performance_report": mock_report_cls}):

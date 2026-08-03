@@ -1,8 +1,6 @@
 from typing import Dict, List
 
 import singer
-# from singer import Transformer, metadata, set_currently_syncing, get_currently_syncing, write_state
-
 from tap_bing_ads.client import Client
 from tap_bing_ads.streams import STREAMS, REPORT_STREAMS
 
@@ -13,7 +11,7 @@ def update_currently_syncing(state: Dict, stream_name: str) -> None:
     """
     Update currently_syncing in state and write it
     """
-    if not stream_name and singer.get_currently_syncing(state):
+    if not stream_name and "currently_syncing" in state:
         del state["currently_syncing"]
     else:
         singer.set_currently_syncing(state, stream_name)
@@ -30,7 +28,7 @@ def write_schema(stream, client, streams_to_sync, catalog) -> None:
     for child in stream.children:
         child_obj = STREAMS[child](client, catalog.get_stream(child))
         write_schema(child_obj, client, streams_to_sync, catalog)
-        if child in streams_to_sync:
+        if child in streams_to_sync or any(_is_ancestor(child, s, STREAMS) for s in streams_to_sync):
             stream.child_to_sync.append(child_obj)
 
 
@@ -40,36 +38,40 @@ def sync(client: Client, config: Dict, catalog: singer.Catalog, state: Dict) -> 
 
     Top-level core stream (accounts) cascades to campaigns → ad_groups → ads automatically.
     Report streams run per account.
+    Syncing is done in the order of streams in the catalog, so that parent streams are synced before child streams.
     """
-    selected_streams = [s.stream for s in catalog.get_selected_streams(state)]
-
-    # Only top-level streams (no parent) are driven directly;
-    # children are wired up inside write_schema via child_to_sync.
-    top_level_streams = [name for name in selected_streams if STREAMS[name].parent is None]
+    streams_to_sync = []
+    for stream in catalog.get_selected_streams(state):
+        streams_to_sync.append(stream.stream)
+    LOGGER.info("selected_streams: {}".format(streams_to_sync))
 
     account_ids: List[str] = [a.strip() for a in config["account_ids"].split(",")]
 
-    LOGGER.info("Selected streams: %s", selected_streams)
-    LOGGER.info("Top-level streams to sync: %s", top_level_streams)
-
     with singer.Transformer() as transformer:
-        for stream_name in top_level_streams:
+        for stream_name in streams_to_sync:
             stream = STREAMS[stream_name](client, catalog.get_stream(stream_name))
-            write_schema(stream, client, selected_streams, catalog)
+            if stream.parent:
+                if stream.parent not in streams_to_sync:
+                    streams_to_sync.append(stream.parent)
+                continue
 
+            write_schema(stream, client, streams_to_sync, catalog)
             LOGGER.info("START Syncing: %s", stream_name)
             update_currently_syncing(state, stream_name)
             total_records = stream.sync(state=state, transformer=transformer)
             update_currently_syncing(state, None)
-            LOGGER.info("FINISHED Syncing: %s, total_records: %s", stream_name, total_records)
-
+            LOGGER.info(
+                "FINISHED Syncing: {}, total_records: {}".format(
+                    stream_name, total_records
+                )
+            )
         # ----------------------------------------------------------------
         # Report streams — run per account, unchanged
         # ----------------------------------------------------------------
         for account_id in account_ids:
             LOGGER.info("--- Report streams for account: %s ---", account_id)
-            for entry in catalog.get_selected_streams(state):
-                stream_name = entry.stream
+            for stream_name in streams_to_sync:
+                entry = catalog.get_stream(stream_name)
                 if stream_name not in REPORT_STREAMS:
                     continue
 
@@ -77,11 +79,14 @@ def sync(client: Client, config: Dict, catalog: singer.Catalog, state: Dict) -> 
                 LOGGER.info("Syncing report %s for account %s", stream_name, account_id)
 
                 stream_obj = STREAMS[stream_name](client, entry)
-                total = stream_obj.sync(state=state, account_id=account_id, config=config)
-                LOGGER.info("Finished %s for account %s. Records: %d", stream_name, account_id, total)
+                total_records = stream_obj.sync(state=state, account_id=account_id, config=config)
                 update_currently_syncing(state, None)
+                LOGGER.info(
+                    "FINISHED Syncing: {}, total_records: {}".format(
+                        stream_name, total_records
+                    )
+                )
 
-    update_currently_syncing(state, None)
     LOGGER.info("Sync complete.")
 
 
