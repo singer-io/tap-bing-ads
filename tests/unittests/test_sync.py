@@ -109,16 +109,16 @@ class TestSyncOrchestration(unittest.TestCase):
 
     @patch("singer.write_state")
     def test_report_streams_called_per_account(self, mock_ws):
-        """Report streams should be invoked once per account ID."""
+        """Reports run per account without adding accounts to the core sync."""
         catalog = Catalog([_make_entry("keyword_performance_report", selected=True)])
 
         mock_report_obj = MagicMock()
-        mock_report_obj.parent = None
+        mock_report_obj.parent = "accounts"
         mock_report_obj.children = []
         mock_report_obj.child_to_sync = []
         mock_report_obj.sync.return_value = 10
         mock_report_cls = MagicMock(return_value=mock_report_obj)
-        mock_report_cls.parent = None
+        mock_report_cls.parent = "accounts"
 
         with patch("tap_bing_ads.sync.STREAMS", {"keyword_performance_report": mock_report_cls}):
             with patch("tap_bing_ads.sync.REPORT_STREAMS", {"keyword_performance_report": mock_report_cls}):
@@ -146,4 +146,3 @@ class TestSyncOrchestration(unittest.TestCase):
         account_ids_used = [c.kwargs.get("account_id") for c in mock_report_obj.sync.call_args_list]
         self.assertIn("67890", account_ids_used)
         self.assertIn("11111", account_ids_used)
-

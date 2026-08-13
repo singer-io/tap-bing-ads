@@ -49,6 +49,11 @@ def sync(client: Client, config: Dict, catalog: singer.Catalog, state: Dict) -> 
 
     with singer.Transformer() as transformer:
         for stream_name in streams_to_sync:
+            # Reports are synced independently per configured account below.
+            # They do not need the accounts stream added to the core stream graph.
+            if stream_name in REPORT_STREAMS:
+                continue
+
             stream = STREAMS[stream_name](client, catalog.get_stream(stream_name))
             if stream.parent:
                 if stream.parent not in streams_to_sync:
