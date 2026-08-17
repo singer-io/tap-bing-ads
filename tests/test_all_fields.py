@@ -14,7 +14,7 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
     # Incremental streams can be harder to populate predictably. Keep this set
     # empty by default and add stream names (for example: {'accounts'}) once
     # data setup is stable enough to enforce field-assert coverage.
-    EXPECTED_INCREMENTAL_STREAMS_ASSERTED = set()
+    EXPECTED_INCREMENTAL_STREAMS_ASSERTED = {'accounts'}
 
     start_date = '2021-01-01T00:00:00Z'
 
@@ -37,6 +37,10 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
 
         return self.expected_stream_names().intersection(core_streams)
 
+    @staticmethod
+    def _sorted_fields(values):
+        return sorted(values)
+
     def test_no_unexpected_streams_replicated(self):
         # Some expected core streams can legitimately return no rows depending on
         # account state and date window. Keep this assertion focused on guarding
@@ -47,37 +51,17 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
 
     def test_core_streams_sync_records(self):
         """
-        FULL_TABLE streams (ads, ad_groups, campaigns) are not bounded by start_date and
-        should always replicate records if data exists in the account — assert these strictly.
-
-        INCREMENTAL streams (accounts) are bounded by LastModifiedTime relative to start_date,
-        so zero rows is acceptable; we skip the hard assertion for those.
+        Core streams are required coverage for this test. Each selected core stream
+        must replicate at least one record.
         """
-        full_table_streams = {
-            stream for stream in self.test_streams
-            if self.expected_replication_method(stream) == self.FULL_TABLE
-        }
-        incremental_streams = self.test_streams - full_table_streams
-
-        for stream in full_table_streams:
+        for stream in self.test_streams:
             with self.subTest(stream=stream):
                 record_count = self.record_count_by_stream.get(stream, 0)
                 self.assertGreater(
                     record_count, 0,
-                    msg=f"FULL_TABLE stream '{stream}' returned 0 records — "
-                        "expected data regardless of start_date. "
-                        "Populate data via the UI for this account."
+                    msg=f"Core stream '{stream}' returned 0 records. "
+                        "Populate data for this stream in the test account before running."
                 )
-
-        for stream in incremental_streams:
-            with self.subTest(stream=stream):
-                record_count = self.record_count_by_stream.get(stream, 0)
-                if record_count == 0:
-                    self.logger.warning(
-                        f"INCREMENTAL stream '{stream}' returned 0 records for "
-                        f"start_date={self.start_date}. Skipping count assertion — "
-                        "adjust start_date or generate records to strengthen this check."
-                    )
 
     def test_all_fields_for_streams_are_replicated(self):
         # Validate all-fields behavior only for streams that actually produced rows.
@@ -99,7 +83,32 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
                 self.fields_replicated = fields_replicated
                 self.remove_bad_keys(stream)
 
+                expected_key_set = set(expected_all_keys)
+                replicated_key_set = set(self.fields_replicated)
+                missing_from_replication = expected_key_set - replicated_key_set
+                unexpected_in_replication = replicated_key_set - expected_key_set
+
+                # Ads stream frequently varies by ad subtype. Emit explicit guidance
+                # so MISSING_FIELDS updates are driven by observed data, not guesswork.
+                replicated_but_marked_missing = set()
+                suggested_missing_field_additions = set()
+                if stream == 'ads':
+                    configured_missing = set(self.MISSING_FIELDS.get('ads', {}))
+                    replicated_but_marked_missing = replicated_key_set.intersection(configured_missing)
+                    suggested_missing_field_additions = missing_from_replication - configured_missing
+
                 self.assertSetEqual(self.fields_replicated, expected_all_keys,
+                                    msg=(
+                                        f"Field mismatch for stream '{stream}'. "
+                                        f"Missing from replicated ({len(missing_from_replication)}): "
+                                        f"{self._sorted_fields(missing_from_replication)}. "
+                                        f"Unexpected in replicated ({len(unexpected_in_replication)}): "
+                                        f"{self._sorted_fields(unexpected_in_replication)}. "
+                                        f"ads recommendations -> remove from MISSING_FIELDS if now present: "
+                                        f"{self._sorted_fields(replicated_but_marked_missing)}; "
+                                        f"consider adding to MISSING_FIELDS only if consistently absent: "
+                                        f"{self._sorted_fields(suggested_missing_field_additions)}"
+                                    ),
                                     logging=f"verify all fields are replicated for stream {stream}")
                 streams_asserted.append(stream)
 
@@ -114,7 +123,8 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
 
         self.assertTrue(
             full_table_streams.issubset(streams_asserted),
-            msg=f"FULL_TABLE stream field assertions missing. Expected: {full_table_streams}, "
+            msg=f"Required FULL_TABLE stream field assertions missing. "
+                f"Expected: {full_table_streams}, "
                 f"asserted: {streams_asserted}"
         )
 
@@ -137,7 +147,6 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
             'AccountMode'
         },
         'ads':{
-            'Descriptions',
             'LongHeadlineString',
             'BusinessName',
             'Videos',
@@ -147,81 +156,29 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
             'PromotionalText',
             'CallToAction',
             'AppStoreId',
-            'Headlines',
             'ImpressionTrackingUrls',
             'CallToActionLanguage',
             'Headline',
             'AppPlatform',
-            'Path1',
-            'EditorialStatus',
-            'DevicePreference',
-            'AdFormatPreference',
-            'Domain',
-            'Type',
-            'Status',
             'DisplayUrl',
-            'UrlCustomParameters',
-            'FinalUrlSuffix',
-            'TrackingUrlTemplate',
             'Title',
             'TitlePart2',
             'TextPart2',
-            'FinalMobileUrls',
-            'FinalUrls',
-            'Id',
-            'ForwardCompatibilityMap',
             'DestinationUrl',
             'Text',
-            'FinalAppUrls',
             'TitlePart3',
             'TitlePart1',
-            'Path2'
         },
         'campaigns':{
             'MultimediaAdsBidAdjustment',
             'AdScheduleUseSearcherTimeZone',
-            'BidStrategyId',
-            'Settings',
-            'BudgetId',
-            'ForwardCompatibilityMap',
-            'Name',
-            'Id',
-            'TimeZone',
-            'UrlCustomParameters',
-            'BiddingScheme',
-            'BudgetType',
-            'FinalUrlSuffix',
-            'AudienceAdsBidAdjustment',
-            'Status',
-            'DailyBudget',
-            'ExperimentId',
-            'Languages',
-            'CampaignType',
-            'SubType',
-            'TrackingUrlTemplate'
+            'BidStrategyId'
         },
         'ad_groups':{
             'CpvBid',
             'AdGroupType',  # TDL-23228 -- data present in fronend but not returned in synced records
             'MultimediaAdsBidAdjustment',
             'AdScheduleUseSearcherTimeZone',
-            'CpmBid',
-            'Settings',
-            'StartDate',
-            'ForwardCompatibilityMap',
-            'CpcBid',
-            'EndDate',
-            'Language',
-            'AdRotation',
-            'Name',
-            'Id',
-            'UrlCustomParameters',
-            'BiddingScheme',
-            'Network',
-            'PrivacyStatus',
-            'FinalUrlSuffix',
-            'AudienceAdsBidAdjustment',
-            'Status',
-            'TrackingUrlTemplate'
+            'CpmBid'
         }
     }

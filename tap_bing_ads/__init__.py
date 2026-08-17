@@ -720,7 +720,9 @@ def sync_ads(client, selected_streams, ad_group_ids):
                     'ExpandedText',
                     'Product',
                     'Text',
-                    'Image'
+                    'Image',
+                    'ResponsiveAd',
+                    'ResponsiveSearch'
                 ]
             })
         response_dict = sobject_to_dict(response)
