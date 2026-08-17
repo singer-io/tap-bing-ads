@@ -85,8 +85,8 @@ class BingAdsBaseTest(BaseCase):
             "oauth_client_secret": os.getenv('TAP_BING_ADS_OAUTH_CLIENT_SECRET'),
             "refresh_token": os.getenv('TAP_BING_ADS_REFRESH_TOKEN'),
             "developer_token": os.getenv('TAP_BING_ADS_DEVELOPER_TOKEN'),
-            "customer_id": '254943312',
-            "account_ids": '188412305,189213875',
+            "customer_id": os.getenv('TAP_BING_ADS_CUSTOMER_ID'),
+            "account_ids": os.getenv('TAP_BING_ADS_ACCOUNT_IDS'),
         }
 
     def expected_metadata(self):
@@ -197,7 +197,9 @@ class BingAdsBaseTest(BaseCase):
         missing_envs = [x for x in ['TAP_BING_ADS_OAUTH_CLIENT_ID',
                                     'TAP_BING_ADS_OAUTH_CLIENT_SECRET',
                                     'TAP_BING_ADS_REFRESH_TOKEN',
-                                    'TAP_BING_ADS_DEVELOPER_TOKEN']
+                                    'TAP_BING_ADS_DEVELOPER_TOKEN',
+                                    'TAP_BING_ADS_CUSTOMER_ID',
+                                    'TAP_BING_ADS_ACCOUNT_IDS']
                         if os.getenv(x) is None]
         if missing_envs:
             raise Exception("set environment variables")

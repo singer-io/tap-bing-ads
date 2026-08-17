@@ -11,9 +11,6 @@ JIRA_CLIENT = jira_client({**jira_config})
 class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
     """ Test the tap all_fields """
 
-    # Incremental streams can be harder to populate predictably. Keep this set
-    # empty by default and add stream names (for example: {'accounts'}) once
-    # data setup is stable enough to enforce field-assert coverage.
     EXPECTED_INCREMENTAL_STREAMS_ASSERTED = {'accounts'}
 
     start_date = '2021-01-01T00:00:00Z'
@@ -24,10 +21,10 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
 
     # When both TDL-23223 (exclusions file fixes) and TDL-24648 (stream data availability)
     # are resolved, report streams may be re-added to streams_to_test().
-    TDL_23223_is_done = JIRA_CLIENT.get_status_category("TDL-23223") == "done"
-    TDL_24648_is_done = JIRA_CLIENT.get_status_category("TDL-24648") == "done"
-    assert not (TDL_23223_is_done and TDL_24648_is_done), \
-        "TDL-23223 and TDL-24648 are both done — re-add report streams to streams_to_test()"
+    SAC_23223_is_done = JIRA_CLIENT.get_status_category("SAC-23223") == "done"
+    SAC_24648_is_done = JIRA_CLIENT.get_status_category("SAC-24648") == "done"
+    assert not (SAC_23223_is_done and SAC_24648_is_done), \
+        "SAC-23223 and SAC-24648 are both done — re-add report streams to streams_to_test()"
 
     def streams_to_test(self):
         # Keep this test pinned to core object streams only.
