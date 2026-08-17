@@ -35,13 +35,27 @@ DEFAULT_CONFIG = {
 }
 
 
+_REPORT_FIELD_SCHEMA = {
+    "Clicks":                   {"type": ["null", "integer"]},
+    "Impressions":              {"type": ["null", "integer"]},
+    "AccountId":                {"type": ["null", "integer"]},
+    "Spend":                    {"type": ["null", "number"]},
+    "Ctr":                      {"type": ["null", "number"]},
+    "AverageCpc":               {"type": ["null", "number"]},
+    "AverageCpm":               {"type": ["null", "number"]},
+    "ImpressionSharePercent":   {"type": ["null", "number"]},
+    "TimePeriod":               {"type": ["null", "string"], "format": "date-time"},
+}
+
+
 def _make_report_catalog_entry(stream_cls, selected_columns=None):
     """Build a CatalogEntry with selected columns for a report stream."""
     selected_columns = selected_columns or ["TimePeriod", "AccountId", "Clicks", "Impressions", "Spend"]
     schema_dict = {
         "type": "object",
         "properties": {
-            col: {"type": ["null", "string"]} for col in selected_columns
+            col: _REPORT_FIELD_SCHEMA.get(col, {"type": ["null", "string"]})
+            for col in selected_columns
         },
     }
     schema_dict["properties"]["_sdc_report_datetime"] = {
@@ -184,7 +198,13 @@ class TestBaseReportCsvParsing(unittest.TestCase):
 
     def setUp(self):
         self.client = MagicMock(spec=Client)
-        self.catalog_entry = _make_report_catalog_entry(CampaignPerformanceReport)
+        self.catalog_entry = _make_report_catalog_entry(
+            CampaignPerformanceReport,
+            selected_columns=[
+                "TimePeriod", "AccountId", "Clicks", "Impressions", "Spend",
+                "Ctr", "AverageCpc", "ImpressionSharePercent",
+            ],
+        )
         self.stream = CampaignPerformanceReport(self.client, self.catalog_entry)
 
     @patch("tap_bing_ads.streams.abstracts.write_record")

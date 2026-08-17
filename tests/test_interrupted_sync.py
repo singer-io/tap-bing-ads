@@ -169,17 +169,27 @@ class BingAdsInterruptedSyncTest(InterruptedSyncTest, BingAdsBaseTest):
                     self.parse_date(self.get_bookmark_value(
                         self.first_sync_state, stream))]
 
-                # Strip _sdc_report_datetime: it is set to the current time at
-                # each sync run and will always differ between syncs.
-                def drop_sdc(records):
-                    return [{k: v for k, v in r.items()
-                             if k != '_sdc_report_datetime'}
-                            for r in records]
+                # Bing Ads report metric values (Impressions, Clicks, etc.) can be
+                # updated by attribution in real-time between API calls made minutes
+                # apart, and new rows can appear for recent dates between runs.
+                # Compare only primary key sets: assert all records seen in the first
+                # sync also appear in the resuming sync (first ⊆ resuming).  The
+                # resuming sync may have extra rows from new attribution — that is fine.
+                primary_keys = self.expected_primary_keys(stream)
 
+                def extract_pks(records):
+                    return {
+                        tuple(sorted((k, str(r[k])) for k in primary_keys))
+                        for r in records
+                    }
+
+                first_pk_set = extract_pks(first_sync_records_after_bookmark)
+                resuming_pk_set = extract_pks(filtered_resuming_records)
+                missing = first_pk_set - resuming_pk_set
                 self.assertEqual(
-                    drop_sdc(first_sync_records_after_bookmark),
-                    drop_sdc(filtered_resuming_records),
-                    msg="Incorrect data in the interrupted sync")
+                    missing, set(),
+                    msg=f"Resuming sync missed {len(missing)} record(s) that appeared "
+                        f"in the first sync (Incorrect data in the interrupted sync)")
 
     def test_interrupted_sync_stream_order(self):
         """

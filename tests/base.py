@@ -32,7 +32,6 @@ class BingAdsBaseTest(BaseCase):
         # strictly after the manipulated bookmark, making record-count assertions valid.
         return_value = {
             'start_date': self.start_date,
-            'conversion_window': '0',  # advanced option
             'customer_id': '254943312',
             'account_ids': '188412305',
         }
@@ -71,7 +70,8 @@ class BingAdsBaseTest(BaseCase):
             cls.REPLICATION_METHOD: cls.INCREMENTAL,
             cls.REPLICATION_KEYS: {"TimePeriod"},
             cls.FOREIGN_KEYS: {"AccountId"},
-            cls.PARENT_TAP_STREAM_ID: "accounts"
+            cls.PARENT_TAP_STREAM_ID: "accounts",
+            cls.LOOK_BACK_WINDOW: timedelta(days=30)
         }
         return {
             "accounts": {

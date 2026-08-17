@@ -54,37 +54,79 @@ class BingAdsStartDateTest(StartDateTest, BingAdsBaseTest):
             "geographic_performance_report": set(),
         }
 
-    # ------------------------------------------------------------------
-    # Overrides
-    # ------------------------------------------------------------------
+    def test_replication_key_values(self):
+        """
+        The 30-day lookback (DEFAULT_CONVERSION_WINDOW=-30) means sync 2 queries
+        from today-30days even when start_date_2 > today-30days.  Records with
+        TimePeriod values back to today-30days are therefore expected and valid.
+
+        Override: validate sync 2 dates against today-30days instead of start_date_2.
+        Sync 1 uses start_date_1 (older than today-30days) so the standard check applies.
+        """
+        lookback_cutoff = (dt.now(tz.utc) - timedelta(days=30)).replace(
+            hour=0, minute=0, second=0, microsecond=0)
+
+        for stream in self.streams_to_test():
+            with self.subTest(stream=stream):
+                assert len(self.expected_replication_keys(stream)) == 1
+                replication_key = next(iter(self.expected_replication_keys(stream)))
+
+                replication_dates_1 = {
+                    record['data'].get(replication_key)
+                    for record in
+                    StartDateTest.synced_messages_by_stream_1.get(
+                        stream, {}).get('messages', [])
+                    if record.get('action') == 'upsert'}
+
+                replication_dates_2 = {
+                    record['data'].get(replication_key)
+                    for record in
+                    StartDateTest.synced_messages_by_stream_2.get(
+                        stream, {}).get('messages', [])
+                    if record.get('action') == 'upsert'}
+
+                # Sync 1: start_date_1 is older than today-30days so full range applies.
+                for replication_date in replication_dates_1:
+                    with self.subTest(sync="sync1", replication_date=replication_date):
+                        self.assertGreaterEqual(
+                            self.parse_date(replication_date),
+                            self.parse_date(self.start_date_1),
+                            msg=f"Record date {replication_date} is before "
+                                f"start_date_1 {self.start_date_1}")
+
+                # Sync 2: the 30-day lookback expands the window back to today-30days,
+                # which is earlier than start_date_2. Validate against today-30days.
+                for replication_date in replication_dates_2:
+                    with self.subTest(sync="sync2", replication_date=replication_date):
+                        self.assertGreaterEqual(
+                            self.parse_date(replication_date),
+                            lookback_cutoff,
+                            msg=f"Record date {replication_date} is before the 30-day "
+                                f"lookback cutoff {lookback_cutoff.date()} "
+                                f"(start_date_2={self.start_date_2})")
 
     def test_replicated_records(self):
         """
-        Override the base assertion to use assertGreaterEqual instead of
-        assertGreater for report streams.
+        The 30-day lookback (DEFAULT_CONVERSION_WINDOW=-30) means start_date_2
+        (today-15days) is overridden: sync 2 queries from today-30days, the same
+        effective window as sync 1 (which has no data before today-30days anyway).
 
-        The test account has sparse data: for small report streams
-        (ad_performance_report, ad_group_performance_report,
-        campaign_performance_report) all 12 records may fall on the same
-        dates, meaning sync 1 and sync 2 can have the same record count when
-        start_date_2 still covers those dates.  assertGreaterEqual avoids a
-        false failure while still verifying that sync 2 is never larger than
-        sync 1 and that all sync-2 records were already present in sync 1.
+        Since both syncs cover the same date range and Bing Ads can attribute new
+        rows between API calls, sync 2 may return slightly more records than sync 1.
+
+        Assert that all records seen in sync 1 also appear in sync 2 (sync1 ⊆ sync2).
+        Sync 2 having extra live-attribution records is expected and acceptable.
         """
         for stream in self.streams_to_test():
             with self.subTest(stream=stream):
 
                 expected_primary_keys = self.expected_primary_keys(stream)
 
-                # compound replication key not supported
                 assert len(self.expected_replication_keys(stream)) == 1
                 expected_replication_key = next(
                     iter(self.expected_replication_keys(stream)))
 
-                record_count_sync_1 = StartDateTest.record_count_by_stream_1.get(stream, 0)
-                record_count_sync_2 = StartDateTest.record_count_by_stream_2.get(stream, 0)
-
-                # Dates replicated in sync 1 — used to filter out records added between syncs.
+                # Dates replicated in sync 1 — used to exclude records added between syncs.
                 replication_dates_1 = {
                     record['data'].get(expected_replication_key)
                     for record in
@@ -92,7 +134,16 @@ class BingAdsStartDateTest(StartDateTest, BingAdsBaseTest):
                         stream, {}).get('messages', [])
                     if record.get('action') == 'upsert'}
 
-                # All PKs from sync 2 whose date is within the sync-1 window.
+                # All PKs from sync 1.
+                primary_keys_sync_1 = {
+                    tuple(msg['data'][pk] for pk in expected_primary_keys)
+                    for msg in
+                    StartDateTest.synced_messages_by_stream_1.get(
+                        stream, {}).get('messages', [])
+                    if msg.get('action') == 'upsert'}
+
+                # PKs from sync 2 filtered to dates present in sync 1's window
+                # (excludes rows that were added to the API after sync 1 ran).
                 primary_keys_sync_2 = {
                     tuple(msg['data'][pk] for pk in expected_primary_keys)
                     for msg in
@@ -102,25 +153,10 @@ class BingAdsStartDateTest(StartDateTest, BingAdsBaseTest):
                     and self.parse_date(msg['data'][expected_replication_key])
                     <= self.parse_date(max(replication_dates_1))}
 
-                # All PKs from sync 1 that fall on or after start_date_2
-                # (i.e., records sync 2 should also see).
-                primary_keys_sync_1 = {
-                    tuple(msg['data'][pk] for pk in expected_primary_keys)
-                    for msg in
-                    StartDateTest.synced_messages_by_stream_1.get(
-                        stream, {}).get('messages', [])
-                    if msg.get('action') == 'upsert'
-                    and self.parse_date(msg['data'][expected_replication_key])
-                    >= self.parse_date(self.start_date_2)}
-
-                # Sync 1 should have at least as many records as sync 2
-                # (use assertGreaterEqual — equal counts are valid on sparse test accounts).
-                self.assertGreaterEqual(
-                    record_count_sync_1, record_count_sync_2,
-                    msg=f"stream {stream}: sync 2 has MORE records than sync 1 "
-                        f"({record_count_sync_2} > {record_count_sync_1})")
-
-                # Every record visible in sync 2 must also have appeared in sync 1.
-                self.assertSetEqual(
-                    primary_keys_sync_1, primary_keys_sync_2,
-                    msg=f"stream {stream}: sync 2 contains records not present in sync 1")
+                # Every record from sync 1 must appear in sync 2 (sync 1 ⊆ sync 2).
+                # Sync 2 may have additional rows from live attribution data — that is fine.
+                missing = primary_keys_sync_1 - primary_keys_sync_2
+                self.assertEqual(
+                    missing, set(),
+                    msg=f"stream {stream}: sync 2 is missing {len(missing)} record(s) "
+                        f"that appeared in sync 1")

@@ -50,11 +50,26 @@ def _mock_client():
     return client
 
 
+_REPORT_FIELD_SCHEMA = {
+    "Clicks":      {"type": ["null", "integer"]},
+    "Impressions": {"type": ["null", "integer"]},
+    "AccountId":   {"type": ["null", "integer"]},
+    "Spend":       {"type": ["null", "number"]},
+    "Ctr":         {"type": ["null", "number"]},
+    "AverageCpc":  {"type": ["null", "number"]},
+    "AverageCpm":  {"type": ["null", "number"]},
+    "TimePeriod":  {"type": ["null", "string"], "format": "date-time"},
+}
+
+
 def _make_report_entry(stream_cls, selected_columns=None):
     selected_columns = selected_columns or ["TimePeriod", "AccountId", "Clicks", "Impressions"]
     schema_dict = {
         "type": "object",
-        "properties": {col: {"type": ["null", "string"]} for col in selected_columns},
+        "properties": {
+            col: _REPORT_FIELD_SCHEMA.get(col, {"type": ["null", "string"]})
+            for col in selected_columns
+        },
     }
     schema_dict["properties"]["_sdc_report_datetime"] = {"type": ["null", "string"]}
     mdata = metadata.new()
@@ -986,49 +1001,61 @@ class TestTypeRow(unittest.TestCase):
 
     def _make_stream(self):
         from tap_bing_ads.streams.campaign_performance_report import CampaignPerformanceReport
-        entry = _make_report_entry(CampaignPerformanceReport)
-        client = _mock_client()
-        return CampaignPerformanceReport(client, entry)
+        from singer.catalog import CatalogEntry
+        from singer.utils import load_json
+        from singer.schema import Schema
+        # Build a schema with explicitly typed fields
+        schema_dict = {
+            "type": "object",
+            "properties": {
+                "Clicks":      {"type": ["null", "integer"]},
+                "AverageCpc":  {"type": ["null", "number"]},
+                "TimePeriod":  {"type": ["null", "string"], "format": "date-time"},
+                "CampaignName": {"type": ["null", "string"]},
+                "_sdc_report_datetime": {"type": ["null", "string"]},
+            },
+        }
+        mdata = metadata.new()
+        mdata = metadata.get_standard_metadata(
+            schema=schema_dict, key_properties=[], valid_replication_keys=["TimePeriod"],
+            replication_method="INCREMENTAL",
+        )
+        mdata = metadata.to_map(mdata)
+        mdata = metadata.write(mdata, (), "selected", True)
+        for col in ["Clicks", "AverageCpc", "TimePeriod", "CampaignName"]:
+            mdata = metadata.write(mdata, ("properties", col), "inclusion", "automatic")
+        entry = CatalogEntry(
+            stream=CampaignPerformanceReport.tap_stream_id,
+            tap_stream_id=CampaignPerformanceReport.tap_stream_id,
+            key_properties=[],
+            schema=Schema.from_dict(schema_dict),
+            metadata=metadata.to_list(mdata),
+        )
+        return CampaignPerformanceReport(_mock_client(), entry)
 
     def test_integer_field_cast(self):
-        from tap_bing_ads.reports import REPORTING_FIELD_TYPES
         stream = self._make_stream()
-        int_field = next((f for f, t in REPORTING_FIELD_TYPES.items() if t == "integer"), None)
-        if not int_field:
-            self.skipTest("No integer fields in REPORTING_FIELD_TYPES")
-        row = {int_field: "1,234"}
+        row = {"Clicks": "1,234"}
         stream._type_row(row)
-        self.assertEqual(row[int_field], 1234)
+        self.assertEqual(row["Clicks"], 1234)
 
     def test_number_field_cast(self):
-        from tap_bing_ads.reports import REPORTING_FIELD_TYPES
         stream = self._make_stream()
-        num_field = next((f for f, t in REPORTING_FIELD_TYPES.items() if t == "number"), None)
-        if not num_field:
-            self.skipTest("No number fields in REPORTING_FIELD_TYPES")
-        row = {num_field: "12.5%"}
+        row = {"AverageCpc": "12.5%"}
         stream._type_row(row)
-        self.assertAlmostEqual(row[num_field], 12.5)
+        self.assertAlmostEqual(row["AverageCpc"], 12.5)
 
     def test_dash_value_becomes_zero(self):
-        from tap_bing_ads.reports import REPORTING_FIELD_TYPES
         stream = self._make_stream()
-        int_field = next((f for f, t in REPORTING_FIELD_TYPES.items() if t == "integer"), None)
-        if not int_field:
-            self.skipTest("No integer fields")
-        row = {int_field: "--"}
+        row = {"Clicks": "--"}
         stream._type_row(row)
-        self.assertEqual(row[int_field], 0)
+        self.assertEqual(row["Clicks"], 0)
 
     def test_empty_value_becomes_none(self):
-        from tap_bing_ads.reports import REPORTING_FIELD_TYPES
         stream = self._make_stream()
-        int_field = next((f for f, t in REPORTING_FIELD_TYPES.items() if t == "integer"), None)
-        if not int_field:
-            self.skipTest("No integer fields")
-        row = {int_field: ""}
+        row = {"Clicks": ""}
         stream._type_row(row)
-        self.assertIsNone(row[int_field])
+        self.assertIsNone(row["Clicks"])
 
 
 # =============================================================================
@@ -1278,16 +1305,34 @@ class TestTypeRowDatetimeException(unittest.TestCase):
 
     def test_invalid_datetime_value_is_silently_skipped(self):
         from tap_bing_ads.streams.campaign_performance_report import CampaignPerformanceReport
-        from tap_bing_ads.reports import REPORTING_FIELD_TYPES
-        entry = _make_report_entry(CampaignPerformanceReport)
+        from singer.catalog import CatalogEntry
+        from singer.schema import Schema
+        schema_dict = {
+            "type": "object",
+            "properties": {
+                "TimePeriod": {"type": ["null", "string"], "format": "date-time"},
+                "_sdc_report_datetime": {"type": ["null", "string"]},
+            },
+        }
+        mdata = metadata.new()
+        mdata = metadata.get_standard_metadata(
+            schema=schema_dict, key_properties=[], valid_replication_keys=["TimePeriod"],
+            replication_method="INCREMENTAL",
+        )
+        mdata = metadata.to_map(mdata)
+        mdata = metadata.write(mdata, (), "selected", True)
+        entry = CatalogEntry(
+            stream=CampaignPerformanceReport.tap_stream_id,
+            tap_stream_id=CampaignPerformanceReport.tap_stream_id,
+            key_properties=[],
+            schema=Schema.from_dict(schema_dict),
+            metadata=metadata.to_list(mdata),
+        )
         stream = CampaignPerformanceReport(_mock_client(), entry)
-        dt_field = next((f for f, t in REPORTING_FIELD_TYPES.items() if t == "datetime"), None)
-        if not dt_field:
-            self.skipTest("No datetime fields in REPORTING_FIELD_TYPES")
-        row = {dt_field: "not-a-real-date-!!$$%%"}
+        row = {"TimePeriod": "not-a-real-date-!!$$%%"}
         # Should not raise — the except block silently passes
         stream._type_row(row)
-        self.assertIn(dt_field, row)
+        self.assertIn("TimePeriod", row)
 
 
 class TestSyncIntervalNoMeasureFromInterval(unittest.TestCase):

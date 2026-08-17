@@ -523,19 +523,23 @@ class BaseReport(ABC):
 
     def _type_row(self, row: Dict) -> None:
         """Cast report column values to their declared types in-place."""
-        from tap_bing_ads.reports import REPORTING_FIELD_TYPES
+        schema_props = self.schema.get("properties", {})
         for field, value in row.items():
             if not value and value != 0:
                 row[field] = None
                 continue
-            field_type = REPORTING_FIELD_TYPES.get(field)
-            if field_type == "integer":
+            prop = schema_props.get(field, {})
+            prop_type = prop.get("type", "string")
+            if isinstance(prop_type, str):
+                prop_type = [prop_type]
+
+            if "integer" in prop_type:
                 row[field] = 0 if value in ("--", "") else int(value.replace(",", ""))
-            elif field_type == "number":
+            elif "number" in prop_type:
                 row[field] = 0.0 if value in ("--", "") else float(
                     value.replace("%", "").replace(",", "")
                 )
-            elif field_type == "datetime":
+            elif prop.get("format") == "date-time":
                 try:
                     row[field] = arrow.get(value).isoformat()
                 except Exception:
