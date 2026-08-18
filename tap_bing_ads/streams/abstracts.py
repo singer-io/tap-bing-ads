@@ -534,11 +534,18 @@ class BaseReport(ABC):
                 prop_type = [prop_type]
 
             if "integer" in prop_type:
-                row[field] = 0 if value in ("--", "") else int(value.replace(",", ""))
+                try:
+                    row[field] = int(value.replace(",", ""))
+                except (ValueError, AttributeError):
+                    # Bing Ads uses non-numeric sentinels ("-", "--", "N/A", etc.)
+                    # for metrics with no applicable data. Treat them as zero.
+                    row[field] = 0
             elif "number" in prop_type:
-                row[field] = 0.0 if value in ("--", "") else float(
-                    value.replace("%", "").replace(",", "")
-                )
+                try:
+                    row[field] = float(value.replace("%", "").replace(",", ""))
+                except (ValueError, AttributeError):
+                    # Same sentinel handling as integer above.
+                    row[field] = 0.0
             elif prop.get("format") == "date-time":
                 try:
                     row[field] = arrow.get(value).isoformat()
