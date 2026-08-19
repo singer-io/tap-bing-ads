@@ -4,14 +4,16 @@ from tap_bing_ads import get_stream_def
 
 class TestStreamDef(unittest.TestCase):
     """A set of unit tests to ensure that we are getting proper schema and metadata for each streams"""
-    
+
     # Mocking metadata
     def mock_metadata(*args):
         return {(): {'table-key-properties': ['Id'], 'forced-replication-method': 'INCREMENTAL', 'valid-replication-keys': 'LastModifiedTime', 'inclusion': 'available'}, ('properties', 'BillToCustomerId'): {'inclusion': 'available'}, ('properties', 'CurrencyCode'): {'inclusion': 'available', 'fieldExclusions': [['properties', 'BidMatchType'], ['properties', 'DeviceOS'], ['properties', 'Goal'], ['properties', 'GoalType'], ['properties', 'TopVsOther']]}, ('properties', 'AccountFinancialStatus'): {'inclusion': 'available'}, ('properties', 'Id'): {'inclusion': 'automatic'}, ('properties', 'Language'): {'inclusion': 'available'}, ('properties', 'LastModifiedByUserId'): {'inclusion': 'available'}, ('properties', 'LastModifiedTime'): {'inclusion': 'available'}, ('properties', 'Name'): {'inclusion': 'available'}}
 
     # Mocking metadata.write method
     def mock_write(mdata,tpl,incl='inclusion', val='automatic'):
-        if isinstance(tpl[1],list):
+        if not tpl:
+            mdata[tpl] = {incl: val}
+        elif isinstance(tpl[1],list):
             mdata[(tpl[0],tpl[1][0])] = {incl: val}
         else:
             mdata[tpl] = {incl: val}
@@ -26,7 +28,7 @@ class TestStreamDef(unittest.TestCase):
     @mock.patch("singer.metadata.write", side_effect=mock_write)
     @mock.patch("singer.metadata.to_list", side_effect=mock_to_list)
     def test_get_stream_def_for_account_stream(self,mock_to_list,mock_write,mock_metadata, mock_get_standard_metadata):
-        """ 
+        """
         Call get_stream_def function for a stream and validate primary keys, automatic keys and replication keys assignment
         """
         # Defined mock variables to call get_stream_def function for account stream
@@ -38,13 +40,13 @@ class TestStreamDef(unittest.TestCase):
         stream_response = get_stream_def(mock_stream_name, mock_schema, mock_stream_metadata, mock_pks, mock_replication_key)
 
         # Verify top-level breadcrum is available
-        self.assertEquals(stream_response.get('metadata')[0].get('breadcrumb'),())
-        self.assertEquals(stream_response.get('metadata')[0].get('metadata'),{'table-key-properties': ['Id'], 'forced-replication-method': 'INCREMENTAL', 'valid-replication-keys': 'LastModifiedTime', 'inclusion': 'available'})
+        self.assertEqual(stream_response.get('metadata')[0].get('breadcrumb'),())
+        self.assertEqual(stream_response.get('metadata')[0].get('metadata'),{'table-key-properties': ['Id'], 'forced-replication-method': 'INCREMENTAL', 'valid-replication-keys': 'LastModifiedTime', 'inclusion': 'available'})
 
         # Verify pks, replication_keys and automatic_keys in mock_stream_metadata must be automatic in metadata
         for field in stream_response.get('metadata'):
             if field.get('breadcrumb') in [('properties', 'Id'),('properties', 'LastModifiedTime'),('properties', 'CurrencyCode')]:
-                self.assertEquals(field.get('metadata').get('inclusion'),'automatic')
+                self.assertEqual(field.get('metadata').get('inclusion'),'automatic')
             if field.get('breadcrumb') == ('properties', 'CurrencyCode'):
                 # verify fieldExclusions
-                self.assertEquals(field.get('metadata').get('fieldExclusions'),[['properties','BidMatchType'],['properties','DeviceOS'],['properties','Goal'],['properties','GoalType'],['properties','TopVsOther']])
+                self.assertEqual(field.get('metadata').get('fieldExclusions'),[['properties','BidMatchType'],['properties','DeviceOS'],['properties','Goal'],['properties','GoalType'],['properties','TopVsOther']])

@@ -59,6 +59,13 @@ DEFAULT_USER_AGENT = 'Singer.io Bing Ads Tap'
 
 ARRAY_TYPE_REGEX = r'ArrayOf([A-Za-z0-9]+)'
 
+PARENT_MAP = {
+    'campaigns': 'accounts',
+    'ad_groups': 'campaigns',
+    'ads': 'ad_groups',
+    'reports': 'accounts'
+}
+
 def should_retry_httperror(exception):
     """ Return true if exception is required to retry otherwise return false """
     try:
@@ -95,6 +102,22 @@ def get_user_agent():
 class InvalidDateRangeEnd(Exception):
     pass
 
+class NoMeasureSelected(Exception):
+    """Raised when a report request contains no measure (metric) columns.
+    Bing Ads requires at least one metric column (e.g. Impressions, Clicks)
+    in addition to dimension columns. Error code: 2017 NoMeasureSelected."""
+
+class InvalidFieldSelection(Exception):
+    """Raised when mutually exclusive fields are both selected for a report stream.
+    Bing Ads defines fieldExclusions groups where certain dimension fields
+    (e.g. DeviceOS, BidMatchType) cannot coexist with share-of-voice metrics
+    (e.g. ImpressionSharePercent). The conflicting field pairs are included in
+    the exception message."""
+
+class BingApiError(Exception):
+    """Raised when the Bing Ads API returns an unrecognised OperationError
+    (e.g. InternalError) that does not map to a more specific exception type."""
+
 def log_service_call(service_method, account_id):
     def wrapper(*args, **kwargs): # pylint: disable=inconsistent-return-statements
         log_args = list(map(lambda arg: str(arg).replace('\n', '\\n'), args)) + list(map(lambda kv: '{}={}'.format(*kv), kwargs.items()))
@@ -114,10 +137,14 @@ def log_service_call(service_method, account_id):
                                                      if oe.ErrorCode == 'InvalidCustomDateRangeEnd']
                     if any(invalid_date_range_end_errors):
                         raise InvalidDateRangeEnd(invalid_date_range_end_errors) from e
+                    no_measure_errors = [oe for (_, oe) in operation_errors
+                                         if oe.ErrorCode == 'NoMeasureSelected']
+                    if any(no_measure_errors):
+                        raise NoMeasureSelected(no_measure_errors) from e
                     LOGGER.info('Caught exception for account: %s', account_id)
-                    raise Exception(operation_errors) from e
+                    raise BingApiError(operation_errors) from e
                 if hasattr(e.fault.detail, 'AdApiFaultDetail'):
-                    raise Exception(e.fault.detail.AdApiFaultDetail.Errors) from e
+                    raise BingApiError(e.fault.detail.AdApiFaultDetail.Errors) from e
 
     return wrapper
 
@@ -135,7 +162,7 @@ class CustomServiceClient(ServiceClient):
     @bing_ads_error_handling
     def __init__(self, name, **kwargs):
         # Initializes a new instance of this ServiceClient class.
-        return super().__init__(name, 'v13', **kwargs)
+        super().__init__(name, 'v13', **kwargs)
 
     def __getattr__(self, name):
         # Log and return service call(suds client call) object
@@ -278,6 +305,8 @@ def get_array_type(array_type):
 
 def get_complex_type_elements(inherited_types, wsdl_type):
     ## inherited type
+    if not wsdl_type.rawchildren or not wsdl_type.rawchildren[0].rawchildren:
+        return []
     if isinstance(wsdl_type.rawchildren[0].rawchildren[0], suds.xsd.sxbasic.Extension): # pylint: disable=no-else-return
         abstract_base = wsdl_type.rawchildren[0].rawchildren[0].ref[0]
         if abstract_base not in inherited_types:
@@ -378,7 +407,14 @@ def get_type_map(client):
 
     return type_map
 
-def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replication_keys=None):
+def get_stream_def(
+        stream_name,
+        schema,
+        stream_metadata=None,
+        pks=None,
+        replication_keys=None,
+        parent_stream_id=None
+    ):
     '''Generate schema with metadata for the given stream.'''
 
     stream_def = {
@@ -399,6 +435,9 @@ def get_stream_def(stream_name, schema, stream_metadata=None, pks=None, replicat
                 replication_method = 'INCREMENTAL' if replication_keys else 'FULL_TABLE'
             )
         )
+
+    if parent_stream_id:
+        mdata = metadata.write(mdata, (), 'parent-tap-stream-id', parent_stream_id)
 
     # Marking replication key as automatic
     if replication_keys:
@@ -426,31 +465,53 @@ def discover_core_objects():
     core_object_streams = []
 
     LOGGER.info('Initializing CustomerManagementService client - Loading WSDL')
-    client = CustomServiceClient('CustomerManagementService')
-
-    # Load Account's schemas
-    account_schema = get_core_schema(client, 'AdvertiserAccount')
-    core_object_streams.append(
-        # After new standard metadata changes we are getting Id as primary key only
-        # while earlier we were getting Id and LastModifiedTime both because of the coding mistake
-        # but we are writing Id only while writing the schema (func: sync_accounts_stream) in sync mode,
-        # Hence we are keeping ID only in pks.
-        get_stream_def('accounts', account_schema, pks=['Id'], replication_keys=['LastModifiedTime']))
+    customer_client = CustomServiceClient('CustomerManagementService')
 
     LOGGER.info('Initializing CampaignManagementService client - Loading WSDL')
-    client = CustomServiceClient('CampaignManagementService')
+    campaign_client = CustomServiceClient('CampaignManagementService')
 
-    # Load Campaign's schemas
-    campaign_schema = get_core_schema(client, 'Campaign')
-    core_object_streams.append(get_stream_def('campaigns', campaign_schema, pks=['Id']))
+    stream_configs = [
+        {
+            'name': 'accounts',
+            'client': customer_client,
+            'object_type': 'AdvertiserAccount',
+            'pks': ['Id'],
+            'replication_keys': ['LastModifiedTime']
+        },
+        {
+            'name': 'campaigns',
+            'client': campaign_client,
+            'object_type': 'Campaign',
+            'pks': ['Id'],
+        },
+        {
+            'name': 'ad_groups',
+            'client': campaign_client,
+            'object_type': 'AdGroup',
+            'pks': ['Id'],
+        },
+        {
+            'name': 'ads',
+            'client': campaign_client,
+            'object_type': 'Ad',
+            'pks': ['Id'],
+        }
+    ]
 
-    # Load AdGroup's schemas
-    ad_group_schema = get_core_schema(client, 'AdGroup')
-    core_object_streams.append(get_stream_def('ad_groups', ad_group_schema, pks=['Id']))
-
-    # Load Ad's schemas
-    ad_schema = get_core_schema(client, 'Ad')
-    core_object_streams.append(get_stream_def('ads', ad_schema, pks=['Id']))
+    # After new standard metadata changes we are getting Id as primary key only
+    # while earlier we were getting Id and LastModifiedTime both because of the coding mistake
+    # but we are writing Id only while writing the schema (func: sync_accounts_stream) in sync mode,
+    # Hence we are keeping ID only in pks.
+    for config in stream_configs:
+        schema = get_core_schema(config['client'], config['object_type'])
+        stream_def = get_stream_def(
+            config['name'],
+            schema,
+            pks=config['pks'],
+            replication_keys=config.get('replication_keys'),
+            parent_stream_id=PARENT_MAP.get(config['name'])
+        )
+        core_object_streams.append(stream_def)
 
     return core_object_streams
 
@@ -548,6 +609,7 @@ def discover_reports():
     client = CustomServiceClient('ReportingService')
     type_map = get_type_map(client)
     report_column_regex = r'^(?!ArrayOf)(.+Report)Column$'
+    parent_stream_id = PARENT_MAP.get("reports")
 
     for type_name in type_map:
         match = re.match(report_column_regex, type_name)
@@ -559,7 +621,8 @@ def discover_reports():
             report_stream_def = get_stream_def(
                 stream_name,
                 report_schema,
-                stream_metadata=report_metadata)
+                stream_metadata=report_metadata,
+                parent_stream_id=parent_stream_id)
             report_streams.append(report_stream_def)
 
     return report_streams
@@ -620,7 +683,7 @@ def get_selected_fields(catalog_item, exclude=None):
 
     # Raise Exception if incompatible fields are selected
     if any(invalid_selections):
-        raise Exception("Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{}".format(json.dumps(invalid_selections, indent=4)))
+        raise InvalidFieldSelection("Invalid selections for field(s) - {{ FieldName: [IncompatibleFields] }}:\n{}".format(json.dumps(invalid_selections, indent=4)))
     return selected_fields
 
 def filter_selected_fields(selected_fields, obj):
@@ -652,20 +715,21 @@ def sync_accounts_stream(account_ids, catalog_item):
         accounts.append(sobject_to_dict(response))
 
     accounts_bookmark = singer.get_bookmark(STATE, 'accounts', 'last_record')
-    if accounts_bookmark:
-        accounts = list(
-            filter(lambda x: x is not None and x['LastModifiedTime'] >= accounts_bookmark,
-                   accounts))
+    accounts = [
+        acc for acc in accounts
+        if acc is not None and (not accounts_bookmark or acc['LastModifiedTime'] >= accounts_bookmark)
+    ]
 
-    max_accounts_last_modified = max([x['LastModifiedTime'] for x in accounts])
+    max_accounts_last_modified = max([x['LastModifiedTime'] for x in accounts]) if accounts else None
 
     with metrics.record_counter('accounts') as counter:
         # Write only selected fields
         singer.write_records('accounts', filter_selected_fields_many(selected_fields, accounts))
         counter.increment(len(accounts))
 
-    singer.write_bookmark(STATE, 'accounts', 'last_record', max_accounts_last_modified)
-    singer.write_state(STATE)
+    if max_accounts_last_modified:
+        singer.write_bookmark(STATE, 'accounts', 'last_record', max_accounts_last_modified)
+        singer.write_state(STATE)
 
 @bing_ads_error_handling
 def sync_campaigns(client, account_id, selected_streams): # pylint: disable=inconsistent-return-statements
@@ -794,7 +858,7 @@ async def poll_report(client, account_id, report_name, start_date, end_date, req
             # As in the async method backoff does not work directly we created a separate method to handle it.
             response = generate_poll_report(client, request_id)
             if response.Status == 'Error':
-                LOGGER.warn('Error polling %s for account %s with request id %s',
+                LOGGER.warning('Error polling %s for account %s with request id %s',
                             report_name, account_id, request_id)
                 return False, None
             if response.Status == 'Success':
@@ -898,8 +962,23 @@ async def sync_report(client, account_id, report_stream):
                                                  current_start_date,
                                                  current_end_date)
         except InvalidDateRangeEnd as ex: # pylint: disable=unused-variable
-            LOGGER.warn("Bing reported that the requested report date range ended outside of "
+            LOGGER.warning("Bing reported that the requested report date range ended outside of "
                         "their data retention period. Skipping to next range...")
+            success = True
+        except NoMeasureSelected as ex: # pylint: disable=unused-variable
+            LOGGER.warning("Bing reported that the report request does not include any measure "
+                        "columns. Please select at least one metric field for stream '%s'. "
+                        "Skipping report...", report_stream.stream)
+            break
+        except InvalidFieldSelection as ex: # pylint: disable=unused-variable
+            LOGGER.warning("Stream '%s' has incompatible field selections. "
+                        "Please deselect conflicting fields. Skipping report...", report_stream.stream)
+            LOGGER.warning(str(ex))
+            break
+        except BingApiError as ex:
+            LOGGER.warning("Bing API returned an error for stream '%s' between %s and %s. "
+                        "Skipping interval...", report_stream.stream, current_start_date, current_end_date)
+            LOGGER.warning(str(ex))
             success = True
 
         if success:
