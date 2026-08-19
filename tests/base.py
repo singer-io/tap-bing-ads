@@ -32,8 +32,7 @@ class BingAdsBaseTest(BaseCase):
         # strictly after the manipulated bookmark, making record-count assertions valid.
         return_value = {
             'start_date': self.start_date,
-            'customer_id': '254943312',
-            'account_ids': '188412305',
+            # 'conversion_window': '-15',  # advanced option
         }
 
         return return_value
@@ -60,7 +59,9 @@ class BingAdsBaseTest(BaseCase):
             "oauth_client_id": os.getenv('TAP_BING_ADS_OAUTH_CLIENT_ID'),
             "oauth_client_secret": os.getenv('TAP_BING_ADS_OAUTH_CLIENT_SECRET'),
             "refresh_token": os.getenv('TAP_BING_ADS_REFRESH_TOKEN'),
-            "developer_token": os.getenv('TAP_BING_ADS_DEVELOPER_TOKEN')
+            "developer_token": os.getenv('TAP_BING_ADS_DEVELOPER_TOKEN'),
+            "customer_id": os.getenv('TAP_BING_ADS_CUSTOMER_ID'),
+            "account_ids": os.getenv('TAP_BING_ADS_ACCOUNT_IDS'),
         }
 
     @classmethod
