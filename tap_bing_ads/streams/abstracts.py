@@ -315,9 +315,14 @@ class BaseReport(ABC):
     # Subclasses must override these
     tap_stream_id: str = ""
     report_name: str = ""
+
+    # Reports are append-only streams — each run downloads a fresh date-windowed
+    # snapshot and writes all rows without upsert logic.  There is no natural
+    # primary key that uniquely identifies a row across runs, so key_properties
+    # is intentionally empty.
     key_properties: List[str] = []
-    replication_method: str = "INCREMENTAL"
-    replication_keys: List[str] = ["TimePeriod"]
+    replication_method: str = "FULL_TABLE"
+    replication_keys: List[str] = []
     parent: Optional[str] = "accounts"
 
     # Required columns (always included regardless of selection)

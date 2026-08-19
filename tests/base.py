@@ -67,11 +67,10 @@ class BingAdsBaseTest(BaseCase):
     def expected_metadata(cls):
         """The expected streams and metadata about the streams"""
         default_report = {
-            cls.REPLICATION_METHOD: cls.INCREMENTAL,
-            cls.REPLICATION_KEYS: {"TimePeriod"},
+            cls.REPLICATION_METHOD: cls.FULL_TABLE,
+            cls.REPLICATION_KEYS: set(),
             cls.FOREIGN_KEYS: {"AccountId"},
             cls.PARENT_TAP_STREAM_ID: "accounts",
-            cls.LOOK_BACK_WINDOW: timedelta(days=30)
         }
         return {
             "accounts": {
@@ -102,15 +101,7 @@ class BingAdsBaseTest(BaseCase):
                 cls.PARENT_TAP_STREAM_ID: "ad_groups"
             },
             "ad_extension_detail_report": {
-                cls.PRIMARY_KEYS: {
-                    "TimePeriod",
-                    "AccountId",
-                    "AdExtensionId",
-                    "AdExtensionVersion",
-                    "DeviceType",
-                    "Network",
-                    "TopVsOther"
-                },
+                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "AdExtensionId",
                     "AdExtensionPropertyValue",
@@ -133,15 +124,7 @@ class BingAdsBaseTest(BaseCase):
                 **default_report
             },
             "ad_group_performance_report": {
-                cls.PRIMARY_KEYS: {
-                    "TimePeriod",
-                    "AccountId",
-                    "AdGroupId",
-                    "Network",
-                    "TopVsOther",
-                    "DeviceType",
-                    "DeliveredMatchType",
-                },
+                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS:{
                     "Clicks",
                     "Revenue",
@@ -162,15 +145,7 @@ class BingAdsBaseTest(BaseCase):
                 **default_report
             },
             "ad_performance_report": {
-                cls.PRIMARY_KEYS: {
-                    "TimePeriod",
-                    "AccountId",
-                    "AdId",
-                    "Network",
-                    "TopVsOther",
-                    "DeviceType",
-                    "DeliveredMatchType"
-                },
+                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "Revenue",
                     "Clicks",
@@ -190,13 +165,7 @@ class BingAdsBaseTest(BaseCase):
                 **default_report
             },
             "age_gender_audience_report": {
-                cls.PRIMARY_KEYS: {
-                    "TimePeriod",
-                    "AccountId",
-                    "AdGroupId",
-                    "AgeGroup",
-                    "Gender"
-                },
+                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "AccountName",
                     "AdGroupName",
@@ -215,12 +184,7 @@ class BingAdsBaseTest(BaseCase):
                 **default_report
             },
             "audience_performance_report": {
-                cls.PRIMARY_KEYS: {
-                    "TimePeriod",
-                    "AccountId",
-                    "AssociationId",
-                    "AssociationLevel",
-                },
+                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "AudienceId",
                     "Clicks",
@@ -240,15 +204,7 @@ class BingAdsBaseTest(BaseCase):
                 **default_report
             },
             "campaign_performance_report": {
-                cls.PRIMARY_KEYS: {
-                    "TimePeriod",
-                    "AccountId",
-                    "CampaignId",
-                    "Network",
-                    "TopVsOther",
-                    "DeviceType",
-                    "DeliveredMatchType"
-                },
+                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "Clicks",
                     "Revenue",
@@ -270,15 +226,7 @@ class BingAdsBaseTest(BaseCase):
                 **default_report
             },
             "geographic_performance_report": {
-                cls.PRIMARY_KEYS: {
-                    "TimePeriod",
-                    "AccountId",
-                    "CampaignId",
-                    "LocationId",
-                    "Network",
-                    "TopVsOther",
-                    "DeviceType"
-                },
+                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "AccountName",
                     "Revenue",
@@ -299,13 +247,7 @@ class BingAdsBaseTest(BaseCase):
                 **default_report
             },
             "goals_and_funnels_report": {
-                cls.PRIMARY_KEYS: {
-                    "TimePeriod",
-                    "AccountId",
-                    "AdGroupId",
-                    "GoalId",
-                    "DeviceType"
-                },
+                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "Goal",
                     "AllConversions",
@@ -316,16 +258,7 @@ class BingAdsBaseTest(BaseCase):
                 **default_report
             },
             "keyword_performance_report": {
-                cls.PRIMARY_KEYS: {
-                    "TimePeriod",
-                    "AccountId",
-                    "KeywordId",
-                    "AdId",
-                    "Network",
-                    "TopVsOther",
-                    "DeviceType",
-                    "DeliveredMatchType"
-                },
+                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "Clicks",
                     "Revenue",
@@ -345,16 +278,7 @@ class BingAdsBaseTest(BaseCase):
                 **default_report
             },
             "search_query_performance_report": {
-                cls.PRIMARY_KEYS: {
-                    "TimePeriod",
-                    "AccountId",
-                    "AdGroupCriterionId",
-                    "SearchQuery",
-                    "Network",
-                    "TopVsOther",
-                    "DeviceType",
-                    "DeliveredMatchType"
-                },
+                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "SearchQuery",
                     "Clicks",
