@@ -18,6 +18,7 @@ setup(
         'requests==2.33.0',
         'singer-python==6.0.1',
         'backoff==2.2.1',
+        'setuptools>=65.5.0',
     ],
     extras_require={
         'test': [
