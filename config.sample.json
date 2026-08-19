@@ -1,0 +1,9 @@
+{
+    "start_date": "2020-10-01T00:00:00Z",
+    "customer_id": "customer_id",
+    "account_ids": "account_id1,account_id2",
+    "oauth_client_id":"client_id",
+    "oauth_client_secret":"client_secret",
+    "refresh_token":"refresh_token",
+    "developer_token":"developer_token"
+}
