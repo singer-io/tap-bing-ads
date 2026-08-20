@@ -57,9 +57,6 @@ class BingAdsBookmarksReports(BookmarkTest, BingAdsBaseTest):
         """
         Translate the framework's flat bookmarks into bing-ads state format.
 
-        Framework produces:
-          {'campaign_performance_report': {'TimePeriod': '2026-07-28T00:00:00+00:00'}}
-
         Bing-ads expects:
           {'188412305_campaign_performance_report': {'date': '2026-07-28T00:00:00+00:00',
                                                      'request_id': None}}
@@ -70,12 +67,11 @@ class BingAdsBookmarksReports(BookmarkTest, BingAdsBaseTest):
 
         account_ids = [
             a.strip()
-            for a in self.get_properties().get('account_ids', '').split(',')
+            for a in self.get_credentials().get('account_ids', '').split(',')
         ]
 
         for stream, rep in new_bookmarks.items():
             if stream.endswith('_report'):
-                # The framework uses 'TimePeriod' as the replication key;
                 # the tap stores the bookmark under 'date'.
                 date_value = rep.get('TimePeriod')
                 if date_value:
@@ -93,6 +89,27 @@ class BingAdsBookmarksReports(BookmarkTest, BingAdsBaseTest):
                     new_state['bookmarks'][stream] = rep
 
         return new_state
+
+    def expected_replication_keys(self, stream=None):
+        """
+        return a dictionary with key of table name
+        and value as a set of replication key fields
+        """
+        replication_keys = {
+            table: properties.get(self.REPLICATION_KEYS, set())
+            for table, properties in self.expected_metadata().items()}
+        if not stream:
+            return replication_keys
+        return replication_keys[stream]
+
+    def expected_replication_method(self, stream=None):
+        """return a dictionary with key of table name nd value of replication method"""
+        replication_method = {
+            table: properties.get(self.REPLICATION_METHOD, None)
+            for table, properties in self.expected_metadata().items()}
+        if not stream:
+            return replication_method
+        return replication_method[stream]
 
     def calculate_new_bookmarks(self):
         """

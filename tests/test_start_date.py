@@ -54,6 +54,27 @@ class BingAdsStartDateTest(StartDateTest, BingAdsBaseTest):
             "geographic_performance_report": set(),
         }
 
+    def expected_replication_keys(self, stream=None):
+        """
+        return a dictionary with key of table name
+        and value as a set of replication key fields
+        """
+        replication_keys = {
+            table: properties.get(self.REPLICATION_KEYS, set())
+            for table, properties in self.expected_metadata().items()}
+        if not stream:
+            return replication_keys
+        return replication_keys[stream]
+
+    def expected_replication_method(self, stream=None):
+        """return a dictionary with key of table name nd value of replication method"""
+        replication_method = {
+            table: properties.get(self.REPLICATION_METHOD, None)
+            for table, properties in self.expected_metadata().items()}
+        if not stream:
+            return replication_method
+        return replication_method[stream]
+
     def test_replication_key_values(self):
         """
         The 30-day lookback (DEFAULT_CONVERSION_WINDOW=-30) means sync 2 queries

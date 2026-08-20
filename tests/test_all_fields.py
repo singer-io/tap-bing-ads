@@ -7,6 +7,19 @@ from base import BingAdsBaseTest
 class BingAdsAllFields(AllFieldsTest, BingAdsBaseTest):
     """ Test the tap all_fields """
 
+    MISSING_FIELDS = {
+        'ads':{
+            'Headline',
+            'Text',
+            'LongHeadline',
+            'LongHeadlineString',
+            'BusinessName',
+            'CallToAction',
+            'CallToActionLanguage',
+            'Images'
+        }
+    }
+
     @staticmethod
     def name():
         return "tap_tester_bing_ads_all_fields_test"

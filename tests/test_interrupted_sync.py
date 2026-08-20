@@ -43,7 +43,7 @@ class BingAdsInterruptedSyncTest(InterruptedSyncTest, BingAdsBaseTest):
         Bing Ads bookmark key format: {account_id}_{stream}
         Bing Ads bookmark value format: {"date": "<ISO>", "request_id": None}
         """
-        account_id = self.get_properties().get('account_ids').split(',')[0]
+        account_id = self.get_credentials().get('account_ids', '').split(',')[0]
         return {
             "currently_syncing": "campaign_performance_report",
             "bookmarks": {
@@ -63,6 +63,27 @@ class BingAdsInterruptedSyncTest(InterruptedSyncTest, BingAdsBaseTest):
             }
         }
 
+    def expected_replication_keys(self, stream=None):
+        """
+        return a dictionary with key of table name
+        and value as a set of replication key fields
+        """
+        replication_keys = {
+            table: properties.get(self.REPLICATION_KEYS, set())
+            for table, properties in self.expected_metadata().items()}
+        if not stream:
+            return replication_keys
+        return replication_keys[stream]
+
+    def expected_replication_method(self, stream=None):
+        """return a dictionary with key of table name nd value of replication method"""
+        replication_method = {
+            table: properties.get(self.REPLICATION_METHOD, None)
+            for table, properties in self.expected_metadata().items()}
+        if not stream:
+            return replication_method
+        return replication_method[stream]
+
     def test_bookmarked_streams_start_date(self):
         """
         Verify that interrupted and completed streams started at the correct
@@ -71,7 +92,7 @@ class BingAdsInterruptedSyncTest(InterruptedSyncTest, BingAdsBaseTest):
         Overrides the base implementation to handle bing-ads's
         {account_id}_{stream} bookmark key format instead of plain stream names.
         """
-        account_id = self.get_properties().get('account_ids').split(',')[0]
+        account_id =  self.get_credentials().get('account_ids', '').split(',')[0]
         manipulated_state = self.manipulate_state()
         currently_syncing = manipulated_state['currently_syncing']
 

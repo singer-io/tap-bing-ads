@@ -44,7 +44,7 @@ class BingAdsBaseTest(BaseCase):
         Return the bookmark date for the stream across the configured account.
         """
         bookmarks = state.get('bookmarks', {})
-        account_id = self.get_properties().get('account_ids').split(',')[0]
+        account_id = self.get_credentials().get('account_ids').split(',')[0]
 
         if stream.endswith('_report'):
             value = bookmarks.get(f'{account_id}_{stream}', {}).get('date', None)
@@ -68,10 +68,12 @@ class BingAdsBaseTest(BaseCase):
     def expected_metadata(cls):
         """The expected streams and metadata about the streams"""
         default_report = {
-            cls.REPLICATION_METHOD: cls.FULL_TABLE,
-            cls.REPLICATION_KEYS: set(),
+            cls.PRIMARY_KEYS: set(),
+            cls.REPLICATION_METHOD: cls.INCREMENTAL,
+            cls.REPLICATION_KEYS: {"TimePeriod"},
             cls.FOREIGN_KEYS: {"AccountId"},
             cls.PARENT_TAP_STREAM_ID: "accounts",
+            cls.LOOK_BACK_WINDOW: timedelta(days=30),
         }
         return {
             "accounts": {
@@ -102,7 +104,6 @@ class BingAdsBaseTest(BaseCase):
                 cls.PARENT_TAP_STREAM_ID: "ad_groups"
             },
             "ad_extension_detail_report": {
-                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "AdExtensionId",
                     "AdExtensionPropertyValue",
@@ -120,12 +121,12 @@ class BingAdsBaseTest(BaseCase):
                     "AverageCpm",
                     "Assists",
                     "AverageCpc",
-                    "AllRevenue"
+                    "AllRevenue",
+                    "TimePeriod"
                 },
                 **default_report
             },
             "ad_group_performance_report": {
-                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS:{
                     "Clicks",
                     "Revenue",
@@ -141,12 +142,12 @@ class BingAdsBaseTest(BaseCase):
                     "AverageCpm",
                     "Assists",
                     "AverageCpc",
-                    "AllRevenue"
+                    "AllRevenue",
+                    "TimePeriod"
                 },
                 **default_report
             },
             "ad_performance_report": {
-                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "Revenue",
                     "Clicks",
@@ -161,12 +162,12 @@ class BingAdsBaseTest(BaseCase):
                     "AllRevenue",
                     "AllConversions",
                     "ViewThroughConversions",
-                    "Conversions"
+                    "Conversions",
+                    "TimePeriod"
                 },
                 **default_report
             },
             "age_gender_audience_report": {
-                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "AccountName",
                     "AdGroupName",
@@ -180,12 +181,12 @@ class BingAdsBaseTest(BaseCase):
                     "AllRevenue",
                     "AllConversions",
                     "ViewThroughConversions",
-                    "Conversions"
+                    "Conversions",
+                    "TimePeriod"
                 },
                 **default_report
             },
             "audience_performance_report": {
-                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "AudienceId",
                     "Clicks",
@@ -200,12 +201,12 @@ class BingAdsBaseTest(BaseCase):
                     "Conversions",
                     "AverageCpm",
                     "ConversionRate",
-                    "AverageCpc"
+                    "AverageCpc",
+                    "TimePeriod"
                 },
                 **default_report
             },
             "campaign_performance_report": {
-                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "Clicks",
                     "Revenue",
@@ -222,12 +223,12 @@ class BingAdsBaseTest(BaseCase):
                     "AverageCpm",
                     "Assists",
                     "AverageCpc",
-                    "AllRevenue"
+                    "AllRevenue",
+                    "TimePeriod"
                 },
                 **default_report
             },
             "geographic_performance_report": {
-                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "AccountName",
                     "Revenue",
@@ -243,23 +244,23 @@ class BingAdsBaseTest(BaseCase):
                     "AllRevenue",
                     "AllConversions",
                     "ViewThroughConversions",
-                    "Conversions"
+                    "Conversions",
+                    "TimePeriod"
                 },
                 **default_report
             },
             "goals_and_funnels_report": {
-                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "Goal",
                     "AllConversions",
                     "ViewThroughConversions",
                     "Assists",
-                    "AllRevenue"
+                    "AllRevenue",
+                    "TimePeriod"
                 },
                 **default_report
             },
             "keyword_performance_report": {
-                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "Clicks",
                     "Revenue",
@@ -274,12 +275,12 @@ class BingAdsBaseTest(BaseCase):
                     "AverageCpm",
                     "Assists",
                     "AverageCpc",
-                    "AllRevenue"
+                    "AllRevenue",
+                    "TimePeriod"
                 },
                 **default_report
             },
             "search_query_performance_report": {
-                cls.PRIMARY_KEYS: set(),
                 cls.REQUIRED_KEYS: {
                     "SearchQuery",
                     "Clicks",
@@ -294,7 +295,8 @@ class BingAdsBaseTest(BaseCase):
                     "AverageCpm",
                     "Assists",
                     "AverageCpc",
-                    "AllRevenue"
+                    "AllRevenue",
+                    "TimePeriod"
                 },
                 **default_report
             }
@@ -337,3 +339,44 @@ class BingAdsBaseTest(BaseCase):
         if not stream:
             return parent_stream
         return parent_stream[stream]
+
+    def expected_replication_method(self,stream=None):
+        """ Return a dictionary with key of table name nd value of replication method
+            TDL-15816 - Currently, in tap, all streams are FULL_TABLE except accounts. But as per
+            the doc https://www.stitchdata.com/docs/integrations/saas/microsoft-advertising,
+            only the below streams are FULL TABLE, all other streams are INCREMENTAL.
+            ads
+            ad_groups
+            campaigns
+            """
+
+        rep_method = {}
+        for table, properties in self.expected_metadata().items():
+            rep_method[table] = properties.get(self.REPLICATION_METHOD, None)
+        for streams in rep_method.keys():
+            if streams in [ 'ad_extension_detail_report', 'ad_group_performance_report',
+                            'ad_performance_report', 'age_gender_audience_report',
+                            'audience_performance_report', 'campaign_performance_report',
+                            'geographic_performance_report', 'goals_and_funnels_report',
+                            'keyword_performance_report', 'search_query_performance_report']:
+                rep_method[streams] = 'FULL_TABLE'
+        if not stream:
+            return rep_method
+        return rep_method[stream]
+
+    def expected_replication_keys(self,stream=None):
+        """
+        Return a dictionary with key of table name and value as a set of replication key fields
+        """
+
+        # As all streams are FULL TABLE according to the tap, there is no replication key specified
+        # for any of the streams. TDL-15816, hence removing the "TimePeriod" key from expected
+        # replication keys. Need to determine the correct replication menthod and replication keys
+        # accordingly.
+
+        replication_keys = {table: properties.get(self.REPLICATION_KEYS, set()) - {"TimePeriod"}
+                            for table, properties
+                            in self.expected_metadata().items()}
+        if not stream:
+            return replication_keys
+        return replication_keys[stream]

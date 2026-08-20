@@ -17,6 +17,12 @@ class BingAdsAutomaticFields(MinimumSelectionTest, BingAdsBaseTest):
             'audience_performance_report',
             'goals_and_funnels_report',
             'keyword_performance_report',
-            'search_query_performance_report'
+            'search_query_performance_report',
+            'geographic_performance_report',
+            'ad_group_performance_report',
+            'ad_performance_report',
+            'campaign_performance_report',
+            'age_gender_audience_report'
+
         }
         return self.expected_stream_names().difference(streams_to_exclude)

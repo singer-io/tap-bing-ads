@@ -6,7 +6,16 @@ from tap_bing_ads.streams.abstracts import IncrementalStream
 
 LOGGER = singer.get_logger()
 
-AD_TYPES = ["AppInstall", "DynamicSearch", "ExpandedText", "Product", "Text", "Image", "ResponsiveAd"]
+AD_TYPES = [
+    "AppInstall",
+    "DynamicSearch",
+    "ExpandedText",
+    "Product",
+    "Text",
+    "Image",
+    "ResponsiveAd",
+    "ResponsiveSearch"
+]
 
 
 class Ads(IncrementalStream):
