@@ -1,0 +1,58 @@
+﻿"""Ads stream - Campaign Management REST API."""
+from typing import Dict, Iterator, Optional
+import singer
+from tap_bing_ads.client import CAMPAIGN_BASE_URL
+from tap_bing_ads.streams.abstracts import IncrementalStream
+
+LOGGER = singer.get_logger()
+
+AD_TYPES = [
+    "AppInstall",
+    "DynamicSearch",
+    "ExpandedText",
+    "Product",
+    "Text",
+    "Image",
+    "ResponsiveAd",
+    "ResponsiveSearch"
+]
+
+
+class Ads(IncrementalStream):
+    tap_stream_id = "ads"
+    key_properties = ["Id", "ad_group_id", "campaign_id", "account_id"]
+    replication_method = "INCREMENTAL"
+    replication_keys = ["ad_groups_LastModifiedTime"]
+    valid_replication_keys = ["ad_groups_LastModifiedTime"]
+    parent = "ad_groups"
+    children = []
+    path = "Ads/QueryByAdGroupId"
+    data_key = "Ads"
+
+    def get_url_endpoint(self, parent_obj: Optional[Dict] = None) -> str:
+        """Constructs the URL endpoint for the API request."""
+        self.url_endpoint = f"{CAMPAIGN_BASE_URL}/{self.path}"
+        return super().get_url_endpoint(parent_obj)
+
+    def check_access(self) -> bool:
+        """
+        Ads require an AdGroupId in the request which is only known at sync time —
+        not at discovery.  Return True and rely on cascade: if the parent ``ad_groups``
+        stream is inaccessible, ads will be pruned automatically by
+        ``_prune_inaccessible_children()`` in discover.py.
+        """
+        return True
+
+    def update_data_payload(self, parent_obj: Dict = None, **kwargs) -> Dict:
+        """Constructs the JSON body payload for the API request."""
+        ad_group_id = str(parent_obj.get("Id", "")) if parent_obj else ""
+        kwargs["AdGroupId"] = ad_group_id
+        kwargs["AdTypes"] = AD_TYPES
+        return super().update_data_payload(parent_obj, **kwargs)
+
+    def modify_object(self, record: Dict, parent_obj: Optional[Dict] = None) -> Dict:
+        record["account_id"] = parent_obj.get("account_id", "") if parent_obj else ""
+        record["campaign_id"] = parent_obj.get("campaign_id", "") if parent_obj else ""
+        record["ad_group_id"] = parent_obj.get("Id", "") if parent_obj else ""
+        record["ad_groups_LastModifiedTime"] = parent_obj.get("campaigns_LastModifiedTime") if parent_obj else ""
+        return super().modify_object(record, parent_obj)

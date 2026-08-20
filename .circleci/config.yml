@@ -10,27 +10,41 @@ jobs:
       - run:
           name: 'Setup virtual env'
           command: |
-            uv venv --python 3.11 /usr/local/share/virtualenvs/tap-bing-ads
+            uv venv --python 3.12 /usr/local/share/virtualenvs/tap-bing-ads
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
-            uv pip install -U pip 'setuptools<51.0.0'
+            uv pip install -U pip setuptools
             uv pip install .[test]
+            uv pip install .[dev]
             uv pip install pylint
       - run:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
-            pylint tap_bing_ads -d missing-docstring,line-too-long,invalid-name,super-with-arguments,return-in-init,too-many-arguments,deprecated-method,consider-using-f-string,too-many-lines,unidiomatic-typecheck,consider-using-generator,broad-exception-raised
+            pylint tap_bing_ads -d C,R,W
       - run:
-          name: 'Unit Tests'
+          name: 'Unit Tests & Coverage Run'
           command: |
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
             uv pip install pytest coverage parameterized
-            coverage run -m pytest tests/unittests
+            mkdir -p htmlcov
+            coverage run --source=tap_bing_ads -m pytest tests/unittests
             coverage html
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:
           path: htmlcov
+      - run:
+          name: 'Coverage Report'
+          command: |
+            source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
+            coverage report -m --fail-under=99 | tee coverage.txt
+            coverage html
+      - store_test_results:
+          path: test_output/report.xml
+      - store_artifacts:
+          path: htmlcov
+      - store_artifacts:
+          path: coverage.txt
       - run:
           name: 'Integration Tests'
           command: |

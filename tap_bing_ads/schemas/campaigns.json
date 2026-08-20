@@ -1,0 +1,180 @@
+{
+  "type": "object",
+  "properties": {
+    "Id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "account_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "accounts_LastModifiedTime": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "Name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CampaignType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "SubType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BudgetType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BudgetId": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "DailyBudget": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AudienceAdsBidAdjustment": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "BiddingScheme": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "Type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "ExperimentId": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "FinalUrlSuffix": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "ForwardCompatibilityMap": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ]
+      }
+    },
+    "Languages": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
+    },
+    "Settings": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ]
+      }
+    },
+    "TimeZone": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "TrackingUrlTemplate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "UrlCustomParameters": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "Parameters": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "Key": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "Value": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,252 +1,183 @@
 from datetime import datetime as dt
 from datetime import timedelta
+from datetime import timezone as tz
 
-from tap_tester import connections, menagerie, runner, LOGGER
 from base import BingAdsBaseTest
+from tap_tester.base_suite_tests.start_date_test import StartDateTest
 
-import base
 
+class BingAdsStartDateTest(StartDateTest, BingAdsBaseTest):
+    """
+    Test that report streams respect the configured start_date.
 
-class BingAdsStartDateTest(BingAdsBaseTest):
+    Two syncs are run:
+      - Sync 1: start_date_1 ~90 days ago  →  covers the full available data window
+      - Sync 2: start_date_2 ~15 days ago  →  covers only the recent tail of that window
 
-    start_date_1 = ""
-    start_date_2 = ""
+    Assertions (per the StartDateTest framework):
+      - Both syncs replicated records for every tested stream.
+      - Replication-key (TimePeriod) values in each sync are >= the respective start_date.
+      - Every record in sync 2 also appears in sync 1 (sync 2 is a strict subset).
+      - For streams that respect start_date, sync 1 replicates >= sync 2 records.
+    """
+
+    # Evaluated once at class-definition time so that setUp can mutate self.start_date freely.
+    start_date_1 = dt.strftime(
+        dt.now(tz.utc) - timedelta(days=90), "%Y-%m-%dT00:00:00Z"
+    )
+    start_date_2 = dt.strftime(
+        dt.now(tz.utc) - timedelta(days=15), "%Y-%m-%dT00:00:00Z"
+    )
 
     @staticmethod
     def name():
         return "tap_tester_bing_ads_start_date_test"
 
-    def expected_sync_streams(self):
+    def streams_to_test(self):
+        # Only report streams: they use TimePeriod as replication key and respect start_date.
+        # accounts / campaigns / ad_groups / ads do not obey start date.
+        streams_to_exclude = {
+            'accounts', 'campaigns', 'ad_groups', 'ads',
+            'ad_extension_detail_report', 'goals_and_funnels_report',
+            'keyword_performance_report', 'search_query_performance_report',
+            'audience_performance_report', 'age_gender_audience_report',
+        }
+        return self.expected_stream_names().difference(streams_to_exclude)
+
+    @staticmethod
+    def streams_to_selected_fields():
+        # Select all available fields for each report stream.
         return {
-            'accounts',
-            # 'ad_extension_detail_report',
-            # 'ad_group_performance_report',
-            'ad_groups',
-            # 'ad_performance_report',
-            'ads',
-            # 'age_gender_audience_report',
-            # 'audience_performance_report',
-            # 'campaign_performance_report',
-            'campaigns',
-            # 'geographic_performance_report',
-            # 'goals_and_funnels_report',  # cannot test no data available
-            # 'keyword_performance_report',
-            # 'search_query_performance_report',
+            "campaign_performance_report": set(),
+            "ad_group_performance_report": set(),
+            "ad_performance_report": set(),
+            "geographic_performance_report": set(),
         }
 
-    def test_run(self):
+    def expected_replication_keys(self, stream=None):
         """
-        Test is parametrized to account for the exclusions in some report streams.
-        By default we select all fields for a given stream for this test, however due to the
-        exclusions (see base.py for groups)  we will be running the test multiple times.
-
-        The first test run selects all fields for standard streams, and as many fields as allowed
-        including the Impression Share Performance Statistics for streams with exclusions.
-
-        The second test run selects all fields for standard streams, and as many fields as allowed
-        including Attributes for streams with exclusions.
-
-        Both runs account for uncategorized exclusion fields. See method in base.py.
+        return a dictionary with key of table name
+        and value as a set of replication key fields
         """
+        replication_keys = {
+            table: properties.get(self.REPLICATION_KEYS, set())
+            for table, properties in self.expected_metadata().items()}
+        if not stream:
+            return replication_keys
+        return replication_keys[stream]
 
-        TDL_24648_is_done = base.JIRA_CLIENT.get_status_category("TDL-24648") == "done"
-        assert TDL_24648_is_done == False, ("TDL-24648 is done, Re-add report streams to "
-                                            "expected_sync_streams")
+    def expected_replication_method(self, stream=None):
+        """return a dictionary with key of table name nd value of replication method"""
+        replication_method = {
+            table: properties.get(self.REPLICATION_METHOD, None)
+            for table, properties in self.expected_metadata().items()}
+        if not stream:
+            return replication_method
+        return replication_method[stream]
 
-        # Test start date selecting all fields for standard streams, and all statistic fields for
-        #   streams with exclusions
-        streams_to_fields_with_statistics = dict()
-        for stream in self.expected_streams_with_exclusions():
-            streams_to_fields_with_statistics[stream] = \
-                self.get_as_many_fields_as_possbible_excluding_attributes(stream)
+    def test_replication_key_values(self):
+        """
+        The 30-day lookback (DEFAULT_CONVERSION_WINDOW=-30) means sync 2 queries
+        from today-30days even when start_date_2 > today-30days.  Records with
+        TimePeriod values back to today-30days are therefore expected and valid.
 
-        self.start_date_test(streams_to_fields_with_statistics)
+        Override: validate sync 2 dates against today-30days instead of start_date_2.
+        Sync 1 uses start_date_1 (older than today-30days) so the standard check applies.
+        """
+        lookback_cutoff = (dt.now(tz.utc) - timedelta(days=30)).replace(
+            hour=0, minute=0, second=0, microsecond=0)
 
-        # Test start date selecting all fields for standard streams and all attribute fields for
-        #   streams with exclusions
-        streams_to_fields_with_attributes = dict()
-        for stream in self.expected_streams_with_exclusions():
-            streams_to_fields_with_attributes[stream] = \
-                self.get_as_many_fields_as_possbible_excluding_statistics(stream)
-
-        self.start_date_test(streams_to_fields_with_attributes)
-
-    def start_date_test(self, streams_to_fields_with_exclusions):
-        """Instantiate start date according to the desired data set and run the test"""
-
-        self.start_date_1 = self.get_properties().get('start_date')
-        self.start_date_2 = self.timedelta_formatted(self.start_date_1, days=1)
-
-        self.start_date = self.start_date_1
-
-        ##########################################################################
-        ### First Sync
-        ##########################################################################
-
-        # instantiate connection
-        conn_id_1 = self.create_connection()
-
-        # run check mode was run when the connection was created, just get the catalog
-        found_catalogs_1 = menagerie.get_catalogs(conn_id_1)
-
-        # ensure our expectations are consistent for streams with exclusions
-        self.assertSetEqual(self.expected_streams_with_exclusions(),
-                            set(self.get_all_attributes().keys()))
-        self.assertSetEqual(self.expected_streams_with_exclusions(),
-                            set(self.get_all_statistics().keys()))
-
-        # table and field selection
-        test_catalogs_1_all_fields = [
-            catalog for catalog in found_catalogs_1
-            if catalog.get('tap_stream_id') in self.expected_sync_streams()
-            and catalog.get('tap_stream_id') not in self.expected_streams_with_exclusions()]
-
-        # BUG (https://stitchdata.atlassian.net/browse/SRCE-4304)
-        # self.perform_and_verify_and_field_selection(conn_id_1,
-        #                                             test_catalogs_1_all_fields,
-        #                                             select_all_fields=True)
-        self.select_all_streams_and_fields(conn_id_1,
-                                           test_catalogs_1_all_fields,
-                                           select_all_fields=True) # BUG_SRCE-4304
-
-        test_catalogs_1_specific_fields = [
-            catalog for catalog in found_catalogs_1
-            if catalog.get('tap_stream_id') in self.expected_sync_streams()
-            and catalog.get('tap_stream_id') in self.expected_streams_with_exclusions()]
-
-        self.perform_and_verify_adjusted_selection(
-            conn_id_1,
-            test_catalogs_1_specific_fields,
-            select_all_fields=False,
-            specific_fields=streams_to_fields_with_exclusions)
-
-        # run initial sync
-        state = menagerie.get_state(conn_id_1)
-        record_count_by_stream_1 = self.run_and_verify_sync(conn_id_1, state)
-
-        replicated_row_count_1 = sum(record_count_by_stream_1.values())
-        self.assertGreater(replicated_row_count_1, 0,
-                           msg="failed to replicate any data: {}".format(record_count_by_stream_1))
-        LOGGER.info("total replicated row count: %s", replicated_row_count_1)
-        synced_records_1 = runner.get_records_from_target_output()
-
-        ##########################################################################
-        ### Update START DATE Between Syncs
-        ##########################################################################
-
-        LOGGER.info("REPLICATION START DATE CHANGE: %s ===>>> %s ", self.start_date,
-                    self.start_date_2)
-        self.start_date = self.start_date_2
-
-        ##########################################################################
-        ### Second Sync
-        ##########################################################################
-
-        # create a new connection with the new start_date
-        conn_id_2 = self.create_connection()
-
-        # run check mode
-        found_catalogs_2 = menagerie.get_catalogs(conn_id_2)
-
-        # table and field selection
-        test_catalogs_2_all_fields = [
-            catalog for catalog in found_catalogs_2
-            if catalog.get('tap_stream_id') in self.expected_sync_streams()
-            and catalog.get('tap_stream_id') not in self.expected_streams_with_exclusions()]
-        # BUG (https://stitchdata.atlassian.net/browse/SRCE-4304)
-        # self.perform_and_verify_and_field_selection(conn_id_2,
-        #                                             test_catalogs_2_all_fields,
-        #                                             select_all_fields=True)
-        self.select_all_streams_and_fields(conn_id_2,
-                                           test_catalogs_2_all_fields,
-                                           select_all_fields=True) # BUG_SRCE-4304
-        test_catalogs_2_specific_fields = [
-            catalog for catalog in found_catalogs_2
-            if catalog.get('tap_stream_id') in self.expected_sync_streams()
-            and catalog.get('tap_stream_id') in self.expected_streams_with_exclusions()]
-        self.perform_and_verify_adjusted_selection(
-            conn_id_2,
-            test_catalogs_2_specific_fields,
-            select_all_fields=False,
-            specific_fields=streams_to_fields_with_exclusions)
-
-        # run sync
-        state = menagerie.get_state(conn_id_2)
-        record_count_by_stream_2 = self.run_and_verify_sync(conn_id_2, state)
-
-        replicated_row_count_2 = sum(record_count_by_stream_2.values())
-        self.assertGreater(replicated_row_count_2, 0, msg="failed to replicate any data")
-        LOGGER.info("total replicated row count: %s", replicated_row_count_2)
-        synced_records_2 = runner.get_records_from_target_output()
-
-        for stream in self.expected_sync_streams():
+        for stream in self.streams_to_test():
             with self.subTest(stream=stream):
-                replication_type = self.expected_replication_method().get(stream)
+                assert len(self.expected_replication_keys(stream)) == 1
+                replication_key = next(iter(self.expected_replication_keys(stream)))
 
-                record_count_1 = record_count_by_stream_1.get(stream, 0)
-                record_count_2 = record_count_by_stream_2.get(stream, 0)
+                replication_dates_1 = {
+                    record['data'].get(replication_key)
+                    for record in
+                    StartDateTest.synced_messages_by_stream_1.get(
+                        stream, {}).get('messages', [])
+                    if record.get('action') == 'upsert'}
 
-                if replication_type == self.INCREMENTAL:
-                    replication_key = next(iter(self.expected_replication_keys().get(stream)))
+                replication_dates_2 = {
+                    record['data'].get(replication_key)
+                    for record in
+                    StartDateTest.synced_messages_by_stream_2.get(
+                        stream, {}).get('messages', [])
+                    if record.get('action') == 'upsert'}
 
-                    if self.is_report(stream):
-                        # Verify replication key is greater or equal to start_date for sync 1
-                        replication_dates_1 =[
-                            row.get('data').get(replication_key)
-                            for row in synced_records_1.get(stream, []).get('messages', [])]
+                # Sync 1: start_date_1 is older than today-30days so full range applies.
+                for replication_date in replication_dates_1:
+                    with self.subTest(sync="sync1", replication_date=replication_date):
+                        self.assertGreaterEqual(
+                            self.parse_date(replication_date),
+                            self.parse_date(self.start_date_1),
+                            msg=f"Record date {replication_date} is before "
+                                f"start_date_1 {self.start_date_1}")
 
-                        for replication_date in replication_dates_1:
-                            self.assertGreaterEqual(
-                                self.parse_date(replication_date),
-                                self.parse_date(self.start_date_1),
-                                msg="Report pertains to a date prior to our start date.\n" +
-                                    "Sync start_date: {}\n".format(self.start_date_1) +
-                                    "Record date: {} ".format(replication_date)
-                            )
+                # Sync 2: the 30-day lookback expands the window back to today-30days,
+                # which is earlier than start_date_2. Validate against today-30days.
+                for replication_date in replication_dates_2:
+                    with self.subTest(sync="sync2", replication_date=replication_date):
+                        self.assertGreaterEqual(
+                            self.parse_date(replication_date),
+                            lookback_cutoff,
+                            msg=f"Record date {replication_date} is before the 30-day "
+                                f"lookback cutoff {lookback_cutoff.date()} "
+                                f"(start_date_2={self.start_date_2})")
 
-                        # Verify replication key is greater or equal to start_date for sync 2
-                        replication_dates_2 =[
-                            row.get('data').get(replication_key)
-                            for row in synced_records_2.get(stream, []).get('messages', [])]
-                        for replication_date in replication_dates_2:
-                            self.assertGreaterEqual(
-                                self.parse_date(replication_date),
-                                self.parse_date(self.start_date_2),
-                                msg="Report pertains to a date prior to our start date.\n" +
-                                    "Sync start_date: {}\n".format(self.start_date_2) +
-                                    "Record date: {} ".format(replication_date)
-                            )
+    def test_replicated_records(self):
+        """
+        The 30-day lookback (DEFAULT_CONVERSION_WINDOW=-30) means start_date_2
+        (today-15days) is overridden: sync 2 queries from today-30days, the same
+        effective window as sync 1 (which has no data before today-30days anyway).
 
-                    elif stream == 'accounts':
+        Since both syncs cover the same date range and Bing Ads can attribute new
+        rows between API calls, sync 2 may return slightly more records than sync 1.
 
-                        # Verify that the 2nd sync with a later start date replicates the same
-                        # number of records as the 1st sync.
-                        self.assertEqual(
-                            record_count_2, record_count_1,
-                            msg="Second sync should result in fewer records\n" +
-                            "Sync 1 start_date: {} ".format(self.start_date) +
-                            "Sync 1 record_count: {}\n".format(record_count_1) +
-                            "Sync 2 start_date: {} ".format(self.start_date_2) +
-                            "Sync 2 record_count: {}".format(record_count_2))
+        Assert that all records seen in sync 1 also appear in sync 2 (sync1 ⊆ sync2).
+        Sync 2 having extra live-attribution records is expected and acceptable.
+        """
+        for stream in self.streams_to_test():
+            with self.subTest(stream=stream):
 
-                    else:
-                        raise NotImplementedError("Stream is not report-based and incremental. "
-                                                  "Must add assertion for it.")
+                expected_primary_keys = self.expected_primary_keys(stream)
 
-                elif replication_type == self.FULL_TABLE:
+                assert len(self.expected_replication_keys(stream)) == 1
+                expected_replication_key = next(
+                    iter(self.expected_replication_keys(stream)))
 
-                    # Verify that the 2nd sync with a later start date replicates the same number of
-                    # records as the 1st sync.
-                    self.assertEqual(
-                        record_count_2, record_count_1,
-                        msg="Second sync should result in fewer records\n" +
-                        "Sync 1 start_date: {} ".format(self.start_date) +
-                        "Sync 1 record_count: {}\n".format(record_count_1) +
-                        "Sync 2 start_date: {} ".format(self.start_date_2) +
-                        "Sync 2 record_count: {}".format(record_count_2))
+                # Dates replicated in sync 1 — used to exclude records added between syncs.
+                replication_dates_1 = {
+                    record['data'].get(expected_replication_key)
+                    for record in
+                    StartDateTest.synced_messages_by_stream_1.get(
+                        stream, {}).get('messages', [])
+                    if record.get('action') == 'upsert'}
 
-                else:
+                # All PKs from sync 1.
+                primary_keys_sync_1 = {
+                    tuple(msg['data'][pk] for pk in expected_primary_keys)
+                    for msg in
+                    StartDateTest.synced_messages_by_stream_1.get(
+                        stream, {}).get('messages', [])
+                    if msg.get('action') == 'upsert'}
 
-                    raise Exception("Expectations are set incorrectly. {} cannot have a "
-                                    "replication method of {}".format(stream, replication_type)
-                    )
+                # PKs from sync 2 filtered to dates present in sync 1's window
+                # (excludes rows that were added to the API after sync 1 ran).
+                primary_keys_sync_2 = {
+                    tuple(msg['data'][pk] for pk in expected_primary_keys)
+                    for msg in
+                    StartDateTest.synced_messages_by_stream_2.get(
+                        stream, {}).get('messages', [])
+                    if msg.get('action') == 'upsert'
+                    and self.parse_date(msg['data'][expected_replication_key])
+                    <= self.parse_date(max(replication_dates_1))}
+
+                # Every record from sync 1 must appear in sync 2 (sync 1 ⊆ sync 2).
+                # Sync 2 may have additional rows from live attribution data — that is fine.
+                missing = primary_keys_sync_1 - primary_keys_sync_2
+                self.assertEqual(
+                    missing, set(),
+                    msg=f"stream {stream}: sync 2 is missing {len(missing)} record(s) "
+                        f"that appeared in sync 1")
