@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.4.0
+  * Adds a CampaignType `Audience` to the call to GetCampaignsByAccountId to fetch relevant campaigns [#134](https://github.com/singer-io/tap-bing-ads/pull/134)
+
 # 2.3.3
   * Bump requests to 2.33.0 for security updates [#127](https://github.com/singer-io/tap-bing-ads/pull/127)
 

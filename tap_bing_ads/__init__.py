@@ -670,7 +670,7 @@ def sync_accounts_stream(account_ids, catalog_item):
 @bing_ads_error_handling
 def sync_campaigns(client, account_id, selected_streams): # pylint: disable=inconsistent-return-statements
     # CampaignType defaults to 'Search', but there are other types of campaigns
-    response = client.GetCampaignsByAccountId(AccountId=account_id, CampaignType='Search Shopping DynamicSearchAds')
+    response = client.GetCampaignsByAccountId(AccountId=account_id, CampaignType='Search Shopping DynamicSearchAds Audience')
     response_dict = sobject_to_dict(response)
     if 'Campaign' in response_dict:
         campaigns = response_dict['Campaign']
