@@ -16,8 +16,8 @@ setup(
         # https://github.com/BingAds/BingAds-Python-SDK/pull/192
         'bingads==13.0.11.1',
         'setuptools==80.0.0',
-        'requests==2.33.0',
-        'singer-python==6.0.1',
+        'requests==2.34.2',
+        'singer-python==6.8.0',
         'backoff==2.2.1',
     ],
     extras_require={
