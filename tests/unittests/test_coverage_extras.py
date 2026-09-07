@@ -220,12 +220,18 @@ class TestBingAdsRateLimitRetryAfter(unittest.TestCase):
 # =============================================================================
 
 class TestGetReportRequiredFields(unittest.TestCase):
-    def test_returns_base_and_metric_columns(self):
+    def test_returns_base_and_report_specific_fields(self):
         from tap_bing_ads.schema import get_report_required_fields
-        fields = get_report_required_fields("CampaignPerformanceReport")
+        from tap_bing_ads.reports import METRIC_COLUMNS
+        fields = get_report_required_fields("GeographicPerformanceReport")
         self.assertIn("TimePeriod", fields)
         self.assertIn("AccountId", fields)
+        self.assertIn("AccountName", fields)
         self.assertGreater(len(fields), 3)
+        # Metric columns must not be forced-required: at least one metric
+        # must be explicitly selected by the user (enforced elsewhere via
+        # BingAdsNoMeasureSelected), so none should appear here.
+        self.assertFalse(METRIC_COLUMNS.intersection(fields))
 
     def test_includes_report_specific_fields(self):
         from tap_bing_ads.schema import get_report_required_fields
