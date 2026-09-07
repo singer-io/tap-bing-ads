@@ -13,6 +13,7 @@ setup(
     install_requires=[
         'arrow>=1.4.0',
         'requests>=2.34.2',
+        'setuptools==80.0.0',
         'singer-python==6.8.0',
         'backoff==2.2.1',
     ],
