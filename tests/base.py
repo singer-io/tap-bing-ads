@@ -16,6 +16,33 @@ class BingAdsBaseTest(BaseCase):
     # respect tap-bing-ads data retention window by looking back a maximum of about 3 years
     start_date = dt.strftime(dt.now() - timedelta(days=365*3), "%Y-%m-%dT00:00:00Z")
 
+    # Metric columns actually present in each report's JSON schema (subset of
+    # tap_bing_ads.reports.METRIC_COLUMNS -- not every metric column applies to every
+    # report). Bing Ads requires at least one metric column per report request
+    # (see tap_bing_ads.reports.METRIC_COLUMNS / BingAdsNoMeasureSelected), so leaving
+    # these unselected causes every report sync to fail with
+    # "has no metric columns selected". Only including fields that exist in a
+    # stream's schema is required: selecting a name that isn't a real property is a
+    # no-op, which makes the framework's expected-vs-actual selected-fields
+    # assertion fail.
+    _COMMON_METRIC_COLUMNS = {
+        'Clicks', 'Impressions', 'Ctr', 'Spend', 'Conversions', 'ConversionRate',
+        'Revenue', 'Assists', 'ReturnOnAdSpend', 'AverageCpc', 'AverageCpm',
+        'AllConversions', 'AllRevenue', 'ViewThroughConversions',
+    }
+
+    @classmethod
+    def report_streams_to_selected_fields(cls):
+        """Metric field selections for the 4 report streams, scoped to only the
+        fields that actually exist in each report's schema."""
+        return {
+            "campaign_performance_report": cls._COMMON_METRIC_COLUMNS
+                | {'PhoneCalls', 'LowQualityClicks'},
+            "ad_group_performance_report": cls._COMMON_METRIC_COLUMNS | {'PhoneCalls'},
+            "ad_performance_report": set(cls._COMMON_METRIC_COLUMNS),
+            "geographic_performance_report": set(cls._COMMON_METRIC_COLUMNS),
+        }
+
     @staticmethod
     def tap_name():
         """The name of the tap"""
@@ -108,63 +135,14 @@ class BingAdsBaseTest(BaseCase):
                     "AdExtensionId",
                     "AdExtensionPropertyValue",
                     "AdExtensionType",
-                    "AdExtensionTypeId",
-                    "Clicks",
-                    "Revenue",
-                    "Ctr",
-                    "Spend",
-                    "AllConversions",
-                    "ReturnOnAdSpend",
-                    "Impressions",
-                    "ConversionRate",
-                    "Conversions",
-                    "AverageCpm",
-                    "Assists",
-                    "AverageCpc",
-                    "AllRevenue",
-                    "TimePeriod"
+                    "AdExtensionTypeId"
                 },
                 **default_report
             },
             "ad_group_performance_report": {
-                cls.REQUIRED_KEYS:{
-                    "Clicks",
-                    "Revenue",
-                    "Ctr",
-                    "PhoneCalls",
-                    "Spend",
-                    "AllConversions",
-                    "ReturnOnAdSpend",
-                    "Impressions",
-                    "ViewThroughConversions",
-                    "ConversionRate",
-                    "Conversions",
-                    "AverageCpm",
-                    "Assists",
-                    "AverageCpc",
-                    "AllRevenue",
-                    "TimePeriod"
-                },
                 **default_report
             },
             "ad_performance_report": {
-                cls.REQUIRED_KEYS: {
-                    "Revenue",
-                    "Clicks",
-                    "Ctr",
-                    "Impressions",
-                    "ReturnOnAdSpend",
-                    "AverageCpm",
-                    "Assists",
-                    "ConversionRate",
-                    "AverageCpc",
-                    "Spend",
-                    "AllRevenue",
-                    "AllConversions",
-                    "ViewThroughConversions",
-                    "Conversions",
-                    "TimePeriod"
-                },
                 **default_report
             },
             "age_gender_audience_report": {
@@ -172,131 +150,38 @@ class BingAdsBaseTest(BaseCase):
                     "AccountName",
                     "AdGroupName",
                     "AgeGroup",
-                    "Gender",
-                    "Revenue",
-                    "Clicks",
-                    "Impressions",
-                    "Assists",
-                    "Spend",
-                    "AllRevenue",
-                    "AllConversions",
-                    "ViewThroughConversions",
-                    "Conversions",
-                    "TimePeriod"
+                    "Gender"
                 },
                 **default_report
             },
             "audience_performance_report": {
                 cls.REQUIRED_KEYS: {
-                    "AudienceId",
-                    "Clicks",
-                    "Revenue",
-                    "Ctr",
-                    "Spend",
-                    "AllConversions",
-                    "ReturnOnAdSpend",
-                    "Impressions",
-                    "ViewThroughConversions",
-                    "AllRevenue",
-                    "Conversions",
-                    "AverageCpm",
-                    "ConversionRate",
-                    "AverageCpc",
-                    "TimePeriod"
+                    "AudienceId"
                 },
                 **default_report
             },
             "campaign_performance_report": {
-                cls.REQUIRED_KEYS: {
-                    "Clicks",
-                    "Revenue",
-                    "Ctr",
-                    "PhoneCalls",
-                    "Spend",
-                    "AllConversions",
-                    "ReturnOnAdSpend",
-                    "Impressions",
-                    "LowQualityClicks",
-                    "ViewThroughConversions",
-                    "ConversionRate",
-                    "Conversions",
-                    "AverageCpm",
-                    "Assists",
-                    "AverageCpc",
-                    "AllRevenue",
-                    "TimePeriod"
-                },
                 **default_report
             },
             "geographic_performance_report": {
                 cls.REQUIRED_KEYS: {
-                    "AccountName",
-                    "Revenue",
-                    "Clicks",
-                    "Ctr",
-                    "Impressions",
-                    "ReturnOnAdSpend",
-                    "AverageCpm",
-                    "Assists",
-                    "ConversionRate",
-                    "AverageCpc",
-                    "Spend",
-                    "AllRevenue",
-                    "AllConversions",
-                    "ViewThroughConversions",
-                    "Conversions",
-                    "TimePeriod"
+                    "AccountName"
                 },
                 **default_report
             },
             "goals_and_funnels_report": {
                 cls.REQUIRED_KEYS: {
                     "Goal",
-                    "AllConversions",
-                    "ViewThroughConversions",
-                    "Assists",
-                    "AllRevenue",
                     "TimePeriod"
                 },
                 **default_report
             },
             "keyword_performance_report": {
-                cls.REQUIRED_KEYS: {
-                    "Clicks",
-                    "Revenue",
-                    "Ctr",
-                    "Spend",
-                    "AllConversions",
-                    "ReturnOnAdSpend",
-                    "Impressions",
-                    "ViewThroughConversions",
-                    "ConversionRate",
-                    "Conversions",
-                    "AverageCpm",
-                    "Assists",
-                    "AverageCpc",
-                    "AllRevenue",
-                    "TimePeriod"
-                },
                 **default_report
             },
             "search_query_performance_report": {
                 cls.REQUIRED_KEYS: {
-                    "SearchQuery",
-                    "Clicks",
-                    "Revenue",
-                    "Ctr",
-                    "Spend",
-                    "AllConversions",
-                    "ReturnOnAdSpend",
-                    "Impressions",
-                    "ConversionRate",
-                    "Conversions",
-                    "AverageCpm",
-                    "Assists",
-                    "AverageCpc",
-                    "AllRevenue",
-                    "TimePeriod"
+                    "SearchQuery"
                 },
                 **default_report
             }

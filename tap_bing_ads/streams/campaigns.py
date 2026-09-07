@@ -6,7 +6,7 @@ from tap_bing_ads.streams.abstracts import IncrementalStream
 
 LOGGER = singer.get_logger()
 
-CAMPAIGN_TYPES = "Search, Shopping, DynamicSearchAds"
+CAMPAIGN_TYPES = "Search, Shopping, DynamicSearchAds, Audience"
 
 
 class Campaigns(IncrementalStream):

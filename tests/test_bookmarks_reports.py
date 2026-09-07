@@ -32,14 +32,21 @@ class BingAdsBookmarksReports(BookmarkTest, BingAdsBaseTest):
         }
         return self.expected_stream_names().difference(streams_to_exclude)
 
-    @staticmethod
-    def streams_to_selected_fields():
-        return {
-            "campaign_performance_report": set(),
-            "ad_group_performance_report": set(),
-            "ad_performance_report": set(),
-            "geographic_performance_report": set(),
-        }
+    @classmethod
+    def streams_to_selected_fields(cls):
+        """
+        Select each report's metric/measure columns (Impressions, Clicks, Spend, etc.)
+        in addition to the automatic fields.  Bing Ads requires at least one metric
+        column per report request (see tap_bing_ads.reports.METRIC_COLUMNS /
+        BingAdsNoMeasureSelected), so leaving these as empty sets causes every
+        report sync to fail with "has no metric columns selected".
+
+        Metric columns don't belong to either exclusion group (Attributes vs.
+        ImpressionSharePerformanceStatistics) defined in tap_bing_ads.exclusions,
+        so selecting them is always safe for campaign_performance_report and
+        ad_group_performance_report as well.
+        """
+        return cls.report_streams_to_selected_fields()
 
     @staticmethod
     def get_stream_name(stream_id):

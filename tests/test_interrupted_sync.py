@@ -21,14 +21,9 @@ class BingAdsInterruptedSyncTest(InterruptedSyncTest, BingAdsBaseTest):
         }
         return self.expected_stream_names().difference(streams_to_exclude)
 
-    @staticmethod
-    def streams_to_selected_fields():
-        return {
-            "campaign_performance_report": set(),
-            "ad_group_performance_report": set(),
-            "ad_performance_report": set(),
-            "geographic_performance_report": set(),
-        }
+    @classmethod
+    def streams_to_selected_fields(cls):
+        return cls.report_streams_to_selected_fields()
 
     def manipulate_state(self):
         """

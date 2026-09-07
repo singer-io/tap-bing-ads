@@ -44,15 +44,9 @@ class BingAdsStartDateTest(StartDateTest, BingAdsBaseTest):
         }
         return self.expected_stream_names().difference(streams_to_exclude)
 
-    @staticmethod
-    def streams_to_selected_fields():
-        # Select all available fields for each report stream.
-        return {
-            "campaign_performance_report": set(),
-            "ad_group_performance_report": set(),
-            "ad_performance_report": set(),
-            "geographic_performance_report": set(),
-        }
+    @classmethod
+    def streams_to_selected_fields(cls):
+        return cls.report_streams_to_selected_fields()
 
     def expected_replication_keys(self, stream=None):
         """
