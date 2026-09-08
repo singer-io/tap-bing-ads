@@ -12,7 +12,7 @@ jobs:
           command: |
             uv venv --python 3.11 /usr/local/share/virtualenvs/tap-bing-ads
             source /usr/local/share/virtualenvs/tap-bing-ads/bin/activate
-            uv pip install -U pip 'setuptools<51.0.0'
+            uv pip install -U 'setuptools'
             uv pip install .[test]
             uv pip install pylint
       - run:

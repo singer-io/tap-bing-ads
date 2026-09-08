@@ -157,17 +157,36 @@ class AllFieldsTest(AllFieldsTest,BingAdsBaseTest):
             'DestinationUrl',
             'TitlePart3',
             'TitlePart1',
+            # Added to the WSDL in bingads 13.0.28; not populated in the test account
+            'AdSubType',
+            'VerifiedTrackingSettings',
         },
         'campaigns':{
             'MultimediaAdsBidAdjustment',
             'AdScheduleUseSearcherTimeZone',
-            'BidStrategyId'
+            'BidStrategyId',
+            # Added to the WSDL in bingads 13.0.28; not populated in the test account
+            'BidStrategyScope',
+            'DealIds',
+            'EndDate',
+            'GoalIds',
+            'IsDealCampaign',
+            'IsPolitical',
+            'StartDate',
+            'UseCampaignLevelDates',
         },
         'ad_groups':{
             'CpvBid',
             'AdGroupType',  # TDL-23228 -- data present in fronend but not returned in synced records
             'MultimediaAdsBidAdjustment',
             'AdScheduleUseSearcherTimeZone',
-            'CpmBid'
+            'CpmBid',
+            # Added to the WSDL in bingads 13.0.28; not populated in the test account
+            'CommissionRate',
+            'FrequencyCapSettings',
+            'McpaBid',
+            'PercentCpcBid',
+            'UseOptimizedTargeting',
+            'UsePredictiveTargeting',
         }
     }
