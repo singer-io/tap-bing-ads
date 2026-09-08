@@ -3,6 +3,7 @@
 ## 2.4.1
   * Bump bingads from 13.0.11.1 to 13.0.28
   * Unpin setuptools
+  * Update complexType handling
 
 ## 2.4.0
   * Adds a CampaignType `Audience` to the call to GetCampaignsByAccountId to fetch relevant campaigns [#134](https://github.com/singer-io/tap-bing-ads/pull/134)
