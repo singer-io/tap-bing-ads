@@ -8,13 +8,15 @@ REPORT_WHITELIST = [
     'CampaignPerformanceReport',
     'GoalsAndFunnelsReport',
     'AudiencePerformanceReport',
-    'AdExtensionDetailReport'
+    'AdExtensionDetailReport',
+    'UserLocationPerformanceReport'
 ]
 
 REPORT_REQUIRED_FIELDS = ['_sdc_report_datetime', 'AccountId', 'TimePeriod']
 
 REPORT_SPECIFIC_REQUIRED_FIELDS = {
     'GeographicPerformanceReport': ['AccountName'],
+    'UserLocationPerformanceReport': ['AccountName'],
     'AgeGenderDemographicReport': [
         'AccountName',
         'AdGroupName',
