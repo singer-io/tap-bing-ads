@@ -1,0 +1,283 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "Id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "account_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "campaign_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "campaigns_LastModifiedTime": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "Name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "PrivacyStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Language": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Network": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AudienceAdsBidAdjustment": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "CpcBid": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "Amount": {
+          "type": [
+            "null",
+            "number"
+          ]
+        }
+      }
+    },
+    "BiddingScheme": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "Type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "InheritedBidStrategyType": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "AdRotation": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "Type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "StartDate": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "EndDate": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "StartDate": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "Day": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "Month": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "Year": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        }
+      }
+    },
+    "EndDate": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "Day": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "Month": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "Year": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        }
+      }
+    },
+    "Settings": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "Type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "Details": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": [
+                "null",
+                "object"
+              ],
+              "properties": {
+                "CriterionTypeGroup": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "TargetAndBid": {
+                  "type": [
+                    "null",
+                    "boolean"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "ForwardCompatibilityMap": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ]
+      }
+    },
+    "TrackingUrlTemplate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "FinalUrlSuffix": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "UrlCustomParameters": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "Parameters": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "Key": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "Value": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
