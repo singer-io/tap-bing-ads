@@ -4,8 +4,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='tap-bing-ads',
-    version="3.0.0",
-    description='Singer.io tap for extracting data from the Microsoft Advertising (Bing Ads) REST API',
+    version="3.1.0",
+    description=(
+        'Singer.io tap for extracting data from Microsoft Advertising (Bing Ads). '
+        'REST is the default/recommended transport; legacy SOAP remains available '
+        'via api_type=soap until its 2027-01-31 retirement.'
+    ),
     author='Stitch',
     url='http://singer.io',
     classifiers=['Programming Language :: Python :: 3 :: Only'],
@@ -18,6 +22,11 @@ setup(
         'backoff==2.2.1',
     ],
     extras_require={
+        'soap': [
+            # Required only when a connection sets `api_type: soap`.
+            # Supported until the Bing Ads SOAP API sunset (2027-01-31).
+            'bingads==13.0.28',
+        ],
         'test': [
             'pytest>=7.0.0',
             'pytest-cov>=4.0.0',

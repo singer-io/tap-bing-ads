@@ -24,7 +24,8 @@
 
 ## Features
 
-- Pure REST API implementation — no Bing Ads SDK dependency.
+- REST API implementation by default — no Bing Ads SDK dependency required.
+- Legacy SOAP support retained behind an opt-in `api_type: soap` config until Microsoft's 2027-01-31 SOAP sunset (see [API Transport](#api-transport-rest-vs-legacy-soap)).
 - OAuth 2.0 refresh-token authentication with automatic token refresh.
 - Streams unauthorized (HTTP 403) streams are silently excluded from the catalog during discovery instead of failing.
 - Asynchronous report generation with polling and CSV download.
@@ -91,6 +92,31 @@ Create a `config.json` file with the following keys:
 | `report_max_days` | No | Max days per report request window (default: `30`) |
 | `conversion_window` | No | Days back from today to re-sync for conversion attribution (default: `-30`) |
 | `request_timeout` | No | HTTP request timeout in seconds (default: `300`) |
+| `api_type` | No | `"rest"` (default) or `"soap"`. See [API Transport](#api-transport-rest-vs-legacy-soap) below. |
+
+---
+
+## API Transport: REST vs. legacy SOAP
+
+Microsoft Advertising supports both a SOAP API and a newer REST API. Microsoft
+has announced that SOAP will continue to be supported, and continue to receive
+new feature parity alongside REST, until it is **retired on 2027-01-31**.
+
+- **REST is the default and the foundation for all new development** in this
+  tap. Leave `api_type` unset (or set it to `"rest"`) unless you have a
+  specific reason to use SOAP.
+- **SOAP remains available** for existing connections that require it, by
+  setting `"api_type": "soap"` in the config. The SOAP implementation requires
+  the optional `bingads` SDK dependency:
+
+  ```bash
+  pip install 'tap-bing-ads[soap]'
+  ```
+
+  Running with `api_type: soap` and without this extra installed raises a
+  clear `ImportError` telling you to install it.
+- Once Microsoft retires the SOAP API (2027-01-31), the `soap` api_type and
+  `tap_bing_ads/soap_tap.py` can be removed from this tap.
 
 ---
 
