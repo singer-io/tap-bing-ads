@@ -10,6 +10,8 @@ the Bing Ads SOAP API - and ship new features to both SOAP and REST - until
 it is retired on 2027-01-31. New streams/fields should be added to REST
 first and backported to SOAP only while it remains supported.
 """
+from datetime import datetime, timezone
+
 import singer
 from singer import utils
 
@@ -37,8 +39,18 @@ VALID_API_TYPES = ("rest", "soap")
 DEFAULT_API_TYPE = "rest"
 
 
+def is_soap_sunset() -> bool:
+    """Return True once the current date is on/after SOAP_SUNSET_DATE."""
+    sunset = datetime.strptime(SOAP_SUNSET_DATE, "%Y-%m-%d").date()
+    return datetime.now(timezone.utc).date() >= sunset
+
+
 def get_api_type(config: dict) -> str:
-    """Resolve and validate the configured `api_type` (defaults to REST)."""
+    """Resolve and validate the configured `api_type` (defaults to REST).
+
+    Forces REST on/after SOAP_SUNSET_DATE, regardless of config, since the
+    SOAP API is no longer supported by Microsoft past that date.
+    """
     api_type = str(config.get("api_type") or DEFAULT_API_TYPE).strip().lower()
     if api_type not in VALID_API_TYPES:
         raise ValueError(
@@ -46,6 +58,13 @@ def get_api_type(config: dict) -> str:
                 api_type, VALID_API_TYPES
             )
         )
+    if api_type == "soap" and is_soap_sunset():
+        LOGGER.warning(
+            "api_type='soap' was requested, but the Bing Ads SOAP API "
+            "sunset date (%s) has passed. Falling back to 'rest'.",
+            SOAP_SUNSET_DATE,
+        )
+        return "rest"
     return api_type
 
 
