@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.0
+  * Restore opt-in legacy SOAP support (`api_type: "soap"`) alongside REST, since Microsoft
+    continues to support the Bing Ads SOAP API - and ship new features to both SOAP and REST -
+    until its retirement on 2027-01-31.
+  * REST remains the default transport and the foundation for new development; SOAP requires
+    the optional `tap-bing-ads[soap]` extra (`bingads` SDK).
+  * Restored `REPORTING_FIELD_TYPES` in `reports.py`, needed by the legacy SOAP implementation.
+
 ## 3.0.0
   * Migrated Microsoft Advertising (Bing Ads) from SOAP SDK to REST API, removing SDK dependency.[#133](https://github.com/singer-io/tap-bing-ads/pull/133)
   * Refactored the Microsoft Advertising integration.

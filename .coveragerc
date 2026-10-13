@@ -1,0 +1,8 @@
+[run]
+# tap_bing_ads/soap_tap.py is the legacy SOAP implementation, kept only for
+# backward compatibility (api_type=soap) until the Bing Ads SOAP API sunset
+# (2027-01-31). It depends on the optional `bingads`/`suds` SDK (not part of
+# the default/test install) and reuses already-proven code from the pre-REST
+# implementation, so it is intentionally excluded from the coverage gate.
+omit =
+    tap_bing_ads/soap_tap.py
