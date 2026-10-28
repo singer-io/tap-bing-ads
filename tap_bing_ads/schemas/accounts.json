@@ -1,0 +1,242 @@
+{
+    "type": "object",
+    "properties": {
+        "Id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Number": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "Name": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "AccountLifeCycleStatus": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "AccountFinancialStatus": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "AutoTagType": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "BillToCustomerId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "BillingThresholdAmount": {
+            "type": [
+                "null",
+                "number"
+            ]
+        },
+        "BackUpPaymentInstrumentId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "BusinessAddress": {
+            "type": [
+                "null",
+                "object"
+            ],
+            "properties": {
+                "BusinessName": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "City": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "CountryCode": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "Id": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "Line1": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "Line2": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "Line3": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "Line4": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "PostalCode": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "StateOrProvince": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "TimeStamp": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                }
+            }
+        },
+        "CurrencyCode": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "ForwardCompatibilityMap": {
+            "type": [
+                "null",
+                "object"
+            ]
+        },
+        "Language": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "LastModifiedByUserId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "LastModifiedTime": {
+            "type": [
+                "null",
+                "string"
+            ],
+            "format": "date-time"
+        },
+        "LinkedAgencies": {
+            "type": [
+                "null",
+                "array"
+            ],
+            "items": {
+                "type": [
+                    "null",
+                    "object"
+                ]
+            }
+        },
+        "ParentCustomerId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "PauseReason": {
+            "type": [
+                "null",
+                "integer"
+            ]
+        },
+        "PaymentMethodId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "PaymentMethodType": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "PrimaryUserId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "SalesHouseCustomerId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "SoldToPaymentInstrumentId": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "TaxInformation": {
+            "type": [
+                "null",
+                "array"
+            ],
+            "items": {
+                "type": [
+                    "null",
+                    "object"
+                ]
+            }
+        },
+        "TimeStamp": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "TimeZone": {
+            "type": [
+                "null",
+                "string"
+            ]
+        }
+    }
+}

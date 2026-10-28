@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.0
+  * Migrated Microsoft Advertising (Bing Ads) from SOAP SDK to REST API, removing SDK dependency.[#133](https://github.com/singer-io/tap-bing-ads/pull/133)
+  * Refactored the Microsoft Advertising integration.
+  * Unauthorized streams (HTTP 403) are silently excluded from the catalog during discovery.
+  * Metadata fields updated for parent streams.
+  * Python version upgrade to version 3.12 in circleci.
+
 ## 2.4.1
   * Bump bingads from 13.0.11.1 to 13.0.28
   * Unpin setuptools

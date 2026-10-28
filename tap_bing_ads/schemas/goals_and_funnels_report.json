@@ -1,0 +1,200 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "_sdc_report_datetime": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "TimePeriod": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "AccountId": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "AccountName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AccountNumber": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AccountStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CampaignId": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "CampaignName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CampaignStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CampaignType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AdGroupId": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "AdGroupName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AdGroupStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AssetGroupId": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AssetGroupName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AssetGroupStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Keyword": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "KeywordId": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "KeywordStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "DeviceType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "DeviceOS": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Goal": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "GoalId": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "GoalType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Assists": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "AllConversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllConversionsQualified": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllRevenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughConversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughConversionsQualified": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughRevenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ConversionDelay": {
+      "type": [
+        "null",
+        "number"
+      ]
+    }
+  }
+}

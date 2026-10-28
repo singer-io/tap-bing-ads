@@ -1,0 +1,368 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "_sdc_report_datetime": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "TimePeriod": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "AccountId": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "AccountName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AccountNumber": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AccountStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CampaignId": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "CampaignName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CampaignStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BaseCampaignId": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AdGroupId": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "AdGroupName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AdGroupStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AudienceId": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "AudienceName": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AudienceType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AssociationId": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AssociationLevel": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AssociationStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BidAdjustment": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "TargetingSetting": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Goal": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "GoalType": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Impressions": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "Clicks": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "Ctr": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Spend": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AverageCpc": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AverageCpm": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AverageCPV": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AveragePosition": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AverageWatchTimePerVideoView": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AverageWatchTimePerImpression": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Conversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ConversionsQualified": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ConversionRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "CostPerConversion": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Revenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "RevenuePerConversion": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ReturnOnAdSpend": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllConversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllConversionsQualified": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllConversionRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllCostPerConversion": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllRevenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllRevenuePerConversion": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AllReturnOnAdSpend": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughConversions": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughConversionsQualified": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughRevenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ViewThroughRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "AbsoluteTopImpressionRatePercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "TopImpressionRatePercent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "VideoViews": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "VideoViewsAt25Percent": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "VideoViewsAt50Percent": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "VideoViewsAt75Percent": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "CompletedVideoViews": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "VideoCompletionRate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "TotalWatchTimeInMS": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    }
+  }
+}
